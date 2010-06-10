@@ -58,4 +58,11 @@ class StencilGrid(object):
         Returns a list of neighbors that are at distance dist from the center
         point.  Uses neighbor_definition to determine what the neighbors are.
         """
-        pass
+        import copy
+        # create a dictionary mapping the grid variables to the actual center
+        center_point = dict(zip(self.grid_variables, center))
+        for neighbor in self.neighbor_definition[dist]:
+            yield [eval(x,center_point) for x in copy.deepcopy(neighbor)]
+
+            
+            

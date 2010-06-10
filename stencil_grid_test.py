@@ -31,6 +31,9 @@ class BasicTests(unittest.TestCase):
     def test_neighbors_iterator(self):
         grid = StencilGrid([10,10])
         self.failIf(len([x for x in grid.neighbors([1,1],1)]) != 5)
+
+        grid = StencilGrid([5,5,5])
+        self.failIf(len([x for x in grid.neighbors([1,1,1],1)]) != 7)
         
 
 if __name__ == '__main__':
