@@ -10,10 +10,10 @@ class BasicTests(unittest.TestCase):
         self.failIf(grid.grid_variables[0] != "DIM0")
         # test to make sure default neighbor definition is correct
         self.failIf(grid.neighbor_definition[0] != ["DIM0","DIM1"])
-        self.failIf(len(grid.neighbor_definition[1]) != 5)
+        self.failIf(len(grid.neighbor_definition[1]) != 4)
         # test to make sure default neighbor definition is correct in 3D
         grid = StencilGrid([5,5,5])
-        self.failIf(len(grid.neighbor_definition[1]) != 7)
+        self.failIf(len(grid.neighbor_definition[1]) != 6)
 
 
     def test_interior_iterator(self):
@@ -30,10 +30,10 @@ class BasicTests(unittest.TestCase):
     
     def test_neighbors_iterator(self):
         grid = StencilGrid([10,10])
-        self.failIf(len([x for x in grid.neighbors([1,1],1)]) != 5)
+        self.failIf(len([x for x in grid.neighbors([1,1],1)]) != 4)
 
         grid = StencilGrid([5,5,5])
-        self.failIf(len([x for x in grid.neighbors([1,1,1],1)]) != 7)
+        self.failIf(len([x for x in grid.neighbors([1,1,1],1)]) != 6)
         
 
 if __name__ == '__main__':

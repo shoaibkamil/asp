@@ -21,7 +21,7 @@ class StencilGrid(object):
             for y in ["", "+1", "-1"]:
                 tmp = copy.deepcopy(self.neighbor_definition[0])
                 tmp[x] += y
-                if tmp != self.grid_variables or len(self.neighbor_definition[1]) < 1:
+                if tmp != self.grid_variables:
                     self.neighbor_definition[1].append(tmp)
 
 
