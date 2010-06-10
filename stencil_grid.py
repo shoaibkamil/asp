@@ -11,6 +11,21 @@ class StencilGrid(object):
         
         self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
 
+        # add default neighbor definition
+        self.neighbor_definition = []
+        self.neighbor_definition.append( [x for x in self.grid_variables] )
+        self.neighbor_definition.append([])
+
+        import copy
+        for x in range(self.dim):
+            for y in ["", "+1", "-1"]:
+                tmp = copy.deepcopy(self.neighbor_definition[0])
+                tmp[x] += y
+                if tmp != self.grid_variables or len(self.neighbor_definition[1]) < 1:
+                    self.neighbor_definition[1].append(tmp)
+
+
+
 
     def interior_points(self):
         """
@@ -38,7 +53,7 @@ class StencilGrid(object):
         pass
 
 
-    def neighbors(center, dist):
+    def neighbors(self, center, dist):
         """
         Returns a list of neighbors that are at distance dist from the center
         point.  Uses neighbor_definition to determine what the neighbors are.
