@@ -24,7 +24,11 @@ class StencilGrid(object):
                 if tmp != self.grid_variables:
                     self.neighbor_definition[1].append(tmp)
 
-
+    # want this to be indexable
+    def __getitem__(self, x):
+        return self.data[x]
+    def __setitem__(self, x, y):
+        self.data[x] = y
 
 
     def interior_points(self):
