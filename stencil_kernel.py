@@ -11,6 +11,7 @@ class StencilKernel(object):
             dir(self).index("kernel")
         except ValueError:
             raise Exception("No kernel method defined.")
+
         
             
 
