@@ -9,7 +9,7 @@ class BasicTests(unittest.TestCase):
         self.failIf(grid.interior != [8,8])
         self.failIf(grid.grid_variables[0] != "DIM0")
         # test to make sure default neighbor definition is correct
-        self.failIf(grid.neighbor_definition[0] != ["DIM0","DIM1"])
+        self.failIf(grid.neighbor_definition[0] != [(0,0)])
         self.failIf(len(grid.neighbor_definition[1]) != 4)
         # test to make sure default neighbor definition is correct in 3D
         grid = StencilGrid([5,5,5])

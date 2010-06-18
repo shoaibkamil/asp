@@ -13,15 +13,17 @@ class StencilGrid(object):
 
         # add default neighbor definition
         self.neighbor_definition = []
-        self.neighbor_definition.append( [x for x in self.grid_variables] )
+        # set self.neighbor_defintion[0] to tuple of size self.dim of all zeros
+        self.neighbor_definition.append([tuple([0 for x in range(self.dim)])])
         self.neighbor_definition.append([])
 
         import copy
         for x in range(self.dim):
-            for y in ["", "+1", "-1"]:
-                tmp = copy.deepcopy(self.neighbor_definition[0])
+            for y in [0, 1, -1]:
+                tmp = list(self.neighbor_definition[0][0])
                 tmp[x] += y
-                if tmp != self.grid_variables:
+                tmp = tuple(tmp)
+                if tmp != self.neighbor_definition[0][0]:
                     self.neighbor_definition[1].append(tmp)
 
     # want this to be indexable
@@ -62,11 +64,6 @@ class StencilGrid(object):
         Returns a list of neighbors that are at distance dist from the center
         point.  Uses neighbor_definition to determine what the neighbors are.
         """
-        import copy
         # create a dictionary mapping the grid variables to the actual center
-        center_point = dict(zip(self.grid_variables, center))
         for neighbor in self.neighbor_definition[dist]:
-            yield [eval(x,center_point) for x in copy.deepcopy(neighbor)]
-
-            
-            
+            yield tuple(map(lambda a,b: a+b, list(center), list(neighbor)))
