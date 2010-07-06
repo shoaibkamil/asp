@@ -5,6 +5,9 @@ import ast
 class CodeGenerator(ast.NodeVisitor):
     def generic_visit(self, node):
         str = ""
+
+        import sys
+        sys.stderr.write("Unsupported node: " + node.__class__.__name__ + "\n")
         
         for child in ast.iter_child_nodes(node):
             str += self.visit(child)
@@ -14,6 +17,9 @@ class CodeGenerator(ast.NodeVisitor):
     # numbers
     def visit_Num(self, node):
         return str(node.n)
+
+    def visit_Name(self, node):
+        return str(node.id)
 
 
     # Binary operations

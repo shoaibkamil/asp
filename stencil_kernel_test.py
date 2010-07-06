@@ -3,6 +3,7 @@ from stencil_kernel import *
 
 class BasicTests(unittest.TestCase):
     def test_init(self):
+        # if no kernel method is defined, it should fail
         self.failUnlessRaises((Exception), StencilKernel)
     
     def test_pure_python(self):
@@ -19,7 +20,10 @@ class BasicTests(unittest.TestCase):
         kernel.kernel(in_grid, out_grid)
         self.failIf(in_grid[3,3] != out_grid[3,3])
 
-        
+
+class IntrospectionTests(unittest.TestCase):
+    def test_get_kernel_body(self):
+        pass
 
 
 if __name__ == '__main__':
