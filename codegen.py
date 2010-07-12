@@ -21,6 +21,12 @@ class CodeGenerator(ast.NodeVisitor):
     def visit_Name(self, node):
         return str(node.id)
 
+    # function call
+    def visit_Call(self, node):
+        func = self.visit(node.func)
+        # map visit() onto the parameters and join them with commas
+        args = ','.join(map(self.visit, node.args))        
+        return func + "(" + args + ")"
 
     # Binary operations
 
@@ -35,3 +41,12 @@ class CodeGenerator(ast.NodeVisitor):
         return "-"
     def visit_Div(self, node):
         return "/"
+
+
+    # for iterator
+    def visit_For(self, node):
+        print "target: ", self.visit(node.target)
+        print "iter: ", self.visit(node.iter)
+        print "body: ", node.body
+        return ""
+                                   

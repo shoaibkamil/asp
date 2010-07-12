@@ -22,10 +22,20 @@ class BasicTests(unittest.TestCase):
         k = ast.parse("34 * 10 + x")
         self.assertEqual(cg.visit(k), "34*10+x")
 
+    def test_call(self):
+        k = ast.parse("abc()")
+        cg = CodeGenerator()
+        self.assertEqual(cg.visit(k), "abc()")
+        k = ast.parse("abc(hi)")
+        self.assertEqual(cg.visit(k), "abc(hi)")
+        k = ast.parse("abc(hi, bye)")
+        self.assertEqual(cg.visit(k), "abc(hi,bye)")
+
+
 class MoreTests(unittest.TestCase):
-    def test_funcdef(self):
+    def test_iterator(self):
         k = ast.parse("""
-for x in abc.neighbors():
+for x in abc.interior_points():
   pass
 """)
         cg = CodeGenerator()
