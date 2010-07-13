@@ -1,7 +1,7 @@
 import numpy
 import inspect
 from stencil_grid import *
-import ast_tools
+import simple_ast
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -20,12 +20,21 @@ class StencilKernel(object):
         print self.kernel_src
         self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
         #print ast.dump(self.kernel_ast)
-        ast_tools.ASTPrettyPrinter().visit(self.kernel_ast)
+        #ast_tools.ASTPrettyPrinter().visit(self.kernel_ast)
+
+        cg = self.StencilCodegen()
+        print cg.visit(self.kernel_ast)
 
     def remove_indentation(self,src):
         return src.lstrip()
 
-        
+
+    # class to codegen stencils
+    import codegen
+    class StencilCodegen(codegen.CodeGenerator):
+        pass
+#        def visit_For(self, node):
+            # can we access the actual instance?
 
 
 

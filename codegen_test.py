@@ -31,6 +31,15 @@ class BasicTests(unittest.TestCase):
         k = ast.parse("abc(hi, bye)")
         self.assertEqual(cg.visit(k), "abc(hi,bye)")
 
+    def test_subscript(self):
+        k = ast.parse("abc[0]")
+        cg = CodeGenerator()
+        self.assertEqual(cg.visit(k), "abc[0]")
+
+    def test_assign(self):
+        k = ast.parse("abc = 5")
+        cg = CodeGenerator()
+        self.assertEqual(cg.visit(k), "abc = 5")
 
 class MoreTests(unittest.TestCase):
     def test_iterator(self):
