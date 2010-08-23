@@ -48,8 +48,15 @@ class ConvertAST(ast.NodeTransformer):
     # by default, only do first statement in a module
     def visit_Module(self, node):
         return self.visit(node.body[0])
-    def visit_Expression(self, node):
-        return Expression(self.visit(node.body))
+    def visit_Expr(self, node):
+        return Expression(self.visit(node.value))
+
+    # only single targets supported
+    def visit_Assign(self, node):
+        return Assign(self.visit(node.targets[0]),
+                self.visit(node.value))
+
+
 
 # classes to express everything in C++ AST
 

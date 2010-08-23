@@ -25,6 +25,10 @@ class ConversionTests(unittest.TestCase):
                         None)
         b = ConvertAST().visit(a)
         self.assertEqual(str(b), "hello[4]")
+    def test_Assign(self):
+        a = ast.Assign([ast.Name("hello", None)], ast.Num(4))
+        b = ConvertAST().visit(a)
+        self.assertEqual(str(b), "hello = 4;")
 
 if __name__ == '__main__':
     unittest.main()
