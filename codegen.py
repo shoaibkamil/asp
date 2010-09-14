@@ -45,8 +45,13 @@ class ConvertAST(ast.NodeTransformer):
         return self.visit(node.value)
 
     
+    def visit_Pass(self, node):
+        return Expression()
+
+    
     # by default, only do first statement in a module
     def visit_Module(self, node):
+        print "-->", ast.dump(node)
         return self.visit(node.body[0])
     def visit_Expr(self, node):
         return Expression(self.visit(node.value))
@@ -56,7 +61,19 @@ class ConvertAST(ast.NodeTransformer):
         return Assign(self.visit(node.targets[0]),
                 self.visit(node.value))
 
+    def visit_FunctionDef(self, node):
+        print("In FunctionDef:")
+        print ast.dump(node)
+        print("----")
+        return FunctionBody(FunctionDeclaration(Value("void",
+                                                      node.name),
+                                                self.visit(node.args)),
+                            Block([self.visit(x) for x in node.body]))
 
+    # only do the basic case: everything is void*,  no named args, no default values
+    def visit_arguments(self, node):
+        return [Pointer(Value("void",self.visit(x))) for x in node.args]
+        
 
 # classes to express everything in C++ AST
 
@@ -77,7 +94,7 @@ class CName(Generable):
 
 class Expression(Generable):
     def __str__(self):
-        raise NotImplementedError
+        return ""
 
     def generate(self):
         yield str(self) + ';'

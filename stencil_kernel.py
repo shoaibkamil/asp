@@ -9,98 +9,108 @@ import ast
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
-    def __init__(self):
-        # we want to raise an exception if there is no kernel()
-        # method defined.
-        try:
-            dir(self).index("kernel")
-        except ValueError:
-            raise Exception("No kernel method defined.")
+	def __init__(self):
+		# we want to raise an exception if there is no kernel()
+		# method defined.
+		try:
+			dir(self).index("kernel")
+		except ValueError:
+			raise Exception("No kernel method defined.")
 
-        # if the method is defined, let us introspect and find
-        # its AST
-        import ast 
-        self.kernel_src = inspect.getsource(self.kernel)
-        self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
-        #print ast.dump(self.kernel_ast)
-        #ast_tools.ASTPrettyPrinter().visit(self.kernel_ast)
+		# if the method is defined, let us introspect and find
+		# its AST
+		import ast 
+		self.kernel_src = inspect.getsource(self.kernel)
+		self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
 
-        # replace kernel with shadow version
-        self.kernel = self.shadow_kernel
-        
+		self.pure_python = False
+		self.pure_python_kernel = self.kernel
 
-    def remove_indentation(self, src):
-        return src.lstrip()
+		# replace kernel with shadow version
+		self.kernel = self.shadow_kernel
+		
 
-    def shadow_kernel(self, *args):
-        #FIXME: need to somehow match arg names to args
-        argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
-        argdict = dict(zip(argnames[1:], args))
-        print argdict
-        #cg = self.StencilCodegen(argdict)
-        print ast.dump(StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast))
+	def remove_indentation(self, src):
+		return src.lstrip()
+
+	def shadow_kernel(self, *args):
+		if self.pure_python:
+			return self.pure_python_kernel(*args)
 
 
-    # the actual Stencil AST Node
-    class StencilInteriorIter(ast.AST):
-        def __init__(self, grid, body, target):
-          self.grid = grid
-          self.body = body
-          self.target = target
-          self._fields = ('grid', 'body', 'target')
+		#FIXME: need to somehow match arg names to args
+		argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
+		argdict = dict(zip(argnames[1:], args))
+		print argdict
+		#cg = self.StencilCodegen(argdict)
+		phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
+		#print ast.dump(StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast))
+		#print ast.dump(StencilKernel.)
+		print ast.dump(phase2)
+		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
-          super(StencilKernel.StencilInteriorIter, self).__init__()
-            
-    class StencilNeighborIter(ast.AST):
-        def __init__(self, grid, body, target, dist):
-            self.grid = grid
-            self.body = body
-            self.target = target
-            self.dist = dist
-            self._fields = ('grid', 'body', 'target', 'dist')
-            super (StencilKernel.StencilNeighborIter, self).__init__()
+	# the actual Stencil AST Node
+	class StencilInteriorIter(ast.AST):
+		def __init__(self, grid, body, target):
+		  self.grid = grid
+		  self.body = body
+		  self.target = target
+		  self._fields = ('grid', 'body', 'target')
 
-
-    # class to convert from Python AST to an AST with special Stencil node
-    class StencilProcessAST(ast.NodeTransformer):
-        def __init__(self, argdict):
-            self.argdict = argdict
-            super(StencilKernel.StencilProcessAST, self).__init__()
-
-        
-        def visit_For(self, node):
-            print "visiting a For...\n"
-            # check if this is the right kind of For loop
-            if (node.iter.__class__.__name__ == "Call" and
-                node.iter.func.__class__.__name__ == "Attribute"):
-                
-                print "Found something to change...\n"
-
-                if (node.iter.func.attr == "interior_points"):
-                    grid = self.visit(node.iter.func.value)    # do we need the name of the grid, or the obj itself?
-                    target = self.visit(node.target)
-                    body = map(self.visit, node.body)
-                    newnode = StencilKernel.StencilInteriorIter(grid, body, target)
-                    return newnode
-
-                elif (node.iter.func.attr == "neighbors"):
-                    print ast.dump(node) + "\n"
-                    target = self.visit(node.target)
-                    body = map(self.visit, node.body)
-                    grid = self.visit(node.iter.func.value)
-                    dist = self.visit(node.iter.args[0])
-                    newnode = StencilKernel.StencilNeighborIter(grid, body, target, dist)
-                    return newnode
-
-                else:
-                    return node
-            else:
-                return node
+		  super(StencilKernel.StencilInteriorIter, self).__init__()
+			
+	class StencilNeighborIter(ast.AST):
+		def __init__(self, grid, body, target, dist):
+			self.grid = grid
+			self.body = body
+			self.target = target
+			self.dist = dist
+			self._fields = ('grid', 'body', 'target', 'dist')
+			super (StencilKernel.StencilNeighborIter, self).__init__()
 
 
-#     # class to codegen stencils
-#     import codegen
-#     class StencilCodegen(codegen.CodeGenerator):
+	# class to convert from Python AST to an AST with special Stencil node
+	class StencilProcessAST(ast.NodeTransformer):
+		def __init__(self, argdict):
+			self.argdict = argdict
+			super(StencilKernel.StencilProcessAST, self).__init__()
+
+		
+		def visit_For(self, node):
+			print "visiting a For...\n"
+			# check if this is the right kind of For loop
+			if (node.iter.__class__.__name__ == "Call" and
+				node.iter.func.__class__.__name__ == "Attribute"):
+				
+				print "Found something to change...\n"
+
+				if (node.iter.func.attr == "interior_points"):
+					grid = self.visit(node.iter.func.value)	   # do we need the name of the grid, or the obj itself?
+					target = self.visit(node.target)
+					body = map(self.visit, node.body)
+					newnode = StencilKernel.StencilInteriorIter(grid, body, target)
+					return newnode
+
+				elif (node.iter.func.attr == "neighbors"):
+					print ast.dump(node) + "\n"
+					target = self.visit(node.target)
+					body = map(self.visit, node.body)
+					grid = self.visit(node.iter.func.value)
+					dist = self.visit(node.iter.args[0])
+					newnode = StencilKernel.StencilNeighborIter(grid, body, target, dist)
+					return newnode
+
+				else:
+					return node
+			else:
+				return node
+
+	import codegen
+	class StencilConvertAST(codegen.ConvertAST):
+		def __init__(self, argdict):
+			self.argdict = argdict
+			super(StencilKernel.StencilConvertAST, self).__init__()
+			
         
 #         def __init__(self, argdict):
 #             #FIXME: should support multiple input arrays
