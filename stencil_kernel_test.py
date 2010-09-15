@@ -73,15 +73,19 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.assertTrue(re.search("array_macro", str(result)))
 		self.assertTrue(re.search("#define", str(result)))
 
-	def test_StencilConvertAST_interior_points(self):
+	def test_visit_StencilInteriorIter(self):
 		import ast, re
 		
 		n = StencilKernel.StencilInteriorIter("in_grid",
 						      [ast.Pass()],
 						      ast.Name("targ", None))
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
+		print str(result)
 		self.assertTrue(re.search("For", str(type(result))))
-			       
+	
+	def test_visit_StencilNeighborIter(self):
+		#pending
+		pass
 		
 
 

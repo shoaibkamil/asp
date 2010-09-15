@@ -124,21 +124,32 @@ class StencilKernel(object):
 				return codepy.cgen.Comment("Not found argument: " + arg)
 
 		def visit_StencilInteriorIter(self, node):
-			import codepy
-			return codepy.cgen.For(None, None, None, None)
+			import codepy, codegen
+			# should catch KeyError here
+			array = self.argdict[node.grid]
+			dim = len(array.shape)
+			if dim == 2:
+				start1 = codepy.cgen.Assign(codepy.cgen.Value("int", "i"),
+							    codegen.CNumber(array.ghost_depth))
+				condition1 = "i < " + str(array.shape[0]-array.ghost_depth)
+				update1 = "i++"
+				start2 = codepy.cgen.Assign(codepy.cgen.Value("int", "j"),
+							    codegen.CNumber(array.ghost_depth))
+				condition2 = "j < " + str(array.shape[1]-array.ghost_depth)
+				update2 = "j++"
 
-        
-#         def __init__(self, argdict):
-#             #FIXME: should support multiple input arrays
-#             #FIXME: should reverse order?
-#             self.argdict = argdict
-#             super(StencilKernel.StencilCodegen, self).__init__()
+				body = codepy.cgen.Block([self.visit(x) for x in node.body])
 
-        
-#         def gensym(self):
-#             """ Generates random strings for unique identifiers. """
-#             import random, string
-#             return "_i" + "".join(random.sample(string.letters+string.digits, 8))
+				return codepy.cgen.For(start1, condition1, update1,
+						       codepy.cgen.For(start2, condition2, update2,
+								       body))
+
+		def visit_StencilNeighborIter(self, node):
+			import codegen
+
+			return codegen.Expression()
+
+
 
 #         def visit_For(self, node):
             
