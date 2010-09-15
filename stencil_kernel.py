@@ -107,10 +107,26 @@ class StencilKernel(object):
 
 	import codegen
 	class StencilConvertAST(codegen.ConvertAST):
+
 		def __init__(self, argdict):
 			self.argdict = argdict
 			super(StencilKernel.StencilConvertAST, self).__init__()
-			
+
+		def gen_array_macro(self, arg):
+			import codepy
+			try:
+				array = self.argdict[arg]
+				if  array.dim == 2:
+					return codepy.cgen.Define("_"+arg+"_array_macro(_a,_b)", 
+								  "(_b+(_a*" + str(array.shape[0]) +
+								  "))")
+			except KeyError:
+				return codepy.cgen.Comment("Not found argument: " + arg)
+
+		def visit_StencilInteriorIter(self, node):
+			import codepy
+			return codepy.cgen.For(None, None, None, None)
+
         
 #         def __init__(self, argdict):
 #             #FIXME: should support multiple input arrays
