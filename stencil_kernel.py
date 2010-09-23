@@ -4,8 +4,6 @@ from stencil_grid import *
 import simple_ast
 import ast
 
-# Overall flow: StencilProcessAST (now has stencil node) ---> StencilToCAST (now is a C++ AST) ---> codegen
-
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -69,6 +67,7 @@ class StencilKernel(object):
 			super (StencilKernel.StencilNeighborIter, self).__init__()
 
 
+	# separate files for different architectures
 	# class to convert from Python AST to an AST with special Stencil node
 	class StencilProcessAST(ast.NodeTransformer):
 		def __init__(self, argdict):
@@ -85,7 +84,7 @@ class StencilKernel(object):
 				print "Found something to change...\n"
 
 				if (node.iter.func.attr == "interior_points"):
-					grid = self.visit(node.iter.func.value)	   # do we need the name of the grid, or the obj itself?
+					grid = self.visit(node.iter.func.value).id	   # do we need the name of the grid, or the obj itself?
 					target = self.visit(node.target)
 					body = map(self.visit, node.body)
 					newnode = StencilKernel.StencilInteriorIter(grid, body, target)
@@ -95,8 +94,8 @@ class StencilKernel(object):
 					print ast.dump(node) + "\n"
 					target = self.visit(node.target)
 					body = map(self.visit, node.body)
-					grid = self.visit(node.iter.func.value)
-					dist = self.visit(node.iter.args[0])
+					grid = self.visit(node.iter.func.value).id
+					dist = self.visit(node.iter.args[1]).n
 					newnode = StencilKernel.StencilNeighborIter(grid, body, target, dist)
 					return newnode
 
@@ -112,7 +111,7 @@ class StencilKernel(object):
 			self.argdict = argdict
 			super(StencilKernel.StencilConvertAST, self).__init__()
 
-		def gen_array_macro(self, arg):
+		def gen_array_macro_definition(self, arg):
 			import codepy
 			try:
 				array = self.argdict[arg]
@@ -123,31 +122,56 @@ class StencilKernel(object):
 			except KeyError:
 				return codepy.cgen.Comment("Not found argument: " + arg)
 
+		def gen_array_macro(self, arg, point):
+			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
+			return macro
+
 		def visit_StencilInteriorIter(self, node):
 			import codepy, codegen
 			# should catch KeyError here
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
 			if dim == 2:
-				start1 = codepy.cgen.Assign(codepy.cgen.Value("int", "i"),
-							    codegen.CNumber(array.ghost_depth))
-				condition1 = "i < " + str(array.shape[0]-array.ghost_depth)
+				start1 = "int i = %s" % str(array.ghost_depth)
+				condition1 = "i < %s" %  str(array.shape[0]-array.ghost_depth)
 				update1 = "i++"
-				start2 = codepy.cgen.Assign(codepy.cgen.Value("int", "j"),
-							    codegen.CNumber(array.ghost_depth))
-				condition2 = "j < " + str(array.shape[1]-array.ghost_depth)
+				start2 = "int j = %s" % str(array.ghost_depth)
+				condition2 = "j < %s" % str(array.shape[1]-array.ghost_depth)
 				update2 = "j++"
 
-				body = codepy.cgen.Block([self.visit(x) for x in node.body])
+				body = codepy.cgen.Block()
+				body.append(codepy.cgen.Value("int", self.visit(node.target)))
+				body.append(codepy.cgen.Assign(self.visit(node.target),
+							       self.gen_array_macro(node.grid, ["i","j"])))
+				body.extend([self.visit(x) for x in node.body])
+				
+				
 
 				return codepy.cgen.For(start1, condition1, update1,
 						       codepy.cgen.For(start2, condition2, update2,
 								       body))
 
 		def visit_StencilNeighborIter(self, node):
-			import codegen
+			import codepy, codegen
 
-			return codegen.Expression()
+			block = codepy.cgen.Block()
+			target = self.visit(node.target)
+			block.append(codepy.cgen.Value("int", target))
+				     
+			grid = self.argdict[node.grid]
+			print node.dist 
+			for n in grid.neighbor_definition[node.dist]:
+				block.append(codepy.cgen.Assign(target,
+								self.gen_array_macro(target,
+										     map(lambda x,y: x + "+" + str(y),
+											 ["i", "j"],
+											 n))))
+				print "HUH:", node.body
+				block.extend( [self.visit(z) for z in node.body] )
+
+			print block
+			return block
+
 
 
 
