@@ -2,6 +2,19 @@ import unittest
 
 from codegen import *
 
+class ReplacerTests(unittest.TestCase):
+	def test_num(self):
+		a = ast.BinOp(ast.Num(4), ast.Add(), ast.Num(9))
+		result = ASTNodeReplacer(ast.Num(4), ast.Num(5)).visit(a)
+		self.assertEqual(a.left.n, 5)
+
+	def test_Name(self):
+		a = ast.BinOp(ast.Num(4), ast.Add(), ast.Name("variable", None))
+		result = ASTNodeReplacer(ast.Name("variable", None), ast.Name("my_variable", None)).visit(a)
+		self.assertEqual(a.right.id, "my_variable")
+
+		
+
 class ConversionTests(unittest.TestCase):
     def test_num(self):
         a = ast.Num(4)

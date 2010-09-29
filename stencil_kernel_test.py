@@ -41,6 +41,7 @@ class StencilProcessASTTests(unittest.TestCase):
 	def test_get_kernel_body(self):
 		self.failIfEqual(self.kernel.kernel_ast, None)
 
+
 		
 	def test_StencilInteriorIter_and_StencilNeighborIter(self):
 		import re
@@ -77,6 +78,19 @@ class StencilConvertASTTests(unittest.TestCase):
 		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro('in_grid', [3,4])
 		self.assertEqual(result, "_in_grid_array_macro(3,4)")
 
+	def test_StencilConvertAST_array_replacement(self):
+		import ast
+		return True
+		n = ast.Subscript(ast.Name("grid", None), ast.Index(ast.Num(1)), None)
+		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
+		self.assertEqual(str(result), "_my_grid[1]")
+
+
+	def test_StencilConvertAST_array_unpack_to_double(self):
+		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_unpack()
+		self.assertEqual(result, "double* _my_out_grid = (double *) PyArray_DATA(out_grid);\n" +
+			"double* _my_in_grid = (double *) PyArray_DATA(in_grid);")
+
 	def test_visit_StencilInteriorIter(self):
 		import ast, re
 		
@@ -101,8 +115,10 @@ class StencilConvertASTTests(unittest.TestCase):
 		n = StencilKernel.StencilProcessAST(self.argdict).visit(self.kernel.kernel_ast)
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
 		print "========"
-		print result
+		print str(result)
 		print "========"
+
+		self.kernel.kernel(self.in_grid, self.out_grid)
 
 
 if __name__ == '__main__':

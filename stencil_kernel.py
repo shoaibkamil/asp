@@ -47,6 +47,22 @@ class StencilKernel(object):
 		print ast.dump(phase2)
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
+		from codepy.bpl import BoostPythonModule
+		from codepy.jit import guess_toolchain
+		import codepy
+		mod = BoostPythonModule()
+		mod.add_function(phase3)
+		toolchain = codepy.toolchain.guess_toolchain()
+		toolchain.add_library("numpy",
+				["/Library/Python/2.6/site-packages/numpy/core/include/numpy"],
+				[], [])
+		mod.add_to_preamble([codepy.cgen.Include("arrayobject.h", False)])
+		print "*********************"
+		print mod.generate()
+		print "*********************"
+		cmod = mod.compile(toolchain, wait_on_error=True, debug=True)
+
+
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
 		def __init__(self, grid, body, target):
@@ -126,6 +142,22 @@ class StencilKernel(object):
 			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
 			return macro
 
+		def gen_array_unpack(self):
+			str = "double* _my_%s = (double *) PyArray_DATA(%s);"
+			return '\n'.join([str % (x, x) for x in self.argdict.keys()])
+		
+		# all arguments are PyObjects
+		def visit_arguments(self, node):
+			import codepy
+			return [codepy.cgen.Pointer(codepy.cgen.Value("PyObject", self.visit(x))) for x in node.args[1:]]
+
+		# interpose by replacing array deref with deref of unpacked array
+#		def visit_Subscript(self, node):
+#			import codegen, ast
+#			new_Name = ast.Name("_my_|" + node.value.id, node.value.ctx)
+#			node.value = new_Name
+#			return super(StencilKernel.StencilConvertAST, self).visit_Subscript(node)
+
 		def visit_StencilInteriorIter(self, node):
 			import codepy, codegen
 			# should catch KeyError here
@@ -140,10 +172,16 @@ class StencilKernel(object):
 				update2 = "j++"
 
 				body = codepy.cgen.Block()
+				body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
+				body.append(codepy.cgen.Statement(self.gen_array_unpack()))
+
 				body.append(codepy.cgen.Value("int", self.visit(node.target)))
 				body.append(codepy.cgen.Assign(self.visit(node.target),
 							       self.gen_array_macro(node.grid, ["i","j"])))
-				body.extend([self.visit(x) for x in node.body])
+				for gridname in self.argdict.keys():
+					replaced_body = [codegen.ASTNodeReplacer(
+						ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
+				body.extend([self.visit(x) for x in replaced_body])
 				
 				
 
@@ -162,7 +200,7 @@ class StencilKernel(object):
 			print node.dist 
 			for n in grid.neighbor_definition[node.dist]:
 				block.append(codepy.cgen.Assign(target,
-								self.gen_array_macro(target,
+								self.gen_array_macro(node.grid,
 										     map(lambda x,y: x + "+" + str(y),
 											 ["i", "j"],
 											 n))))
@@ -173,36 +211,6 @@ class StencilKernel(object):
 			return block
 
 
-
-
-#         def visit_For(self, node):
-            
-#             if (node.iter.__class__.__name__ == "Call" and
-#                 node.iter.func.__class__.__name__ == "Attribute"):
-
-#                 if (node.iter.func.attr == "interior_points"):
-#                     grid_shape =  eval(self.visit(node.iter.func.value) + ".shape", self.argdict)
-#                     grid_dim = len(grid_shape)
-#                     target = self.visit(node.target)
-                    
-#                     if grid_dim == 2:
-
-#                         i1 = self.gensym()
-#                         i2 = self.gensym()
-#                         self.grid_vars = [i1,i2]
-#                         str = "\nfor (int %s=1; %s < %d; %s++){\n " % (i1,i1,grid_shape[0],i1)
-#                         str += "for (int %s=1; %s < %d; %s++){\n " % (i2,i2,grid_shape[0],i2)
-#                         # now let iterator var = proper index
-#                         str += "int " + target + " = _INDEX(" + ','.join(self.grid_vars) + ");\n"
-#                         str += ';'.join(map(self.visit, node.body))
-#                         str += ";} }"
-                        
-#                         return str
-#                 if (node.iter.func.attr == "neighbors"):
-#                     # read the neighbors out
-#                     return super(StencilKernel.StencilCodegen, self).vist_For(node)
-
-#             return super(StencilKernel.StencilCodegen, self).visit_For(node)
 
 
 

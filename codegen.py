@@ -2,6 +2,29 @@
 from codepy.cgen import *
 import ast
 
+# class to replace python AST nodes
+class ASTNodeReplacer(ast.NodeTransformer):
+	def __init__(self, original, replacement):
+		self.original = original
+		self.replacement = replacement
+
+	def visit(self, node):
+		eql = False
+		if node.__class__ == self.original.__class__:
+			eql = True
+			for (field, value) in ast.iter_fields(self.original):
+				if field != 'ctx' and node.__getattribute__(field) != value:
+					print str(node.__getattribute__(field)) + " != " + str(value)
+					eql = False
+			
+		if eql:
+			import copy
+			print "Found something to replace!!!!"
+			return copy.deepcopy(self.replacement)
+		else:
+			return self.generic_visit(node)
+	
+
 # class to convert from python AST to C++ AST
 class ConvertAST(ast.NodeTransformer):
     def visit_Num(self, node):
@@ -47,12 +70,11 @@ class ConvertAST(ast.NodeTransformer):
     
     def visit_Pass(self, node):
         return Expression()
-
     
     # by default, only do first statement in a module
     def visit_Module(self, node):
-        print "-->", ast.dump(node)
         return self.visit(node.body[0])
+
     def visit_Expr(self, node):
         return Expression(self.visit(node.value))
 
