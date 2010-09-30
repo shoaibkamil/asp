@@ -123,6 +123,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.kernel.kernel(self.in_grid, self.out_grid)
 
 		print self.out_grid.data
+		self.assertEqual(self.out_grid[5,5],4.0)
 
 
 
