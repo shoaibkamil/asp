@@ -57,10 +57,12 @@ class StencilKernel(object):
 				["/Library/Python/2.6/site-packages/numpy/core/include/numpy"],
 				[], [])
 		mod.add_to_preamble([codepy.cgen.Include("arrayobject.h", False)])
+		mod.add_to_init([codepy.cgen.Statement("import_array();")])
 		print "*********************"
 		print mod.generate()
 		print "*********************"
 		cmod = mod.compile(toolchain, wait_on_error=True, debug=True)
+		cmod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
 
 
 	# the actual Stencil AST Node
@@ -133,7 +135,7 @@ class StencilKernel(object):
 				array = self.argdict[arg]
 				if  array.dim == 2:
 					return codepy.cgen.Define("_"+arg+"_array_macro(_a,_b)", 
-								  "(_b+(_a*" + str(array.shape[0]) +
+								  "((_b)+((_a)*" + str(array.shape[0]) +
 								  "))")
 			except KeyError:
 				return codepy.cgen.Comment("Not found argument: " + arg)
@@ -175,6 +177,10 @@ class StencilKernel(object):
 				body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
 				body.append(codepy.cgen.Statement(self.gen_array_unpack()))
 
+#				body.append(codepy.cgen.Statement("printf(\"IN FUNC!!!!!!\\n\");"))
+#				body.append(codepy.cgen.Statement("printf(\"strides: %d %d\\n\", (unsigned int)PyArray_STRIDE(in_grid, 0),"+
+#					"(unsigned int) PyArray_STRIDE(in_grid, 1))"))
+
 				body.append(codepy.cgen.Value("int", self.visit(node.target)))
 				body.append(codepy.cgen.Assign(self.visit(node.target),
 							       self.gen_array_macro(node.grid, ["i","j"])))
@@ -201,11 +207,12 @@ class StencilKernel(object):
 			for n in grid.neighbor_definition[node.dist]:
 				block.append(codepy.cgen.Assign(target,
 								self.gen_array_macro(node.grid,
-										     map(lambda x,y: x + "+" + str(y),
+										     map(lambda x,y: x + "+(" + str(y) + ")",
 											 ["i", "j"],
 											 n))))
-				print "HUH:", node.body
+#				block.append(codepy.cgen.Statement("printf(\"i=\%d,j=\%d, in_val[\%d]: \%g \\n\",i,j,y, _my_in_grid[y]);"))
 				block.extend( [self.visit(z) for z in node.body] )
+				
 
 			print block
 			return block

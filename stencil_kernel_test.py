@@ -112,13 +112,18 @@ class StencilConvertASTTests(unittest.TestCase):
 
 	def test_whole_thing(self):
 		
-		n = StencilKernel.StencilProcessAST(self.argdict).visit(self.kernel.kernel_ast)
-		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-		print "========"
-		print str(result)
-		print "========"
+		#n = StencilKernel.StencilProcessAST(self.argdict).visit(self.kernel.kernel_ast)
+		#result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
+
+		import numpy
+		self.in_grid.data = numpy.ones([10,10])
+
+		print self.in_grid.data
 
 		self.kernel.kernel(self.in_grid, self.out_grid)
+
+		print self.out_grid.data
+
 
 
 if __name__ == '__main__':
