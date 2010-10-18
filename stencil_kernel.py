@@ -63,7 +63,7 @@ class StencilKernel(object):
 		print "*********************"
 		cmod = mod.compile(toolchain, wait_on_error=True, debug=True)
 		cmod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-
+#		cmod.kernel(*argdict.keys())
 
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
