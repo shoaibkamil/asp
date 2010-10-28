@@ -1,7 +1,7 @@
 import numpy
 import inspect
 from stencil_grid import *
-import simple_ast
+#import simple_ast
 import ast
 
 
