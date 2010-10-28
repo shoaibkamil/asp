@@ -122,7 +122,7 @@ class StencilKernel(object):
 			else:
 				return node
 
-	import codegen
+	import asp.codegen.codegen as codegen
 	class StencilConvertAST(codegen.ConvertAST):
 
 		def __init__(self, argdict):
@@ -161,7 +161,7 @@ class StencilKernel(object):
 #			return super(StencilKernel.StencilConvertAST, self).visit_Subscript(node)
 
 		def visit_StencilInteriorIter(self, node):
-			import codepy, codegen
+			import codepy, asp.codegen.codegen as codegen
 			# should catch KeyError here
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
@@ -196,7 +196,7 @@ class StencilKernel(object):
 								       body))
 
 		def visit_StencilNeighborIter(self, node):
-			import codepy, codegen
+			import codepy, asp.codegen.codegen as codegen
 
 			block = codepy.cgen.Block()
 			target = self.visit(node.target)
