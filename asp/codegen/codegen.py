@@ -1,6 +1,6 @@
 
 from codepy.cgen import *
-import ast
+import python_ast as ast
 
 # class to replace python AST nodes
 class ASTNodeReplacer(ast.NodeTransformer):

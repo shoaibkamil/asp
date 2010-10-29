@@ -2,7 +2,7 @@ import numpy
 import inspect
 from stencil_grid import *
 #import simple_ast
-import ast
+import asp.codegen.python_ast as ast
 
 
 # may want to make this inherit from something else...
@@ -17,7 +17,6 @@ class StencilKernel(object):
 
 		# if the method is defined, let us introspect and find
 		# its AST
-		import ast 
 		self.kernel_src = inspect.getsource(self.kernel)
 		self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
 

@@ -79,7 +79,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.assertEqual(result, "_in_grid_array_macro(3,4)")
 
 	def test_StencilConvertAST_array_replacement(self):
-		import ast
+		import asp.codegen.python_ast as ast
 		return True
 		n = ast.Subscript(ast.Name("grid", None), ast.Index(ast.Num(1)), None)
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
@@ -92,7 +92,7 @@ class StencilConvertASTTests(unittest.TestCase):
 			"double* _my_in_grid = (double *) PyArray_DATA(in_grid);")
 
 	def test_visit_StencilInteriorIter(self):
-		import ast, re
+		import asp.codegen.python_ast as ast, re
 		
 		n = StencilKernel.StencilInteriorIter("in_grid",
 						      [ast.Pass()],
@@ -102,7 +102,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.assertTrue(re.search("For", str(type(result))))
 	
 	def test_visit_StencilNeighborIter(self):
-		import ast, re
+		import asp.codegen.python_ast as ast, re
 		n = StencilKernel.StencilNeighborIter("in_grid",
 						      [ast.parse("in_grid[x] = in_grid[x] + out_grid[y]").body[0]],
 						      ast.Name("y", None),
