@@ -1,10 +1,9 @@
 import numpy
 import inspect
 from stencil_grid import *
-#import simple_ast
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
-import asp.codegen.codegen as codegen
+import asp.codegen.ast_tools as ast_tools
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -50,7 +49,6 @@ class StencilKernel(object):
 		from codepy.bpl import BoostPythonModule
 		from codepy.jit import guess_toolchain
 		import codepy
-		import asp.codegen.cpp_ast as cpp_ast
 		mod = BoostPythonModule()
 		mod.add_function(phase3)
 		toolchain = codepy.toolchain.guess_toolchain()
@@ -123,9 +121,7 @@ class StencilKernel(object):
 			else:
 				return node
 
-	import asp.codegen.codegen as codegen
-	import asp.codegen.cpp_ast as cpp_ast
-	class StencilConvertAST(codegen.ConvertAST):
+	class StencilConvertAST(ast_tools.ConvertAST):
 		
 		def __init__(self, argdict):
 			self.argdict = argdict
@@ -173,7 +169,7 @@ class StencilKernel(object):
 				body.append(cpp_ast.Assign(self.visit(node.target),
 							       self.gen_array_macro(node.grid, ["i","j"])))
 				for gridname in self.argdict.keys():
-					replaced_body = [codegen.ASTNodeReplacer(
+					replaced_body = [ast_tools.ASTNodeReplacer(
 						ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
 				body.extend([self.visit(x) for x in replaced_body])
 				

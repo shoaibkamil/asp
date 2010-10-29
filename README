@@ -5,3 +5,8 @@ ASP -- A SEJITS Implementation for Python
 Tests
 --
 > PYTHONPATH=`pwd` python tests/<tst_file_name>
+
+or
+
+> ./run_tests.py
+

@@ -1,6 +1,6 @@
 import unittest
 
-from asp.codegen.codegen import *
+from asp.codegen.ast_utils import *
 
 class ReplacerTests(unittest.TestCase):
 	def test_num(self):
