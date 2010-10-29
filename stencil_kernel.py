@@ -3,7 +3,8 @@ import inspect
 from stencil_grid import *
 #import simple_ast
 import asp.codegen.python_ast as ast
-
+import asp.codegen.cpp_ast as cpp_ast
+import asp.codegen.codegen as codegen
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -49,14 +50,15 @@ class StencilKernel(object):
 		from codepy.bpl import BoostPythonModule
 		from codepy.jit import guess_toolchain
 		import codepy
+		import asp.codegen.cpp_ast as cpp_ast
 		mod = BoostPythonModule()
 		mod.add_function(phase3)
 		toolchain = codepy.toolchain.guess_toolchain()
 		toolchain.add_library("numpy",
 				["/Library/Python/2.6/site-packages/numpy/core/include/numpy"],
 				[], [])
-		mod.add_to_preamble([codepy.cgen.Include("arrayobject.h", False)])
-		mod.add_to_init([codepy.cgen.Statement("import_array();")])
+		mod.add_to_preamble([cpp_ast.Include("arrayobject.h", False)])
+		mod.add_to_init([cpp_ast.Statement("import_array();")])
 		print "*********************"
 		print mod.generate()
 		print "*********************"
@@ -122,22 +124,22 @@ class StencilKernel(object):
 				return node
 
 	import asp.codegen.codegen as codegen
+	import asp.codegen.cpp_ast as cpp_ast
 	class StencilConvertAST(codegen.ConvertAST):
-
+		
 		def __init__(self, argdict):
 			self.argdict = argdict
 			super(StencilKernel.StencilConvertAST, self).__init__()
 
 		def gen_array_macro_definition(self, arg):
-			import codepy
 			try:
 				array = self.argdict[arg]
 				if  array.dim == 2:
-					return codepy.cgen.Define("_"+arg+"_array_macro(_a,_b)", 
+					return cpp_ast.Define("_"+arg+"_array_macro(_a,_b)", 
 								  "((_b)+((_a)*" + str(array.shape[0]) +
 								  "))")
 			except KeyError:
-				return codepy.cgen.Comment("Not found argument: " + arg)
+				return cpp_astComment("Not found argument: " + arg)
 
 		def gen_array_macro(self, arg, point):
 			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
@@ -149,18 +151,9 @@ class StencilKernel(object):
 		
 		# all arguments are PyObjects
 		def visit_arguments(self, node):
-			import codepy
-			return [codepy.cgen.Pointer(codepy.cgen.Value("PyObject", self.visit(x))) for x in node.args[1:]]
-
-		# interpose by replacing array deref with deref of unpacked array
-#		def visit_Subscript(self, node):
-#			import codegen, ast
-#			new_Name = ast.Name("_my_|" + node.value.id, node.value.ctx)
-#			node.value = new_Name
-#			return super(StencilKernel.StencilConvertAST, self).visit_Subscript(node)
+			return [cpp_ast.Pointer(cpp_ast.Value("PyObject", self.visit(x))) for x in node.args[1:]]
 
 		def visit_StencilInteriorIter(self, node):
-			import codepy, asp.codegen.codegen as codegen
 			# should catch KeyError here
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
@@ -172,44 +165,37 @@ class StencilKernel(object):
 				condition2 = "j < %s" % str(array.shape[1]-array.ghost_depth)
 				update2 = "j++"
 
-				body = codepy.cgen.Block()
+				body = cpp_ast.Block()
 				body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-				body.append(codepy.cgen.Statement(self.gen_array_unpack()))
+				body.append(cpp_ast.Statement(self.gen_array_unpack()))
 
-#				body.append(codepy.cgen.Statement("printf(\"IN FUNC!!!!!!\\n\");"))
-#				body.append(codepy.cgen.Statement("printf(\"strides: %d %d\\n\", (unsigned int)PyArray_STRIDE(in_grid, 0),"+
-#					"(unsigned int) PyArray_STRIDE(in_grid, 1))"))
-
-				body.append(codepy.cgen.Value("int", self.visit(node.target)))
-				body.append(codepy.cgen.Assign(self.visit(node.target),
+				body.append(cpp_ast.Value("int", self.visit(node.target)))
+				body.append(cpp_ast.Assign(self.visit(node.target),
 							       self.gen_array_macro(node.grid, ["i","j"])))
 				for gridname in self.argdict.keys():
 					replaced_body = [codegen.ASTNodeReplacer(
 						ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
 				body.extend([self.visit(x) for x in replaced_body])
 				
-				
-
-				return codepy.cgen.For(start1, condition1, update1,
-						       codepy.cgen.For(start2, condition2, update2,
+				return cpp_ast.For(start1, condition1, update1,
+						       cpp_ast.For(start2, condition2, update2,
 								       body))
 
 		def visit_StencilNeighborIter(self, node):
-			import codepy, asp.codegen.codegen as codegen
 
-			block = codepy.cgen.Block()
+			block = cpp_ast.Block()
 			target = self.visit(node.target)
-			block.append(codepy.cgen.Value("int", target))
+			block.append(cpp_ast.Value("int", target))
 				     
 			grid = self.argdict[node.grid]
 			print node.dist 
 			for n in grid.neighbor_definition[node.dist]:
-				block.append(codepy.cgen.Assign(target,
+				block.append(cpp_ast.Assign(target,
 								self.gen_array_macro(node.grid,
 										     map(lambda x,y: x + "+(" + str(y) + ")",
 											 ["i", "j"],
 											 n))))
-#				block.append(codepy.cgen.Statement("printf(\"i=\%d,j=\%d, in_val[\%d]: \%g \\n\",i,j,y, _my_in_grid[y]);"))
+
 				block.extend( [self.visit(z) for z in node.body] )
 				
 
