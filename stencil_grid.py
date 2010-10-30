@@ -7,10 +7,9 @@ class StencilGrid(object):
         self.data = numpy.zeros(size)
         self.shape = size
         self.ghost_depth = 1
-        self.interior = [x-2*self.ghost_depth for x in self.shape]
-        
-        self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
 
+        self.set_grid_variables()
+        self.set_interior()
         # add default neighbor definition
         self.set_default_neighbor_definition()
 
@@ -19,6 +18,15 @@ class StencilGrid(object):
         return self.data[x]
     def __setitem__(self, x, y):
         self.data[x] = y
+
+    def set_grid_variables(self):
+        self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
+
+    def set_interior(self):
+        """
+        Sets the number of interior points in each dimension
+        """
+        self.interior = [x-2*self.ghost_depth for x in self.shape]
 
     def set_default_neighbor_definition(self):
         """
