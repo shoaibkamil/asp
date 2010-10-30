@@ -58,7 +58,7 @@ class StencilKernel(object):
 		debug_print("*********************")
 		debug_print(mod.generate())
 		debug_print("*********************")
-		cmod = mod.compile(toolchain, wait_on_error=True, debug=True)
+		cmod = mod.compile(toolchain, wait_on_error=True, debug=True, cache_dir=".")
 		cmod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
 
 	# the actual Stencil AST Node
