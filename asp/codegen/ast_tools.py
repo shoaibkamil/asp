@@ -1,6 +1,7 @@
 
 from cpp_ast import *
 import python_ast as ast
+from asp.util import *
 
 # class to replace python AST nodes
 class ASTNodeReplacer(ast.NodeTransformer):
@@ -14,12 +15,12 @@ class ASTNodeReplacer(ast.NodeTransformer):
 			eql = True
 			for (field, value) in ast.iter_fields(self.original):
 				if field != 'ctx' and node.__getattribute__(field) != value:
-					print str(node.__getattribute__(field)) + " != " + str(value)
+					debug_print( str(node.__getattribute__(field)) + " != " + str(value) )
 					eql = False
 			
 		if eql:
 			import copy
-			print "Found something to replace!!!!"
+			debug_print( "Found something to replace!!!!" )
 			return copy.deepcopy(self.replacement)
 		else:
 			return self.generic_visit(node)
@@ -84,9 +85,9 @@ class ConvertAST(ast.NodeTransformer):
                 self.visit(node.value))
 
     def visit_FunctionDef(self, node):
-        print("In FunctionDef:")
-        print ast.dump(node)
-        print("----")
+        debug_print("In FunctionDef:")
+        debug_print(ast.dump(node))
+        debug_print("----")
         return FunctionBody(FunctionDeclaration(Value("void",
                                                       node.name),
                                                 self.visit(node.args)),
@@ -97,4 +98,4 @@ class ConvertAST(ast.NodeTransformer):
         return [Pointer(Value("void",self.visit(x))) for x in node.args]
         
 
-# classes to express everything in C++ AST
+

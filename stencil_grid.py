@@ -12,8 +12,21 @@ class StencilGrid(object):
         self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
 
         # add default neighbor definition
+        self.set_default_neighbor_definition()
+
+    # want this to be indexable
+    def __getitem__(self, x):
+        return self.data[x]
+    def __setitem__(self, x, y):
+        self.data[x] = y
+
+    def set_default_neighbor_definition(self):
+        """
+        Sets the default for neighbors[0] and neighbors[1].  Note that neighbors[1]
+        does not include the center point.
+        """
         self.neighbor_definition = []
-        # set self.neighbor_defintion[0] to tuple of size self.dim of all zeros
+
         self.neighbor_definition.append([tuple([0 for x in range(self.dim)])])
         self.neighbor_definition.append([])
 
@@ -26,11 +39,6 @@ class StencilGrid(object):
                 if tmp != self.neighbor_definition[0][0]:
                     self.neighbor_definition[1].append(tmp)
 
-    # want this to be indexable
-    def __getitem__(self, x):
-        return self.data[x]
-    def __setitem__(self, x, y):
-        self.data[x] = y
 
 
     def interior_points(self):
