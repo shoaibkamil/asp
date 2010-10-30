@@ -4,6 +4,7 @@ from stencil_grid import *
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
+from asp.util import *
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -34,16 +35,13 @@ class StencilKernel(object):
 		if self.pure_python:
 			return self.pure_python_kernel(*args)
 
-
 		#FIXME: need to somehow match arg names to args
 		argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
 		argdict = dict(zip(argnames[1:], args))
-		print argdict
-		#cg = self.StencilCodegen(argdict)
+		debug_print(argdict)
+
 		phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
-		#print ast.dump(StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast))
-		#print ast.dump(StencilKernel.)
-		print ast.dump(phase2)
+		debug_print(ast.dump(phase2))
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
 		from codepy.bpl import BoostPythonModule
@@ -57,12 +55,11 @@ class StencilKernel(object):
 				[], [])
 		mod.add_to_preamble([cpp_ast.Include("arrayobject.h", False)])
 		mod.add_to_init([cpp_ast.Statement("import_array();")])
-		print "*********************"
-		print mod.generate()
-		print "*********************"
+		debug_print("*********************")
+		debug_print(mod.generate())
+		debug_print("*********************")
 		cmod = mod.compile(toolchain, wait_on_error=True, debug=True)
 		cmod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-#		cmod.kernel(*argdict.keys())
 
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
@@ -93,12 +90,12 @@ class StencilKernel(object):
 
 		
 		def visit_For(self, node):
-			print "visiting a For...\n"
+			debug_print("visiting a For...\n")
 			# check if this is the right kind of For loop
 			if (node.iter.__class__.__name__ == "Call" and
 				node.iter.func.__class__.__name__ == "Attribute"):
 				
-				print "Found something to change...\n"
+				debug_print("Found something to change...\n")
 
 				if (node.iter.func.attr == "interior_points"):
 					grid = self.visit(node.iter.func.value).id	   # do we need the name of the grid, or the obj itself?
@@ -108,7 +105,7 @@ class StencilKernel(object):
 					return newnode
 
 				elif (node.iter.func.attr == "neighbors"):
-					print ast.dump(node) + "\n"
+					debug_print(ast.dump(node) + "\n")
 					target = self.visit(node.target)
 					body = map(self.visit, node.body)
 					grid = self.visit(node.iter.func.value).id
@@ -184,7 +181,7 @@ class StencilKernel(object):
 			block.append(cpp_ast.Value("int", target))
 				     
 			grid = self.argdict[node.grid]
-			print node.dist 
+			debug_print(node.dist)
 			for n in grid.neighbor_definition[node.dist]:
 				block.append(cpp_ast.Assign(target,
 								self.gen_array_macro(node.grid,
@@ -195,7 +192,7 @@ class StencilKernel(object):
 				block.extend( [self.visit(z) for z in node.body] )
 				
 
-			print block
+			debug_print(block)
 			return block
 
 

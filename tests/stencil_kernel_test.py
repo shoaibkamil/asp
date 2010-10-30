@@ -1,5 +1,6 @@
 import unittest
 from stencil_kernel import *
+from asp.util import *
 
 class BasicTests(unittest.TestCase):
 	def test_init(self):
@@ -70,7 +71,6 @@ class StencilConvertASTTests(unittest.TestCase):
 		import re
 		
 		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro_definition('in_grid')
-		print str(result)
 		self.assertTrue(re.search("array_macro", str(result)))
 		self.assertTrue(re.search("#define", str(result)))
 
@@ -98,7 +98,7 @@ class StencilConvertASTTests(unittest.TestCase):
 						      [ast.Pass()],
 						      ast.Name("targ", None))
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-		print str(result)
+		debug_print(str(result))
 		self.assertTrue(re.search("For", str(type(result))))
 	
 	def test_visit_StencilNeighborIter(self):
@@ -112,9 +112,6 @@ class StencilConvertASTTests(unittest.TestCase):
 
 	def test_whole_thing(self):
 		
-		#n = StencilKernel.StencilProcessAST(self.argdict).visit(self.kernel.kernel_ast)
-		#result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-
 		import numpy
 		self.in_grid.data = numpy.ones([10,10])
 
