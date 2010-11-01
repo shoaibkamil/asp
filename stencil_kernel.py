@@ -44,22 +44,17 @@ class StencilKernel(object):
 		debug_print(ast.dump(phase2))
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
-		from codepy.bpl import BoostPythonModule
-		from codepy.jit import guess_toolchain
-		import codepy
-		mod = BoostPythonModule()
-		mod.add_function(phase3)
-		toolchain = codepy.toolchain.guess_toolchain()
-		toolchain.add_library("numpy",
-				["/Library/Python/2.6/site-packages/numpy/core/include/numpy"],
-				[], [])
-		mod.add_to_preamble([cpp_ast.Include("arrayobject.h", False)])
+		from asp.jit import asp_module
+
+		mod = asp_module.ASPModule()
+		mod.add_library("numpy", ["/Library/Python/2.6/site-packages/numpy/core/include/numpy"])
+		mod.add_header("arrayobject.h")
 		mod.add_to_init([cpp_ast.Statement("import_array();")])
-		debug_print("*********************")
-		debug_print(mod.generate())
-		debug_print("*********************")
-		cmod = mod.compile(toolchain, wait_on_error=True, debug=True, cache_dir=".")
-		cmod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+		mod.add_function(phase3)
+		mod.compile()
+		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+		
+
 
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
