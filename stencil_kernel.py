@@ -31,6 +31,13 @@ class StencilKernel(object):
 	def remove_indentation(self, src):
 		return src.lstrip()
 
+	def add_libraries(self, mod):
+		# these are necessary includes, includedirs, and init statements to use the numpy library
+		mod.add_library("numpy", ["/Library/Python/2.6/site-packages/numpy/core/include/numpy"])
+		mod.add_header("arrayobject.h")
+		mod.add_to_init([cpp_ast.Statement("import_array();")])
+		
+
 	def shadow_kernel(self, *args):
 		if self.pure_python:
 			return self.pure_python_kernel(*args)
@@ -47,9 +54,7 @@ class StencilKernel(object):
 		from asp.jit import asp_module
 
 		mod = asp_module.ASPModule()
-		mod.add_library("numpy", ["/Library/Python/2.6/site-packages/numpy/core/include/numpy"])
-		mod.add_header("arrayobject.h")
-		mod.add_to_init([cpp_ast.Statement("import_array();")])
+		self.add_libraries(mod)
 		mod.add_function(phase3)
 		mod.compile()
 		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
@@ -127,7 +132,7 @@ class StencilKernel(object):
 								  "((_b)+((_a)*" + str(array.shape[0]) +
 								  "))")
 			except KeyError:
-				return cpp_astComment("Not found argument: " + arg)
+				return cpp_ast.Comment("Not found argument: " + arg)
 
 		def gen_array_macro(self, arg, point):
 			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
