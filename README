@@ -2,11 +2,6 @@ ASP -- A SEJITS Implementation for Python
 -------
 
 
-Tests
---
-> PYTHONPATH=`pwd` python tests/<tst_file_name>
+See http://aspsejits.pbworks.com/
 
-or
-
-> ./run_tests.py
 
