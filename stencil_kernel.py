@@ -56,9 +56,9 @@ class StencilKernel(object):
 		mod = asp_module.ASPModule()
 		self.add_libraries(mod)
 		mod.add_function(phase3)
-		mod.compile()
-		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-		
+#		mod.compile()
+#		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+		mod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
 
 
 	# the actual Stencil AST Node

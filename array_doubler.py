@@ -14,8 +14,7 @@ class ArrayDoubler(object):
         mod = asp_module.ASPModule()
         # remember, must specify function name when using a string
         mod.add_function(rendered, fname="double_in_c")
-        mod.compile()
-        return mod.compiled_module.double_in_c(arr)
+        return mod.double_in_c(arr)
 
     def double(self, arr):
         return map (lambda x: x*2, arr)
