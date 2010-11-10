@@ -33,7 +33,7 @@ class StencilKernel(object):
 
 	def add_libraries(self, mod):
 		# these are necessary includes, includedirs, and init statements to use the numpy library
-		mod.add_library("numpy", ["/Library/Python/2.6/site-packages/numpy/core/include/numpy"])
+		mod.add_library("numpy",[numpy.get_include()+"/numpy"])
 		mod.add_header("arrayobject.h")
 		mod.add_to_init([cpp_ast.Statement("import_array();")])
 		
