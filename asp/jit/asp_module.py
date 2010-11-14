@@ -5,14 +5,24 @@ import asp.codegen.cpp_ast as cpp_ast
 
 class ASPModule(object):
 
+    class Variants(object):
+        def __init__(self, func, variant_names):
+            self.variant_times = {}
+            self.variant_names = []
+            self.func_name = func
+            self.best_found = False
+
     
     def __init__(self):
         self.toolchain = codepy.toolchain.guess_toolchain()
         self.module = codepy.bpl.BoostPythonModule()
         self.dirty = False
         self.compiled_methods = []
+        self.compiled_methods_with_variants = {}
         self.times = {}
         self.timing_enabled = True
+
+
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
         self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
@@ -57,6 +67,14 @@ class ASPModule(object):
         
         self.dirty = True
         self.compiled_methods.append(fname)
+
+    def add_function_with_variants(self, variant_funcs, func_name, variant_names):
+        variants = ASPModule.Variants(func_name, variant_names)
+        for x in range(0,len(variant_funcs)):
+            self.add_function(variant_funcs[x], fname=variant_names[x])
+        self.compiled_methods_with_variants[func_name] = variants
+        self.dirty = True
+
     
 
     def compile(self):
