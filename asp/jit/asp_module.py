@@ -11,6 +11,8 @@ class ASPModule(object):
         self.module = codepy.bpl.BoostPythonModule()
         self.dirty = False
         self.compiled_methods = []
+        self.times = {}
+        self.timing_enabled = True
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
         self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
@@ -29,6 +31,9 @@ class ASPModule(object):
             stmt = cpp_ast.Line(stmt)
         self.module.add_to_init(stmt)
 
+    def add_time(self, func_name, time):
+        # if no time exists, add this one, otherwise append
+        self.times.setdefault(func_name, []).append(time)
     
     def get_name_from_func(self, func):
         """
@@ -59,12 +64,26 @@ class ASPModule(object):
         self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=".")
         self.dirty = False
         
+    def func_with_timing(self, name):
+        import time
+        def special(*args, **kwargs):
+            start_time = time.time()
+            real_func = self.compiled_module.__getattribute__(name)
+            result = real_func(*args, **kwargs)
+            self.add_time(name, (time.time()-start_time))
+            return result
+
+        return special
 
     def __getattr__(self, name):
         if name in self.compiled_methods:
             if self.dirty:
                 self.compile()
-            return self.compiled_module.__getattribute__(name)
+            if self.timing_enabled == True:
+                return self.func_with_timing(name)
+            else:
+                return self.compiled_module.__getattribute__(name)
+
         else:
             raise AttributeError("No method %s found; did you add it?" % name)
 
