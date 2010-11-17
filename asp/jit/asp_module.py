@@ -8,9 +8,16 @@ class ASPModule(object):
     class Variants(object):
         def __init__(self, func, variant_names):
             self.variant_times = {}
-            self.variant_names = []
+            self.variant_names = variant_names
             self.func_name = func
             self.best_found = False
+            self.next_variant_run = 0
+        
+        def set_best(self):
+            self.best_found = self.variant_names[0]
+            for (f,t) in self.variant_times.iteritems():
+                if t < self.variant_times[self.best_found]:
+                    self.best_found = f
 
     
     def __init__(self):
@@ -51,10 +58,8 @@ class ASPModule(object):
         """
         return func.fdecl.subdecl.name
 
-    def add_function(self, func, fname=None):
-        """
-        self.add_function(func) takes func as either a generable AST or a string.
-        """
+
+    def add_function_helper(self, func, fname=None):
         if isinstance(func, str):
             if fname == None:
                 raise Exception("Cannot add a function as a string without specifying the function's name")
@@ -71,9 +76,24 @@ class ASPModule(object):
     def add_function_with_variants(self, variant_funcs, func_name, variant_names):
         variants = ASPModule.Variants(func_name, variant_names)
         for x in range(0,len(variant_funcs)):
-            self.add_function(variant_funcs[x], fname=variant_names[x])
+            self.add_function_helper(variant_funcs[x], fname=variant_names[x])
         self.compiled_methods_with_variants[func_name] = variants
         self.dirty = True
+
+    def add_function(self, funcs, fname=None, variant_names=None):
+        """
+        self.add_function(func) takes func as either a generable AST or a string, or
+        list of variants in either format.
+        """
+        if variant_names:
+            self.add_function_with_variants(funcs, fname, variant_names)
+        else:
+            variant_funcs = [funcs]
+            if not fname:
+                fname = self.get_name_from_func(funcs)
+            variant_names = [fname]
+            self.add_function_with_variants(variant_funcs, fname, variant_names)
+                
 
     
 
@@ -93,6 +113,25 @@ class ASPModule(object):
 
         return special
 
+    def func_with_variants(self, name):
+        variants = self.compiled_methods_with_variants[name]
+        if variants.best_found:
+            return self.func_with_timing(variants.best_found)
+        else:
+            import time
+            def special(*args, **kwargs):
+                start_time = time.time()
+                real_func = self.compiled_module.__getattribute__(variants.variant_names[variants.next_variant_run])
+                result = real_func(*args, **kwargs)
+                elapsed = time.time() - start_time
+                self.add_time(name, elapsed)
+                variants.variant_times.setdefault(variants.variant_names[variants.next_variant_run],[]).append(elapsed)
+                variants.next_variant_run += 1
+                if variants.next_variant_run >= len(variants.variant_names):
+                    variants.set_best()
+                return result
+            return special
+
     def __getattr__(self, name):
         if name in self.compiled_methods:
             if self.dirty:
@@ -101,6 +140,11 @@ class ASPModule(object):
                 return self.func_with_timing(name)
             else:
                 return self.compiled_module.__getattribute__(name)
+
+        elif name in self.compiled_methods_with_variants.keys():
+            if self.dirty:
+                self.compile()
+            return self.func_with_variants(name)
 
         else:
             raise AttributeError("No method %s found; did you add it?" % name)
