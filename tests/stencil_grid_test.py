@@ -34,7 +34,6 @@ class BasicTests(unittest.TestCase):
         # 2D
         grid = StencilGrid([5,5])
         pts = [x for x in grid.interior_points()]
-        print pts
         self.failIf(pts[0] != [1,1])
         self.failIf(len(pts) != 9)
 
@@ -51,6 +50,9 @@ class BasicTests(unittest.TestCase):
 
         grid = StencilGrid([5,5,5])
         self.failIf(len([x for x in grid.neighbors([1,1,1],1)]) != 6)
+
+        grid = StencilGrid([5])
+        self.assertEquals(len([x for x in grid.neighbors([1],1)]), 2)
         
 
 if __name__ == '__main__':
