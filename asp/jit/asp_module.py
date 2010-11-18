@@ -94,9 +94,6 @@ class ASPModule(object):
             variant_names = [fname]
             self.add_function_with_variants(variant_funcs, fname, variant_names)
                 
-
-    
-
     def compile(self):
         
         self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=".")
@@ -133,15 +130,7 @@ class ASPModule(object):
             return special
 
     def __getattr__(self, name):
-        if name in self.compiled_methods:
-            if self.dirty:
-                self.compile()
-            if self.timing_enabled == True:
-                return self.func_with_timing(name)
-            else:
-                return self.compiled_module.__getattribute__(name)
-
-        elif name in self.compiled_methods_with_variants.keys():
+        if name in self.compiled_methods_with_variants.keys():
             if self.dirty:
                 self.compile()
             return self.func_with_variants(name)
