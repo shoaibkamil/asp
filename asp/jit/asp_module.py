@@ -20,7 +20,7 @@ class ASPModule(object):
                     self.best_found = f
 
     
-    def __init__(self):
+    def __init__(self, use_cuda=False):
         self.toolchain = codepy.toolchain.guess_toolchain()
         self.module = codepy.bpl.BoostPythonModule()
         self.dirty = False
@@ -28,7 +28,11 @@ class ASPModule(object):
         self.compiled_methods_with_variants = {}
         self.times = {}
         self.timing_enabled = True
-
+        self.use_cuda = use_cuda
+        if use_cuda:
+            self.cuda_mod = codepy.cuda.CudaModule(self.module)
+            self.cuda_mod.add_to_preamble([cpp_ast.Include('cuda.h', False)])
+            self.cuda_toolchain = codepy.toolchain.guess_nvcc_toolchain()
 
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
@@ -59,44 +63,51 @@ class ASPModule(object):
         return func.fdecl.subdecl.name
 
 
-    def add_function_helper(self, func, fname=None):
+    def add_function_helper(self, func, fname=None, cuda_func=False):
+        if cuda_func:
+            module = self.cuda_module
+        else:
+            module = self.module
+        
         if isinstance(func, str):
             if fname == None:
                 raise Exception("Cannot add a function as a string without specifying the function's name")
-            self.module.add_to_module([cpp_ast.Line(func)])
-            self.module.add_to_init([cpp_ast.Statement(
+            module.add_to_module([cpp_ast.Line(func)])
+            module.add_to_init([cpp_ast.Statement(
                         "boost::python::def(\"%s\", &%s)" % (fname, fname))])
         else:
-            self.module.add_function(func)
+            module.add_function(func)
             fname = self.get_name_from_func(func)
         
         self.dirty = True
         self.compiled_methods.append(fname)
 
-    def add_function_with_variants(self, variant_funcs, func_name, variant_names):
+    def add_function_with_variants(self, variant_funcs, func_name, variant_names, cuda_func=False):
         variants = ASPModule.Variants(func_name, variant_names)
         for x in range(0,len(variant_funcs)):
-            self.add_function_helper(variant_funcs[x], fname=variant_names[x])
+            self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
         self.compiled_methods_with_variants[func_name] = variants
         self.dirty = True
 
-    def add_function(self, funcs, fname=None, variant_names=None):
+    def add_function(self, funcs, fname=None, variant_names=None, cuda_func=False):
         """
         self.add_function(func) takes func as either a generable AST or a string, or
         list of variants in either format.
         """
         if variant_names:
-            self.add_function_with_variants(funcs, fname, variant_names)
+            self.add_function_with_variants(funcs, fname, variant_names, cuda_func=cuda_func)
         else:
             variant_funcs = [funcs]
             if not fname:
                 fname = self.get_name_from_func(funcs)
             variant_names = [fname]
-            self.add_function_with_variants(variant_funcs, fname, variant_names)
+            self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
                 
     def compile(self):
-        
-        self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=".")
+        if self.use_cuda:
+            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir=".")
+        else:
+            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=".")
         self.dirty = False
         
     def func_with_timing(self, name):
