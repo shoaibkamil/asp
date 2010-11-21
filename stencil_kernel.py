@@ -122,6 +122,7 @@ class StencilKernel(object):
 		
 		def __init__(self, argdict):
 			self.argdict = argdict
+			self.dim_vars = []
 			super(StencilKernel.StencilConvertAST, self).__init__()
 
 		def gen_array_macro_definition(self, arg):
@@ -138,6 +139,13 @@ class StencilKernel(object):
 			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
 			return macro
 
+		def gen_dim_var(self):
+			import random
+			import string
+			var = "_" + ''.join(random.choice(string.letters) for i in xrange(8))
+			self.dim_vars.append(var)
+			return var
+
 		def gen_array_unpack(self):
 			str = "double* _my_%s = (double *) PyArray_DATA(%s);"
 			return '\n'.join([str % (x, x) for x in self.argdict.keys()])
@@ -151,12 +159,14 @@ class StencilKernel(object):
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
 			if dim == 2:
-				start1 = "int i = %s" % str(array.ghost_depth)
-				condition1 = "i < %s" %  str(array.shape[0]-array.ghost_depth)
-				update1 = "i++"
-				start2 = "int j = %s" % str(array.ghost_depth)
-				condition2 = "j < %s" % str(array.shape[1]-array.ghost_depth)
-				update2 = "j++"
+				dim1_var = self.gen_dim_var()
+				dim2_var = self.gen_dim_var()
+				start1 = "int %s = %s" % (dim1_var, str(array.ghost_depth))
+				condition1 = "%s < %s" % (dim1_var,  str(array.shape[0]-array.ghost_depth))
+				update1 = "%s++" % dim1_var
+				start2 = "int %s = %s" % (dim2_var, str(array.ghost_depth))
+				condition2 = "%s < %s" % (dim2_var, str(array.shape[1]-array.ghost_depth))
+				update2 = "%s++" % dim2_var
 
 				body = cpp_ast.Block()
 				body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
@@ -164,7 +174,7 @@ class StencilKernel(object):
 
 				body.append(cpp_ast.Value("int", self.visit(node.target)))
 				body.append(cpp_ast.Assign(self.visit(node.target),
-							       self.gen_array_macro(node.grid, ["i","j"])))
+							       self.gen_array_macro(node.grid, self.dim_vars)))
 				for gridname in self.argdict.keys():
 					replaced_body = [ast_tools.ASTNodeReplacer(
 						ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
@@ -186,7 +196,7 @@ class StencilKernel(object):
 				block.append(cpp_ast.Assign(target,
 								self.gen_array_macro(node.grid,
 										     map(lambda x,y: x + "+(" + str(y) + ")",
-											 ["i", "j"],
+											 self.dim_vars,
 											 n))))
 
 				block.extend( [self.visit(z) for z in node.body] )
