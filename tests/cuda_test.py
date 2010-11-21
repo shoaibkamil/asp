@@ -12,7 +12,9 @@ class CUDATest(unittest.TestCase):
     def test_cuda(self):
 
         # The host module should include a function which is callable from Python
-        host_mod = BoostPythonModule()
+        #host_mod = BoostPythonModule()
+        
+        mod = asp_module.ASPModule(use_cuda=True)
 
         # This host function extracts a pointer and shape information from a PyCUDA
         # GPUArray, and then sends them to a CUDA function.  The CUDA function
@@ -36,16 +38,13 @@ class CUDATest(unittest.TestCase):
             'PyObject* GPUArrayClass = PyObject_GetAttrString(gpuArray, "__class__")',
             'PyObject* remoteResult = PyObject_Call(GPUArrayClass, args, kwargs)',
             'return remoteResult']
-        host_mod.add_function(
+        mod.add_function(
             FunctionBody(
                 FunctionDeclaration(Pointer(Value("PyObject", "adjacentDifference")),
                                     [Pointer(Value("PyObject", "gpuArray"))]),
                 Block([Statement(x) for x in statements])))
-        host_mod.add_to_preamble([Include('boost/python/extract.hpp')])
+        mod.add_to_preamble([Include('boost/python/extract.hpp')])
         
-        
-        cuda_mod = CudaModule(host_mod)
-        cuda_mod.add_to_preamble([Include('cuda.h')])
         
         globalIndex = 'int index = blockIdx.x * blockDim.x + threadIdx.x'
         compute_diff = 'outputPtr[index] = inputPtr[index] - inputPtr[index-1]'
@@ -74,24 +73,25 @@ class CUDATest(unittest.TestCase):
                                           Value('int', 'length')])),
             Block([Statement(x) for x in launch])]
         
-        cuda_mod.add_to_module(diff)
+        # right now the global stuff is not handled as a function; they're templated.
+        # so you have to add them using mod.add_to_cuda_module().  the actual function
+        # that is called by the C++ (i.e. diffInstance()) is added below, using
+        # mod.add_function()
+
+        mod.add_to_cuda_module(diff)
+
         diff_instance = FunctionBody(
             FunctionDeclaration(Value('CUdeviceptr', 'diffInstance'),
                                 [Value('CUdeviceptr', 'inputPtr'),
                                  Value('int', 'length')]),
             Block([Statement('return difference<int>(inputPtr, length)')]))
-        # CudaModule.add_function also adds a declaration of this
-        # function to the BoostPythonModule which
-        # is responsible for the host function.
-        cuda_mod.add_function(diff_instance)
+
+        
+        mod.add_function(diff_instance, cuda_func=True)
 
         
         
-        import codepy.jit, codepy.toolchain
-        gcc_toolchain = codepy.toolchain.guess_toolchain()
-        nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
-        
-        module = cuda_mod.compile(gcc_toolchain, nvcc_toolchain, debug=True)
+
         import pycuda.autoinit
         import pycuda.driver
         
@@ -107,7 +107,7 @@ class CUDATest(unittest.TestCase):
         pointer = pycuda.driver.mem_alloc(length * 4)
         pycuda.driver.memset_d32(pointer, constantValue, length)
         a = pycuda.gpuarray.GPUArray((25,), np.int32, gpudata=pointer)
-        b = module.adjacentDifference(a).get()
+        b = mod.adjacentDifference(a).get()
         
         golden = [constantValue] + [0] * (length - 1)
         difference = [(x-y)*(x-y) for x, y in zip(b, golden)]

@@ -30,9 +30,9 @@ class ASPModule(object):
         self.timing_enabled = True
         self.use_cuda = use_cuda
         if use_cuda:
-            self.cuda_mod = codepy.cuda.CudaModule(self.module)
-            self.cuda_mod.add_to_preamble([cpp_ast.Include('cuda.h', False)])
-            self.cuda_toolchain = codepy.toolchain.guess_nvcc_toolchain()
+            self.cuda_module = codepy.cuda.CudaModule(self.module)
+            self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
+            self.nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
 
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
@@ -56,6 +56,9 @@ class ASPModule(object):
         # if no time exists, add this one, otherwise append
         self.times.setdefault(func_name, []).append(time)
     
+    def add_to_cuda_module(self, block):
+        self.cuda_module.add_to_module(block)
+
     def get_name_from_func(self, func):
         """
         returns the name of a function from a CodePy FunctionBody object
