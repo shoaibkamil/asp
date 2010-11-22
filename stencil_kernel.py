@@ -58,8 +58,9 @@ class StencilKernel(object):
 		mod.add_function(phase3)
 #		mod.compile()
 #		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-		mod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-
+		myargs = [y.data for y in args]
+#		mod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+		mod.kernel(*myargs)
 
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
@@ -172,9 +173,8 @@ class StencilKernel(object):
 			# 	update2 = "%s++" % dim2_var
 			ret_node = None
 			cur_node = None
-			print "DIM is ", dim
+
 			for d in xrange(dim):
-				print "in d loop"
 				dim_var = self.gen_dim_var()
 				start = "int %s = %s" % (dim_var, str(array.ghost_depth))
 			 	condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
@@ -186,12 +186,10 @@ class StencilKernel(object):
 					cur_node.body = cpp_ast.For(start, condition, update, cpp_ast.Block())
 					cur_node = cur_node.body
 		
-			print "ret_node is ", ret_node
-			print "and argdict is", self.argdict
 
 			body = cpp_ast.Block()
 			body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-			print "body is", body
+
 
 			body.append(cpp_ast.Statement(self.gen_array_unpack()))
 			
@@ -199,8 +197,7 @@ class StencilKernel(object):
 			body.append(cpp_ast.Assign(self.visit(node.target),
 									   self.gen_array_macro(node.grid, self.dim_vars)))
 
-			print "now ret node is", ret_node
-			print "and body is ", body
+
 
 
 			replaced_body = None
@@ -210,7 +207,7 @@ class StencilKernel(object):
 			body.extend([self.visit(x) for x in replaced_body])
 			
 			cur_node.body = body
-			print ret_node.__str__()
+
 			return ret_node
 
 		def visit_StencilNeighborIter(self, node):

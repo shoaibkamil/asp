@@ -71,7 +71,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		import re
 		
 		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro_definition('in_grid')
-		print str(result)
+
 		self.assertTrue(re.search("array_macro", str(result)))
 		self.assertTrue(re.search("#define", str(result)))
 
@@ -116,7 +116,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.assertTrue(re.search("array_macro", str(result)))
 
 	def test_whole_thing(self):
-		#return True #FIXME
+
 		import numpy
 		self.in_grid.data = numpy.ones([10,10])
 
@@ -134,7 +134,7 @@ class Stencil1dAnd3dTests(unittest.TestCase):
 			def kernel(self, in_grid_1d, out_grid_1d):
 				for x in out_grid_1d.interior_points():
 					for y in in_grid_1d.neighbors(x, 1):
-						out_grid_1d[x] += in_grid_1d[y]
+						out_grid_1d[x] = out_grid_1d[x] + in_grid_1d[y]
 
 
 		self.kernel = My1DKernel()
@@ -149,16 +149,21 @@ class Stencil1dAnd3dTests(unittest.TestCase):
 
 	def test_1d_visit_StencilInteriorIter(self):
 
-		print "doing test....."
 		import asp.codegen.python_ast as ast, re
 		n = StencilKernel.StencilInteriorIter("in_grid_1d",
 						      [ast.Pass()],
 						      ast.Name("targ", None))
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-		print result.__str__()
+
 		self.assertTrue(re.search("For", str(type(result))))
 
-
+	def test_whole_thing(self):
+		import numpy
+		import numpy
+		self.in_grid.data = numpy.ones([10])
+		self.kernel.kernel(self.in_grid, self.out_grid)
+		print self.out_grid.data
+		self.assertEqual(self.out_grid[4], 2.0)
 
 
 if __name__ == '__main__':
