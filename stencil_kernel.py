@@ -128,10 +128,13 @@ class StencilKernel(object):
 		def gen_array_macro_definition(self, arg):
 			try:
 				array = self.argdict[arg]
-				if  array.dim == 2:
-					return cpp_ast.Define("_"+arg+"_array_macro(_a,_b)", 
-								  "((_b)+((_a)*" + str(array.shape[0]) +
-								  "))")
+				defname = "_"+arg+"_array_macro"
+				params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
+				calc = "(_d%s)" % str(array.dim-1)
+				for x in range(1,array.dim):
+					calc = "(%s + %s * (_d%s))" % (calc, str(array.shape[x-1]), str(array.dim-x-1))
+				return cpp_ast.Define(defname+params, calc)
+
 			except KeyError:
 				return cpp_ast.Comment("Not found argument: " + arg)
 
@@ -158,31 +161,57 @@ class StencilKernel(object):
 			# should catch KeyError here
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
-			if dim == 2:
-				dim1_var = self.gen_dim_var()
-				dim2_var = self.gen_dim_var()
-				start1 = "int %s = %s" % (dim1_var, str(array.ghost_depth))
-				condition1 = "%s < %s" % (dim1_var,  str(array.shape[0]-array.ghost_depth))
-				update1 = "%s++" % dim1_var
-				start2 = "int %s = %s" % (dim2_var, str(array.ghost_depth))
-				condition2 = "%s < %s" % (dim2_var, str(array.shape[1]-array.ghost_depth))
-				update2 = "%s++" % dim2_var
+			# if dim == 2:
+			# 	dim1_var = self.gen_dim_var()
+			# 	dim2_var = self.gen_dim_var()
+			# 	start1 = "int %s = %s" % (dim1_var, str(array.ghost_depth))
+			# 	condition1 = "%s < %s" % (dim1_var,  str(array.shape[0]-array.ghost_depth))
+			# 	update1 = "%s++" % dim1_var
+			# 	start2 = "int %s = %s" % (dim2_var, str(array.ghost_depth))
+			# 	condition2 = "%s < %s" % (dim2_var, str(array.shape[1]-array.ghost_depth))
+			# 	update2 = "%s++" % dim2_var
+			ret_node = None
+			cur_node = None
+			print "DIM is ", dim
+			for d in xrange(dim):
+				print "in d loop"
+				dim_var = self.gen_dim_var()
+				start = "int %s = %s" % (dim_var, str(array.ghost_depth))
+			 	condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
+				update = "%s++" % dim_var
+				if d == 0:
+					ret_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
+					cur_node = ret_node
+				else:
+					cur_node.body = cpp_ast.For(start, condition, update, cpp_ast.Block())
+					cur_node = cur_node.body
+		
+			print "ret_node is ", ret_node
+			print "and argdict is", self.argdict
 
-				body = cpp_ast.Block()
-				body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-				body.append(cpp_ast.Statement(self.gen_array_unpack()))
+			body = cpp_ast.Block()
+			body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
+			print "body is", body
 
-				body.append(cpp_ast.Value("int", self.visit(node.target)))
-				body.append(cpp_ast.Assign(self.visit(node.target),
-							       self.gen_array_macro(node.grid, self.dim_vars)))
-				for gridname in self.argdict.keys():
-					replaced_body = [ast_tools.ASTNodeReplacer(
-						ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
-				body.extend([self.visit(x) for x in replaced_body])
-				
-				return cpp_ast.For(start1, condition1, update1,
-						       cpp_ast.For(start2, condition2, update2,
-								       body))
+			body.append(cpp_ast.Statement(self.gen_array_unpack()))
+			
+			body.append(cpp_ast.Value("int", self.visit(node.target)))
+			body.append(cpp_ast.Assign(self.visit(node.target),
+									   self.gen_array_macro(node.grid, self.dim_vars)))
+
+			print "now ret node is", ret_node
+			print "and body is ", body
+
+
+			replaced_body = None
+			for gridname in self.argdict.keys():
+				replaced_body = [ast_tools.ASTNodeReplacer(
+								ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
+			body.extend([self.visit(x) for x in replaced_body])
+			
+			cur_node.body = body
+			print ret_node.__str__()
+			return ret_node
 
 		def visit_StencilNeighborIter(self, node):
 
