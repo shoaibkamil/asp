@@ -44,12 +44,12 @@ class ASPModule(object):
 
     def add_to_preamble(self, pa):
         if isinstance(pa, str):
-            pa = cpp_ast.Line(pa)
+            pa = [cpp_ast.Line(pa)]
         self.module.add_to_preamble(pa)
 
     def add_to_init(self, stmt):
         if isinstance(stmt, str):
-            stmt = cpp_ast.Line(stmt)
+            stmt = [cpp_ast.Line(stmt)]
         self.module.add_to_init(stmt)
 
     def add_time(self, func_name, time):
