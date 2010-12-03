@@ -38,14 +38,30 @@ class ASPModule(object):
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
         self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
 
+    def add_cuda_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
+        self.nvcc_toolchain.add_library(feature, include_dirs, library_dirs, libraries)        
+
+    def add_cuda_arch_spec(self, arch):
+        archflag = '-arch='
+        if 'sm_' not in arch: archflag += 'sm_' 
+        archflag += arch
+        self.nvcc_toolchain.cflags += [archflag]
+
     def add_header(self, include_file):
-        import asp.codegen.cpp_ast as cpp_ast
         self.module.add_to_preamble([cpp_ast.Include(include_file, False)])
+
+    def add_cuda_header(self, include_file):
+        self.cuda_module.add_to_preamble([cpp_ast.Include(include_file, False)])
 
     def add_to_preamble(self, pa):
         if isinstance(pa, str):
             pa = [cpp_ast.Line(pa)]
         self.module.add_to_preamble(pa)
+
+    def add_to_cuda_preamble(self, pa):
+        if isinstance(pa, str):
+            pa = [cpp_ast.Line(pa)]
+        self.cuda_module.add_to_preamble(pa)
 
     def add_to_init(self, stmt):
         if isinstance(stmt, str):
@@ -57,6 +73,8 @@ class ASPModule(object):
         self.times.setdefault(func_name, []).append(time)
     
     def add_to_cuda_module(self, block):
+        if isinstance(block, str):
+            block = [cpp_ast.Line(block)]
         self.cuda_module.add_to_module(block)
 
     def get_name_from_func(self, func):
