@@ -6,15 +6,13 @@ import asp.codegen.cpp_ast as cpp_ast
 class ASPModule(object):
 
     class Variants(object):
-        def __init__(self, func, variant_names):
+        def __init__(self, func, variant_names, key_func):
             self.variant_times = {} #key: (name, *args)  value:[time of each variant]
             self.variant_names = variant_names
             self.func_name = func
             self.best_found = {} #False key: (name,*args) value: var_name/F
             self.next_variant_run = {} #0 key: (name,*args) value: index into variant_names
-        
-        def make_key(self, name, *args, **kwargs):
-            return (name, args)
+            self.make_key = key_func     
 
         def set_best(self, name, *args, **kwargs):
             key = self.make_key(name, *args, **kwargs)
@@ -123,8 +121,8 @@ class ASPModule(object):
         self.dirty = True
         self.compiled_methods.append(fname)
 
-    def add_function_with_variants(self, variant_funcs, func_name, variant_names, cuda_func=False):
-        variants = ASPModule.Variants(func_name, variant_names)
+    def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), cuda_func=False):
+        variants = ASPModule.Variants(func_name, variant_names, key_maker)
         for x in range(0,len(variant_funcs)):
             self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
         self.compiled_methods_with_variants[func_name] = variants

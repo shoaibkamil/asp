@@ -52,7 +52,8 @@ class MultipleFuncTests(unittest.TestCase):
             ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
              "PyObject* test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); return b;}"] ,
             "test",
-            ["test_1", "test_2"])
+            ["test_1", "test_2"],
+            lambda name, *args, **kwargs: (name, args) )
         result1 = mod.test(1,2)
         result2 = mod.test(1,2)
         result3 = mod.test(2,1)
