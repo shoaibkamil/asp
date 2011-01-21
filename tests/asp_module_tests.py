@@ -57,6 +57,9 @@ class MultipleFuncTests(unittest.TestCase):
         result1 = mod.test(1,2)
         result2 = mod.test(1,2)
         result3 = mod.test(2,1)
+        mod.save_func_variant_timings("test")
+        mod.clear_func_variant_timings("test")
+        mod.restore_func_variant_timings("test")        
         self.assertEqual(result1, 1)
         self.assertEqual(result2, 2)
         self.assertEqual(result3, 2)
@@ -76,8 +79,6 @@ class MultipleFuncTests(unittest.TestCase):
             False)
         self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",1,2), 'test_2')
         self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",2,1), 'test_1')
-        
-        
 
 if __name__ == '__main__':
     unittest.main()
