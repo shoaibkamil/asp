@@ -4,7 +4,7 @@ import asp.codegen.cpp_ast as cpp_ast
 import pickle
 
 
-class Variants(object):
+class CodeVariants(object):
     def __init__(self, func, variant_names, key_func):
         self.variant_names = variant_names
         self.func_name = func
@@ -122,7 +122,7 @@ class ASPModule(object):
         self.compiled_methods.append(fname)
 
     def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), cuda_func=False):
-        variants = Variants(func_name, variant_names, key_maker)
+        variants = CodeVariants(func_name, variant_names, key_maker)
         for x in range(0,len(variant_funcs)):
             self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
         self.compiled_methods_with_variants[func_name] = variants
