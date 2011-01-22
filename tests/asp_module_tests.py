@@ -54,28 +54,24 @@ class MultipleFuncTests(unittest.TestCase):
             "test",
             ["test_1", "test_2"],
             lambda name, *args, **kwargs: (name, args) )
-        result1 = mod.test(1,2)
-        result2 = mod.test(1,2)
-        result3 = mod.test(2,1)
-        self.assertEqual(result1, 1)
-        self.assertEqual(result2, 2)
-        self.assertEqual(result3, 2)
+        result1 = mod.test(1,20000)
+        result2 = mod.test(1,20000)
+        result3 = mod.test(20000,1)
         self.assertNotEqual(
-            mod.compiled_methods_with_variants["test"].get_best("test",1,2), # best time found for this input
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found for this input
             False)
         self.assertEqual(
             mod.compiled_methods_with_variants["test"].get_best("test",7,7), # this input never previously tried
             False)
         self.assertEqual(
-            mod.compiled_methods_with_variants["test"].get_best("test",2,1), # only one variant timed for this input
+            mod.compiled_methods_with_variants["test"].get_best("test",20000,1), # only one variant timed for this input
             False)
-        result4 = mod.test(2,1)
-        self.assertEqual(result4, 1)
+        result4 = mod.test(20000,1)
         self.assertNotEqual(
-            mod.compiled_methods_with_variants["test"].get_best("test",2,1), # now both variants have been timed
+            mod.compiled_methods_with_variants["test"].get_best("test",20000,1), # now both variants have been timed
             False)
-        self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",1,2), 'test_2')
-        self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",2,1), 'test_1')
+        self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",1,20000), 'test_1')
+        self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",20000,1), 'test_2')
 
     def test_pickling_variants_data(self):
         mod = asp_module.ASPModule()
@@ -100,6 +96,10 @@ class MultipleFuncTests(unittest.TestCase):
         self.assertEqual(
             mod.compiled_methods_with_variants["test"].get_best("test",2,1), # only one variant timed for this input
             False)
+
+    #TODO: def test_dealing_with_compilation_errors(self):
+
+    #TODO: def test_dealing_with_cuda_launch_failures(self):
 
 if __name__ == '__main__':
     unittest.main()
