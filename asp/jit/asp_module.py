@@ -35,6 +35,10 @@ class CodeVariants(object):
         key = self.make_key(name, *args, **kwargs)
         return self.next_variant_run.setdefault(key, 0)
 
+    def append(self, variant_names):
+        self.variant_names.extend(variant_names)
+        self.best_found = {} #new variant might be the best
+
 class ASPModule(object):
     
     def __init__(self, use_cuda=False):
@@ -122,7 +126,11 @@ class ASPModule(object):
         self.compiled_methods.append(fname)
 
     def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), cuda_func=False):
-        variants = CodeVariants(func_name, variant_names, key_maker)
+        variants = self.compiled_methods_with_variants.get(func_name, None)
+        if not variants:
+            variants = CodeVariants(func_name, variant_names, key_maker)
+        else:
+            variants.append(variant_names)
         for x in range(0,len(variant_funcs)):
             self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
         self.compiled_methods_with_variants[func_name] = variants

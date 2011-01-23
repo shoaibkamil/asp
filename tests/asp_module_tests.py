@@ -73,6 +73,30 @@ class MultipleFuncTests(unittest.TestCase):
         self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",1,20000), 'test_1')
         self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",20000,1), 'test_2')
 
+    def test_adding_variants_incrementally(self):
+        mod = asp_module.ASPModule()
+        mod.add_function_with_variants(
+            ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}"], 
+            "test",
+            ["test_1"],
+            lambda name, *args, **kwargs: (name, args) )
+        result1 = mod.test(1,20000)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found for this input
+            False)
+        mod.add_function_with_variants(
+             ["PyObject* test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); return b;}"] ,
+            "test",
+            ["test_2"] )
+        self.assertEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # time is no longer definitely best
+            False)
+        result1 = mod.test(1,20000)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found again
+            False)
+        self.assertEqual(mod.compiled_methods_with_variants["test"].get_best("test",1,20000), 'test_1')
+
     def test_pickling_variants_data(self):
         mod = asp_module.ASPModule()
         mod.add_function_with_variants(
