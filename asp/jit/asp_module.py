@@ -5,10 +5,11 @@ import pickle
 
 
 class CodeVariants(object):
-    def __init__(self, func, variant_names, key_func):
+    def __init__(self, func, variant_names, key_func, param_names):
         self.variant_names = variant_names
         self.func_name = func
         self.make_key = key_func     
+        self.param_names = param_names
         self.variant_times = {} #key: (name, *args)  value:[time of each variant]
         self.best_found = {} #Dict of names, key: (name,*args) value: var_name/False
         self.next_variant_run = {} #Dict of indexes, key: (name,*args) value: index into variant_names
@@ -38,6 +39,23 @@ class CodeVariants(object):
     def append(self, variant_names):
         self.variant_names.extend(variant_names)
         self.best_found = {} #new variant might be the best
+
+    def get_picklable_obj(self):
+        return {'func_name': self.func_name,
+                'variant_names': self.variant_names,
+                'param_names': self.param_names,
+                'variant_times': self.variant_times,
+                'best_found': self.best_found,
+                'next_variant_run': self.next_variant_run
+               }
+
+    def set_from_pickled_obj(self, obj):
+        self.func_name = obj['func_name']
+        self.variant_names = obj['variant_names']
+        self.param_names = obj['param_names']
+        self.variant_times = obj['variant_times']
+        self.best_found = obj['best_found']
+        self.next_variant_run = obj['next_variant_run']
 
 class ASPModule(object):
     
@@ -125,10 +143,10 @@ class ASPModule(object):
         self.dirty = True
         self.compiled_methods.append(fname)
 
-    def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), cuda_func=False):
+    def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), param_names=[], cuda_func=False):
         variants = self.compiled_methods_with_variants.get(func_name, None)
         if not variants:
-            variants = CodeVariants(func_name, variant_names, key_maker)
+            variants = CodeVariants(func_name, variant_names, key_maker, param_names)
         else:
             variants.append(variant_names)
         for x in range(0,len(variant_funcs)):
@@ -189,17 +207,13 @@ class ASPModule(object):
     def save_func_variant_timings(self, name):
         variants = self.compiled_methods_with_variants[name]
         f = open(self.cache_dir+'/'+name+'.vardump', 'w')
-        pickle.dump(variants.variant_times, f)
-        pickle.dump(variants.best_found, f)
-        pickle.dump(variants.next_variant_run, f)
+        pickle.dump(variants.get_picklable_obj(), f)
         f.close()
 
     def restore_func_variant_timings(self, name):
         variants = self.compiled_methods_with_variants[name]
         f = open(self.cache_dir+'/'+name+'.vardump', 'r')
-        variants.variant_times = pickle.load(f)
-        variants.best_found = pickle.load(f)
-        variants.next_variant_run = pickle.load(f)
+        variants.set_from_pickled_obj(pickle.load(f))
         f.close()
 
     def clear_func_variant_timings(self, name):
