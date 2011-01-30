@@ -210,9 +210,9 @@ class ASPModule(object):
         pickle.dump(variants.get_picklable_obj(), f)
         f.close()
 
-    def restore_func_variant_timings(self, name):
+    def restore_func_variant_timings(self, name, file_name=None):
         variants = self.compiled_methods_with_variants[name]
-        f = open(self.cache_dir+'/'+name+'.vardump', 'r')
+        f = open(file_name or self.cache_dir+'/'+name+'.vardump', 'r')
         variants.set_from_pickled_obj(pickle.load(f))
         f.close()
 
