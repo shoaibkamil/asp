@@ -9,6 +9,10 @@ class PlatformDetector(object):
         self.rawinfo = self.readCPUInfo()
         info = {}
         info['numCores'] = self.parseNumCores()
+        info['vendorID'] = self.parseCPUInfo('vendor_id')
+        info['model'] = int(self.parseCPUInfo('model'))
+        info['cpuFamily'] = int(self.parseCPUInfo('cpu family'))
+        info['cacheSize'] = int(self.parseCPUInfo('cache size'))
         return info
 
     def parseNumCores(self):
@@ -19,6 +23,11 @@ class PlatformDetector(object):
                 count +=1
         return count
         
-
+    def parseCPUInfo(self, item):
+        matcher = re.compile(item +"\s+:\s*(\w+)")
+        for line in self.rawinfo:
+            if re.match(matcher, line):
+                return re.match(matcher, line).group(1)
+        
     def readCPUInfo(self):
         pass
