@@ -108,9 +108,9 @@ class ASPModule(object):
                 
     def compile(self):
         if self.use_cuda:
-            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir=".")
+            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir="cache")
         else:
-            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=".")
+            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir="cache")
         self.dirty = False
         
     def func_with_timing(self, name):
