@@ -13,8 +13,16 @@ class PlatformDetector(object):
         info['model'] = int(self.parseCPUInfo('model'))
         info['cpuFamily'] = int(self.parseCPUInfo('cpu family'))
         info['cacheSize'] = int(self.parseCPUInfo('cache size'))
+        info['capabilities'] = self.parseCapabilities()
         return info
 
+    def parseCapabilities(self):
+        matcher = re.compile("flags\s+:")
+        for line in self.rawinfo:
+            if re.match(matcher, line):
+                return line.split(":")[1].split(" ")
+    
+        
     def parseNumCores(self):
         matcher = re.compile("processor\s+:")
         count = 0

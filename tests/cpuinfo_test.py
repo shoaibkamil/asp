@@ -35,6 +35,16 @@ class CPUInfoTests(unittest.TestCase):
 
         info = pd.getCPUInfo()
         self.assertEqual(info['cacheSize'], 8192)
+    
+    def testCapabilities(self):
+        def readCPUInfo(self):
+            return open("tests/cpuinfo").readlines()
+        
+        asp.config.PlatformDetector.readCPUInfo = readCPUInfo
+        pd = asp.config.PlatformDetector()
+       
+        info = pd.getCPUInfo()
+        self.assertEqual(info['capabilities'].count("sse"), 1)
         
 
 if __name__ == '__main__':
