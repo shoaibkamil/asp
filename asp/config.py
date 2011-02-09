@@ -38,4 +38,4 @@ class PlatformDetector(object):
                 return re.match(matcher, line).group(1)
         
     def readCPUInfo(self):
-        pass
+        return open("/proc/cpuinfo", "r").readlines()
