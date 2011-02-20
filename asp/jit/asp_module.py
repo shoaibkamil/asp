@@ -100,7 +100,6 @@ class ASPModule(object):
     def __init__(self, use_cuda=False):
         self.toolchain = codepy.toolchain.guess_toolchain()
         self.module = codepy.bpl.BoostPythonModule()
-        self.cache_dir = "./.aspcache"
         self.dirty = False
         self.compiled_methods = []
         self.compiled_methods_with_variants = {}
