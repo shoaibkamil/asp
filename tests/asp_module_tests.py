@@ -92,6 +92,7 @@ class MultipleFuncTests(unittest.TestCase):
             mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # time is no longer definitely best
             False)
         result1 = mod.test(1,20000)
+        result2 = mod.test(1,20000)
         self.assertNotEqual(
             mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found again
             False)
@@ -121,9 +122,61 @@ class MultipleFuncTests(unittest.TestCase):
             mod.compiled_methods_with_variants["test"].get_best("test",2,1), # only one variant timed for this input
             False)
 
-    #TODO: def test_dealing_with_compilation_errors(self):
+    def test_dealing_with_preidentified_compilation_errors(self):
+        mod = asp_module.ASPModule()
+        mod.add_function_with_variants(
+            ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
+             "PyObject* test_2(PyObject* a, PyObject* b){ /*Dummy*/}",
+             "PyObject* test_3(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); return b;}"] ,
+            "test",
+            ["test_1", "test_2", "test_3"],
+            lambda name, *args, **kwargs: (name, args),
+            [lambda name, *args, **kwargs: True]*3,
+            [True, False, True],
+            ['a', 'b'] )
+        result1 = mod.test(1,20000)
+        result2 = mod.test(1,20000)
+        result3 = mod.test(1,20000)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found for this input
+            False)
+        self.assertEqual(
+            mod.compiled_methods_with_variants["test"].variant_times[("test",(1,20000))][1], # second variant was uncompilable
+            -1)
 
-    #TODO: def test_dealing_with_cuda_launch_failures(self):
+    def test_dealing_with_preidentified_runtime_errors(self):
+        mod = asp_module.ASPModule()
+        mod.add_function_with_variants(
+            ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
+             "PyObject* test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
+             "PyObject* test_3(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); return b;}"] ,
+            "test",
+            ["test_1", "test_2", "test_3"],
+            lambda name, *args, **kwargs: (name, args),
+            [lambda name, *args, **kwargs: True, lambda name, *args, **kwargs: args[1] < 10001, lambda name, *args, **kwargs: True],
+            [True]*3,
+            ['a', 'b'] )
+        result1 = mod.test(1,20000)
+        result2 = mod.test(1,20000)
+        result3 = mod.test(1,20000)
+        result1 = mod.test(1,10000)
+        result2 = mod.test(1,10000)
+        result3 = mod.test(1,10000)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,20000), # best time found for this input
+            False)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].get_best("test",1,10000), # best time found for this input
+            False)
+        self.assertEqual(
+            mod.compiled_methods_with_variants["test"].variant_times[("test",(1,20000))][1], # second variant was unrannable for 20000
+            -1)
+        self.assertNotEqual(
+            mod.compiled_methods_with_variants["test"].variant_times[("test",(1,10000))][1], # second variant was runnable for 10000
+            -1)
+
+    def test_dealing_with_preidentified_runtime_errors(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()
