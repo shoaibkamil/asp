@@ -100,6 +100,7 @@ class ASPModule(object):
     def __init__(self, use_cuda=False):
         self.toolchain = codepy.toolchain.guess_toolchain()
         self.module = codepy.bpl.BoostPythonModule()
+        self.cache_dir = "cache"
         self.dirty = False
         self.compiled_methods = []
         self.compiled_methods_with_variants = {}
@@ -210,9 +211,9 @@ class ASPModule(object):
                 
     def compile(self):
         if self.use_cuda:
-            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir="cache")
+            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir=self.cache_dir)
         else:
-            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir="cache")
+            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=self.cache_dir)
         self.dirty = False
         
     def func_with_timing(self, name):
