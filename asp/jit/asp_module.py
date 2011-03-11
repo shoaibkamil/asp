@@ -87,8 +87,9 @@ class CodeVariants(object):
                }
 
     def set_from_pickled_obj(self, obj):
-        self.func_name = obj['func_name']
-        self.variant_names = obj['variant_names']
+        if self.func_name != obj['func_name'] or self.variant_names != obj['variant_names']:
+	    print "Warning: Attempted to load pickled performance data for non-matching space of code variants."
+	    return
         self.param_names = obj['param_names']
         self.variant_times = obj['variant_times']
         self.best_found = obj['best_found']
