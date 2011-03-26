@@ -4,6 +4,8 @@ class PlatformDetector(object):
     def __init__(self):
         self.rawinfo = []
 
+    def getGPUInfo(self):
+        raise NotImplementedError
 
     def getCPUInfo(self):
         self.rawinfo = self.readCPUInfo()
