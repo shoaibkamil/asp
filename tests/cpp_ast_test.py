@@ -40,6 +40,53 @@ class XMLTests(unittest.TestCase):
         self.assertEqual(ElementTree.tostring(t.to_xml()),
                          "<For><start><CName name=\"foo\" /></start><condition><CName name=\"bar\" /></condition>"+
                          "<update><CName name=\"baz\" /></update><body><CName name=\"bin\" /></body></For>")
+
+    def test_FunctionBody(self):
+        t = FunctionBody(CName("foo"), CName("bar"))
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<FunctionBody><fdecl><CName name=\"foo\" /></fdecl><body><CName name=\"bar\" /></body></FunctionBody>")
+
+    def test_FunctionDeclaration(self):
+        t = FunctionDeclaration(CName("foo"), [CName("bar")])
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<FunctionDeclaration><subdecl><CName name=\"foo\" /></subdecl><arg_decls><CName name=\"bar\" /></arg_decls></FunctionDeclaration>")
+
+    def test_Value(self):
+        t = Value("int", "foo")
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Value name=\"foo\" typename=\"int\" />")
+
+    def test_Pointer(self):
+        t = Pointer(Value("int", "foo"))
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Pointer><subdecl><Value name=\"foo\" typename=\"int\" /></subdecl></Pointer>")
+                                              
+
+    def test_Block(self):
+        t = Block(contents=[CName("foo")])
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Block><CName name=\"foo\" /></Block>")
+
+    def test_Define(self):
+        t = Define("foo", "defined_to")
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Define symbol=\"foo\" value=\"defined_to\" />")
+
+    def test_Statement(self):
+        t = Statement("foo")
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Statement>foo</Statement>")
+
+    def test_Assign(self):
+        t = Assign(CName("foo"), CNumber(5))
+        self.assertEqual(ElementTree.tostring(t.to_xml()),
+                         "<Assign><lvalue><CName name=\"foo\" /></lvalue><rvalue><CNumber num=\"5\" /></rvalue></Assign>")
+
+    def test_whole_ast(self):
+        """ A test using the pickled whole AST from one of the stencil kernel test cases."""
+        import pickle
+        t = pickle.load(open("tests/pickled_ast"))
+        t.to_xml()
         
 if __name__ == '__main__':
     unittest.main()

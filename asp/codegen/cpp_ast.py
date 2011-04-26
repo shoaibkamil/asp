@@ -140,9 +140,71 @@ class TypeCast(Expression):
 class For(codepy.cgen.For):
     def to_xml(self):
         node = ElementTree.Element("For")
-        ElementTree.SubElement(node, "start").append(self.start.to_xml())
-        ElementTree.SubElement(node, "condition").append(self.condition.to_xml())
-        ElementTree.SubElement(node, "update").append(self.update.to_xml())
+        if (not isinstance(self.start, str)):
+            ElementTree.SubElement(node, "start").append(self.start.to_xml())
+        else:
+            ElementTree.SubElement(node,"start").text = self.start
+            
+        if (not isinstance(self.condition, str)):
+            ElementTree.SubElement(node, "condition").append(self.condition.to_xml())
+        else:
+            ElementTree.SubElement(node, "condition").text = self.condition
+
+        if (not isinstance(self.update, str)):
+            ElementTree.SubElement(node, "update").append(self.update.to_xml())
+        else:
+            ElementTree.SubElement(node, "update").text = self.update
+            
         ElementTree.SubElement(node, "body").append(self.body.to_xml())
         return node
-    
+
+class FunctionBody(codepy.cgen.FunctionBody):
+    def to_xml(self):
+        node = ElementTree.Element("FunctionBody")
+        ElementTree.SubElement(node, "fdecl").append(self.fdecl.to_xml())
+        ElementTree.SubElement(node, "body").append(self.body.to_xml())
+        return node
+
+class FunctionDeclaration(codepy.cgen.FunctionDeclaration):
+    def to_xml(self):
+        node = ElementTree.Element("FunctionDeclaration")
+        ElementTree.SubElement(node, "subdecl").append(self.subdecl.to_xml())
+        arg_decls = ElementTree.SubElement(node, "arg_decls")
+        for x in self.arg_decls:
+            arg_decls.append(x.to_xml())
+        return node
+
+class Value(codepy.cgen.Value):
+    def to_xml(self):
+        return ElementTree.Element("Value", attrib={"typename":self.typename, "name":self.name})
+
+class Pointer(codepy.cgen.Pointer):
+    def to_xml(self):
+        node = ElementTree.Element("Pointer")
+        ElementTree.SubElement(node, "subdecl").append(self.subdecl.to_xml())
+        return node
+
+class Block(codepy.cgen.Block):
+    def to_xml(self):
+        node = ElementTree.Element("Block")
+        for x in self.contents:
+            node.append(x.to_xml())
+        return node
+
+class Define(codepy.cgen.Define):
+    def to_xml(self):
+        return ElementTree.Element("Define", attrib={"symbol":self.symbol, "value":self.value})
+
+class Statement(codepy.cgen.Statement):
+    def to_xml(self):
+        node = ElementTree.Element("Statement")
+        node.text = self.text
+        return node
+
+class Assign(codepy.cgen.Assign):
+    def to_xml(self):
+        node = ElementTree.Element("Assign")
+        ElementTree.SubElement(node, "lvalue").append(self.lvalue.to_xml())
+        ElementTree.SubElement(node, "rvalue").append(self.rvalue.to_xml())
+        return node
+        
