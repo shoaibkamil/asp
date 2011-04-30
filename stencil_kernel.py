@@ -51,6 +51,9 @@ class StencilKernel(object):
 		debug_print(ast.dump(phase2))
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
+#                import pickle
+#                pickle.dump(phase3, open("out_ast", 'w'))
+                
 		from asp.jit import asp_module
 
 		mod = asp_module.ASPModule()
@@ -195,7 +198,7 @@ class StencilKernel(object):
 			
 			body.append(cpp_ast.Value("int", self.visit(node.target)))
 			body.append(cpp_ast.Assign(self.visit(node.target),
-									   self.gen_array_macro(node.grid, self.dim_vars)))
+									   cpp_ast.CName(self.gen_array_macro(node.grid, self.dim_vars))))
 
 
 
@@ -219,11 +222,12 @@ class StencilKernel(object):
 			grid = self.argdict[node.grid]
 			debug_print(node.dist)
 			for n in grid.neighbor_definition[node.dist]:
+                                #FIXME: rval here should not be a CName
 				block.append(cpp_ast.Assign(target,
-								self.gen_array_macro(node.grid,
+								cpp_ast.CName(self.gen_array_macro(node.grid,
 										     map(lambda x,y: x + "+(" + str(y) + ")",
 											 self.dim_vars,
-											 n))))
+											 n)))))
 
 				block.extend( [self.visit(z) for z in node.body] )
 				
