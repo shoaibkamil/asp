@@ -216,7 +216,7 @@ class Pointer(codepy.cgen.Pointer):
         return node
 
 class Block(codepy.cgen.Block):
-    def __init__(self, contents):
+    def __init__(self, contents=[]):
         super(Block, self).__init__(contents)
         self._fields = ['contents']
         
