@@ -6,6 +6,7 @@ from asp.util import *
 
 # unified class for visiting python and c++ AST nodes
 class NodeVisitor(ast.NodeVisitor):
+    # adapted from Python source
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
         for field, value in ast.iter_fields(node):
@@ -17,6 +18,31 @@ class NodeVisitor(ast.NodeVisitor):
                 self.visit(value)
 	
 
+# unified class for *transforming* python and c++ AST nodes
+class NodeTransformer(ast.NodeTransformer):
+    # adapted from Python source
+     def generic_visit(self, node):
+	        for field, old_value in ast.iter_fields(node):
+	            old_value = getattr(node, field, None)
+	            if isinstance(old_value, list):
+	                new_values = []
+	                for value in old_value:
+	                    if isinstance(value, ast.AST) or isinstance(value, Generable):
+	                        value = self.visit(value)
+	                        if value is None:
+	                            continue
+	                        elif not (isinstance(value, ast.AST) or isinstance(value, Generable)):
+	                            new_values.extend(value)
+	                            continue
+	                    new_values.append(value)
+	                old_value[:] = new_values
+	            elif isinstance(old_value, ast.AST) or isinstance(old_value, Generable):
+	                new_node = self.visit(old_value)
+	                if new_node is None:
+	                    delattr(node, field)
+	                else:
+	                    setattr(node, field, new_node)
+	        return node
 
 
 # class to replace python AST nodes

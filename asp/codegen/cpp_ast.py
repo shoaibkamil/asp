@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ElementTree
 # programmers express the C code as a real AST (not the hybrid AST/strings/etc
 # that codepy implements.
 
+#TODO: add all of CodePy's classes we want to support
+
 class CNumber(Generable):
     def __init__(self, num):
         self.num = num

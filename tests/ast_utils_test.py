@@ -45,5 +45,31 @@ class NodeVisitorTests(unittest.TestCase):
         d.visit(c)
         self.assertTrue(d.worked)
 
+
+class NodeTransformerTests(unittest.TestCase):
+    def test_for_pyhon_nodes(self):
+        class Dummy(NodeTransformer):
+            def visit_Name(self, node):            
+                return python_ast.Name("hi", False)
+        p = python_ast.Name("hello", False)
+        result = Dummy().visit(p)
+        self.assertEqual(result.id, "hi")
+
+    def test_for_cpp_nodes(self):
+        class Dummy(NodeTransformer):
+            def visit_CName(self, node):
+                return CName("hi")
+        c = CName("hello")
+        result = Dummy().visit(c)
+        self.assertEqual(result.name, "hi")
+
+    def test_for_cpp_children(self):
+        class Dummy(NodeTransformer):
+            def visit_CName(self, node):
+                return CName("hi")
+        c = BinOp(CNumber(1), "+", CName("hello"))
+        result = Dummy().visit(c)
+        self.assertEqual(result.right.name, "hi")
+        
 if __name__ == '__main__':
     unittest.main()
