@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ElementTree
 class CNumber(Generable):
     def __init__(self, num):
         self.num = num
+        self._fields = []
 
     def __str__(self):
         return str(self.num)
@@ -19,6 +20,7 @@ class CNumber(Generable):
 class CName(Generable):
     def __init__(self, name):
         self.name = name
+        self._fields = []
 
     def __str__(self):
         return str(self.name)
@@ -38,6 +40,7 @@ class BinOp(Expression):
         self.left = left
         self.op = op
         self.right = right
+        self._fields = ['left', 'right']
 
     def __str__(self):
         return "(%s %s %s)" % (self.left, self.op, self.right)
@@ -54,6 +57,7 @@ class UnaryOp(Expression):
     def __init__(self, op, operand):
         self.op = op
         self.operand = operand
+        self._fields = ['operand']
 
     def __str__(self):
         return "(%s(%s))" % (self.op, self.operand)
@@ -68,6 +72,7 @@ class Subscript(Expression):
     def __init__(self, value, index):
         self.value = value
         self.index = index
+        self._fields = ['value', 'index']
 
     def __str__(self):
         return "%s[%s]" % (self.value, self.index)
@@ -82,6 +87,7 @@ class Call(Expression):
     def __init__(self, func, args):
         self.func = func
         self.args = args
+        self._fields = ['func', 'args']
 
     def __str__(self):
         return "%s(%s)" % (self.func, ", ".join(map(str, self.args)))
@@ -98,6 +104,7 @@ class PostfixUnaryOp(Expression):
     def __init__(self, operand, op):
         self.operand = operand
         self.op = op
+        self._fields = ['op', 'operand']
 
     def __str__(self):
         return "((%s)%s)" % (self.operand, self.op)
@@ -114,6 +121,7 @@ class ConditionalExpr(Expression):
         self.test = test
         self.body = body
         self.orelse = orelse
+        self._fields = ['test', 'body', 'orelse']
 
     def __str__(self):
         return "(%s ? %s : %s)" % (self.test, self.body, self.orelse)
@@ -132,12 +140,17 @@ class TypeCast(Expression):
     def __init__(self, type, value):
         self.type = type
         self.value = value
+        self._fields = ['type', 'value']
 
     def __str__(self):
         return "((%s)%s)" % (self.type.inline(), self.value)
 
 
 class For(codepy.cgen.For):
+    def __init__(self, start, condition, update, body):
+        super(For, self).__init__(start, condition, update, body)
+        self._fields = ['start', 'condition', 'update', 'body']
+
     def to_xml(self):
         node = ElementTree.Element("For")
         if (not isinstance(self.start, str)):
@@ -159,6 +172,10 @@ class For(codepy.cgen.For):
         return node
 
 class FunctionBody(codepy.cgen.FunctionBody):
+    def __init__(self, fdecl, body):
+        super(FunctionBody, self).__init__(fdecl, body)
+        self._fields = ['fdecl', 'body']
+        
     def to_xml(self):
         node = ElementTree.Element("FunctionBody")
         ElementTree.SubElement(node, "fdecl").append(self.fdecl.to_xml())
@@ -166,6 +183,10 @@ class FunctionBody(codepy.cgen.FunctionBody):
         return node
 
 class FunctionDeclaration(codepy.cgen.FunctionDeclaration):
+    def __init__(self, subdecl, arg_decls):
+        super(FunctionDeclaration, self).__init__(subdecl, arg_decls)
+        self._fields = ['subdecl', 'arg_decls']
+
     def to_xml(self):
         node = ElementTree.Element("FunctionDeclaration")
         ElementTree.SubElement(node, "subdecl").append(self.subdecl.to_xml())
@@ -175,16 +196,28 @@ class FunctionDeclaration(codepy.cgen.FunctionDeclaration):
         return node
 
 class Value(codepy.cgen.Value):
+    def __init__(self, typename, name):
+        super(Value, self).__init__(typename, name)
+        self._fields = []
+        
     def to_xml(self):
         return ElementTree.Element("Value", attrib={"typename":self.typename, "name":self.name})
 
 class Pointer(codepy.cgen.Pointer):
+    def __init__(self, subdecl):
+        super(Pointer, self).__init__(subdecl)
+        self._fields = ['subdecl']
+        
     def to_xml(self):
         node = ElementTree.Element("Pointer")
         ElementTree.SubElement(node, "subdecl").append(self.subdecl.to_xml())
         return node
 
 class Block(codepy.cgen.Block):
+    def __init__(self, contents):
+        super(Block, self).__init__(contents)
+        self._fields = ['contents']
+        
     def to_xml(self):
         node = ElementTree.Element("Block")
         for x in self.contents:
@@ -192,16 +225,28 @@ class Block(codepy.cgen.Block):
         return node
 
 class Define(codepy.cgen.Define):
+    def __init__(self, symbol, value):
+        super(Define, self).__init__(symbol, value)
+        self._fields = ['symbol', 'value']
+        
     def to_xml(self):
         return ElementTree.Element("Define", attrib={"symbol":self.symbol, "value":self.value})
 
 class Statement(codepy.cgen.Statement):
+    def __init__(self, text):
+        super(Statement, self).__init__(text)
+        self._fields = []
+        
     def to_xml(self):
         node = ElementTree.Element("Statement")
         node.text = self.text
         return node
 
 class Assign(codepy.cgen.Assign):
+    def __init__(self, lvalue, rvalue):
+        super(Assign, self).__init__(lvalue, rvalue)
+        self._fields = ['lvalue', 'rvalue']
+        
     def to_xml(self):
         node = ElementTree.Element("Assign")
         ElementTree.SubElement(node, "lvalue").append(self.lvalue.to_xml())

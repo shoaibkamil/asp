@@ -3,6 +3,22 @@ from cpp_ast import *
 import python_ast as ast
 from asp.util import *
 
+
+# unified class for visiting python and c++ AST nodes
+class NodeVisitor(ast.NodeVisitor):
+    def generic_visit(self, node):
+        """Called if no explicit visitor function exists for a node."""
+        for field, value in ast.iter_fields(node):
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, ast.AST):
+                        self.visit(item)
+            elif isinstance(value, ast.AST) or isinstance(value, Generable):
+                self.visit(value)
+	
+
+
+
 # class to replace python AST nodes
 class ASTNodeReplacer(ast.NodeTransformer):
 	def __init__(self, original, replacement):
