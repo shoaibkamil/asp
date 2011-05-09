@@ -58,6 +58,7 @@ class StencilKernel(object):
 
 		mod = self.mod = asp_module.ASPModule()
 		self.add_libraries(mod)
+		mod.toolchain.cflags += ["-fopenmp"]
 		mod.add_function(phase3)
 #		mod.compile()
 #		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
@@ -185,6 +186,11 @@ class StencilKernel(object):
 				if d == 0:
 					ret_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
 					cur_node = ret_node
+				elif d == 1:
+					pragma = cpp_ast.Pragma("omp parallel for")
+					for_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
+					cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
+					cur_node = for_node
 				else:
 					cur_node.body = cpp_ast.For(start, condition, update, cpp_ast.Block())
 					cur_node = cur_node.body
