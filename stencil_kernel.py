@@ -56,7 +56,7 @@ class StencilKernel(object):
                 
 		from asp.jit import asp_module
 
-		mod = asp_module.ASPModule()
+		mod = self.mod = asp_module.ASPModule()
 		self.add_libraries(mod)
 		mod.add_function(phase3)
 #		mod.compile()
