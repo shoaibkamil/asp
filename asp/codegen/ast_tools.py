@@ -141,21 +141,26 @@ class ConvertAST(ast.NodeTransformer):
         
 
 class LoopUnroller(object):
-    class Unroller(NodeVisitor):
-        def __init__(self, loopvar, factor):
+    class UnrollReplacer(NodeTransformer):
+        def __init__(self, loopvar, increment):
             self.loopvar = loopvar
-            self.factor = factor
-            super(LoopUnroller.Unroller, self).__init__()
+            self.increment = increment
+            super(LoopUnroller.UnrollReplacer, self).__init__()
 
-        def generic_visit(self, node):
-            return node
-
-
-        def visit_For(self, node):
-            new_update = Assign(node.update.lvalue, BinOp(node.update.rvalue, "*", CNumber(self.factor)))
-            return For(node.start, node.condition, new_update, self.visit(node.body))
+        def visit_CName(self, node):
+            if node.name == self.loopvar:
+                return BinOp(CName(self.loopvar), "+", CNumber(self.increment))
+            else:
+                return node
             
-    def unroll(self, ast, loopvar, factor, perfect=True):
-        return LoopUnroller.Unroller(loopvar, factor).visit(ast)
+    def unroll(self, ast, factor, perfect=True):
+        import copy
+        new_increment = BinOp(ast.increment, "*", CNumber(factor))
+        new_block = Block(contents=ast.body.contents)
+        new_extension = copy.deepcopy(ast.body)
+        new_extension = LoopUnroller.UnrollReplacer(ast.loopvar, 1).visit(new_extension)
+
+        new_block.extend(new_extension.contents)
+        return For(ast.loopvar, ast.initial, ast.end, new_increment, new_block)
         
 

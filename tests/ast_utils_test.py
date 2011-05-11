@@ -76,13 +76,14 @@ class LoopUnrollerTests(unittest.TestCase):
     def test_unroller(self):
         # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
         ast = For(
-            ForInitializer(Value("int", CName("i")), CNumber(0)),
-            BinOp(CName("i"), "<", CNumber(8)),
-            Assign(CName("i"), BinOp(CName("i"), "+", CNumber(1))),
+            "i",
+            CNumber(0),
+            CNumber(7),
+            CNumber(1),
             Block(contents=[Assign(Subscript(CName("a"), CName("i")),
                    CName("i"))]))
-        result = LoopUnroller().unroll(ast, "i", 2)
-        print result
+        result = LoopUnroller().unroll(ast, 2)
+        print (result)
 
 
 if __name__ == '__main__':
