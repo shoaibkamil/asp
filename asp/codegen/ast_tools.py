@@ -153,14 +153,17 @@ class LoopUnroller(object):
             else:
                 return node
             
-    def unroll(self, ast, factor, perfect=True):
+    def unroll(self, node, factor, perfect=True):
         import copy
-        new_increment = BinOp(ast.increment, "*", CNumber(factor))
-        new_block = Block(contents=ast.body.contents)
-        new_extension = copy.deepcopy(ast.body)
-        new_extension = LoopUnroller.UnrollReplacer(ast.loopvar, 1).visit(new_extension)
 
-        new_block.extend(new_extension.contents)
-        return For(ast.loopvar, ast.initial, ast.end, new_increment, new_block)
+        new_increment = BinOp(node.increment, "*", CNumber(factor))
+
+        new_block = Block(contents=node.body.contents)
+        for x in xrange(1, factor):
+            new_extension = copy.deepcopy(node.body)
+            new_extension = LoopUnroller.UnrollReplacer(node.loopvar, x).visit(new_extension)
+            new_block.extend(new_extension.contents)
+
+        return For(node.loopvar, node.initial, node.end, new_increment, new_block)
         
 

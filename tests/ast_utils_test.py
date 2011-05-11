@@ -73,7 +73,7 @@ class NodeTransformerTests(unittest.TestCase):
         
 
 class LoopUnrollerTests(unittest.TestCase):
-    def test_unroller(self):
+    def test_unrolling_by_2(self):
         # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
         ast = For(
             "i",
@@ -85,6 +85,22 @@ class LoopUnrollerTests(unittest.TestCase):
         result = LoopUnroller().unroll(ast, 2)
         wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n}"
         self.assertEqual(str(result), str(wanted_result))
+
+    def test_unrolling_by_4(self):
+    # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
+        ast = For(
+            "i",
+            CNumber(0),
+            CNumber(7),
+            CNumber(1),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+        result = LoopUnroller().unroll(ast, 4)
+        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 4)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n  a[(i + 3)] = (i + 3);\n}"
+
+        self.assertEqual(str(result), str(wanted_result))
+        
+        
 
 
 
