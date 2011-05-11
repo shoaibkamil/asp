@@ -16,8 +16,8 @@ out_grid = StencilGrid([258,258,258])
 k = Heat3D()
 k.kernel(in_grid, out_grid)
 
-in_grid = StencilGrid([258,258,258])
-out_grid = StencilGrid([258,258,258])
+#in_grid = StencilGrid([258,258,258])
+#out_grid = StencilGrid([258,258,258])
 
 #start_time = time.time()
 #for x in range(1,257):

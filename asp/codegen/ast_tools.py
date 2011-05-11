@@ -140,4 +140,22 @@ class ConvertAST(ast.NodeTransformer):
         return [Pointer(Value("void",self.visit(x))) for x in node.args]
         
 
+class LoopUnroller(object):
+    class Unroller(NodeVisitor):
+        def __init__(self, loopvar, factor):
+            self.loopvar = loopvar
+            self.factor = factor
+            super(LoopUnroller.Unroller, self).__init__()
+
+        def generic_visit(self, node):
+            return node
+
+
+        def visit_For(self, node):
+            new_update = Assign(node.update.lvalue, BinOp(node.update.rvalue, "*", CNumber(self.factor)))
+            return For(node.start, node.condition, new_update, self.visit(node.body))
+            
+    def unroll(self, ast, loopvar, factor, perfect=True):
+        return LoopUnroller.Unroller(loopvar, factor).visit(ast)
+        
 

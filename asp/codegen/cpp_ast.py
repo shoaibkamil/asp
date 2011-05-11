@@ -147,10 +147,14 @@ class TypeCast(Expression):
     def __str__(self):
         return "((%s)%s)" % (self.type.inline(), self.value)
 
+class ForInitializer(codepy.cgen.Initializer):
+    def __str__(self):
+        return super(ForInitializer, self).__str__()[0:-1]
 
-class For(codepy.cgen.For):
+
+class RawFor(codepy.cgen.For):
     def __init__(self, start, condition, update, body):
-        super(For, self).__init__(start, condition, update, body)
+        super(RawFor, self).__init__(start, condition, update, body)
         self._fields = ['start', 'condition', 'update', 'body']
 
     def to_xml(self):
@@ -172,6 +176,25 @@ class For(codepy.cgen.For):
             
         ElementTree.SubElement(node, "body").append(self.body.to_xml())
         return node
+
+class For(RawFor):
+    #TODO: setting initial,end,etc should update the field in the shadow
+    #TODO: should loopvar be a string or a CName?
+    def __init__(self, loopvar, initial, end, increment, body):
+        self.loopvar = loopvar
+        self.initial = initial
+        self.end = end
+        self.increment = increment
+        self._fields = ['start', 'condition', 'update', 'body']
+        super(For, self).__init__(
+            ForInitializer(Value("int", self.loopvar), self.initial),
+            BinOp(CName(self.loopvar), "<=", self.end),
+            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", increment)),
+            body)
+
+    def intro_line(self):
+        return "for (%s; %s; %s)" % (self.start, self.condition, str(self.update)[0:-1])
+
 
 class FunctionBody(codepy.cgen.FunctionBody):
     def __init__(self, fdecl, body):

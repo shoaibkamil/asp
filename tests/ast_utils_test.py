@@ -47,7 +47,7 @@ class NodeVisitorTests(unittest.TestCase):
 
 
 class NodeTransformerTests(unittest.TestCase):
-    def test_for_pyhon_nodes(self):
+    def test_for_python_nodes(self):
         class Dummy(NodeTransformer):
             def visit_Name(self, node):            
                 return python_ast.Name("hi", False)
@@ -71,5 +71,19 @@ class NodeTransformerTests(unittest.TestCase):
         result = Dummy().visit(c)
         self.assertEqual(result.right.name, "hi")
         
+
+class LoopUnrollerTests(unittest.TestCase):
+    def test_unroller(self):
+        # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
+        ast = For(
+            ForInitializer(Value("int", CName("i")), CNumber(0)),
+            BinOp(CName("i"), "<", CNumber(8)),
+            Assign(CName("i"), BinOp(CName("i"), "+", CNumber(1))),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+        result = LoopUnroller().unroll(ast, "i", 2)
+        print result
+
+
 if __name__ == '__main__':
     unittest.main()
