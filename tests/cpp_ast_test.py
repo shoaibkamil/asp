@@ -7,7 +7,7 @@ class ForTests(unittest.TestCase):
     def test_init(self):
         # For(loopvar, initial, end, increment)
         f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
-        self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1);)\n{\n}")
+        self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1))\n{\n}")
 
 class XMLTests(unittest.TestCase):
     def test_BinOp(self):

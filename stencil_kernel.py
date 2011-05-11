@@ -179,7 +179,7 @@ class StencilKernel(object):
                 #condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
                 #update = "%s++" % dim_var
                 initial = cpp_ast.CNumber(array.ghost_depth)
-                end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth)
+                end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth-1)
                 increment = cpp_ast.CNumber(1)
                 if d == 0:
                     #ret_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
