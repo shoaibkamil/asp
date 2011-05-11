@@ -83,7 +83,9 @@ class LoopUnrollerTests(unittest.TestCase):
             Block(contents=[Assign(Subscript(CName("a"), CName("i")),
                    CName("i"))]))
         result = LoopUnroller().unroll(ast, 2)
-        print (result)
+        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n}"
+        self.assertEqual(str(result), str(wanted_result))
+
 
 
 if __name__ == '__main__':
