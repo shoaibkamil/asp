@@ -31,8 +31,15 @@ class CName(Generable):
         return ElementTree.Element("CName", attrib={"name":str(self.name)})
 
 class Expression(Generable):
+    def __init__(self):
+        super(Expression, self).__init__()
+        self._fields = []
+        
+
     def __str__(self):
         return ""
+
+    
 
     def generate(self):
         yield str(self) + ';'

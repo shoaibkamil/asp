@@ -76,8 +76,11 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.assertTrue(re.search("#define", str(result)))
 
 	def test_StencilConvertAST_array_macro_use(self):
-		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro('in_grid', [3,4])
-		self.assertEqual(result, "_in_grid_array_macro(3,4)")
+		import asp.codegen.cpp_ast as cpp_ast
+		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro('in_grid',
+                                                                               [cpp_ast.CNumber(3),
+                                                                                cpp_ast.CNumber(4)])
+		self.assertEqual(str(result), "_in_grid_array_macro(3, 4)")
 
 	def test_StencilConvertAST_array_replacement(self):
 		import asp.codegen.python_ast as ast

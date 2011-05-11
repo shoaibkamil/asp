@@ -147,8 +147,11 @@ class StencilKernel(object):
                 return cpp_ast.Comment("Not found argument: " + arg)
 
         def gen_array_macro(self, arg, point):
-            macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
-            return macro
+            name = "_%s_array_macro" % arg
+            #param = [cpp_ast.CNumber(x) for x in point]
+            return cpp_ast.Call(cpp_ast.CName(name), point)
+
+
 
         def gen_dim_var(self):
             import random
@@ -203,7 +206,8 @@ class StencilKernel(object):
             
             body.append(cpp_ast.Value("int", self.visit(node.target)))
             body.append(cpp_ast.Assign(self.visit(node.target),
-                                       cpp_ast.CName(self.gen_array_macro(node.grid, self.dim_vars))))
+                                       self.gen_array_macro(
+                                           node.grid, [cpp_ast.CName(x) for x in self.dim_vars])))
 
 
 
@@ -213,9 +217,15 @@ class StencilKernel(object):
                 replaced_body = [ast_tools.ASTNodeReplacer(
                                 ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
             body.extend([self.visit(x) for x in replaced_body])
+
             
             cur_node.body = body
 
+            # unroll
+            print ast_tools.LoopUnroller().unroll(cur_node, 2)
+
+
+            
             return ret_node
 
         def visit_StencilNeighborIter(self, node):
@@ -228,11 +238,17 @@ class StencilKernel(object):
             debug_print(node.dist)
             for n in grid.neighbor_definition[node.dist]:
                                 #FIXME: rval here should not be a CName
-                block.append(cpp_ast.Assign(target,
-                                cpp_ast.CName(self.gen_array_macro(node.grid,
-                                             map(lambda x,y: x + "+(" + str(y) + ")",
+                # block.append(cpp_ast.Assign(target,
+                #                 cpp_ast.CName(self.gen_array_macro(node.grid,
+                #                              map(lambda x,y: x + "+(" + str(y) + ")",
+                #                              self.dim_vars,
+                #                              n)))))
+                block.append(cpp_ast.Assign(
+                    target,
+                    self.gen_array_macro(node.grid,
+                                         map(lambda x,y: cpp_ast.BinOp(cpp_ast.CName(x), "+", cpp_ast.CNumber(y)),
                                              self.dim_vars,
-                                             n)))))
+                                             n))))
 
                 block.extend( [self.visit(z) for z in node.body] )
                 
