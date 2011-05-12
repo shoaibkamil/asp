@@ -128,9 +128,10 @@ class StencilKernel(object):
 
     class StencilConvertAST(ast_tools.ConvertAST):
         
-        def __init__(self, argdict):
+        def __init__(self, argdict, unroll_factor=None):
             self.argdict = argdict
             self.dim_vars = []
+            self.unroll_factor = unroll_factor
             super(StencilKernel.StencilConvertAST, self).__init__()
 
         def gen_array_macro_definition(self, arg):
@@ -222,7 +223,8 @@ class StencilKernel(object):
             cur_node.body = body
 
             # unroll
-            print ast_tools.LoopUnroller().unroll(cur_node, 2)
+            if self.unroll_factor:
+                ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
 
 
             
@@ -237,12 +239,6 @@ class StencilKernel(object):
             grid = self.argdict[node.grid]
             debug_print(node.dist)
             for n in grid.neighbor_definition[node.dist]:
-                                #FIXME: rval here should not be a CName
-                # block.append(cpp_ast.Assign(target,
-                #                 cpp_ast.CName(self.gen_array_macro(node.grid,
-                #                              map(lambda x,y: x + "+(" + str(y) + ")",
-                #                              self.dim_vars,
-                #                              n)))))
                 block.append(cpp_ast.Assign(
                     target,
                     self.gen_array_macro(node.grid,
