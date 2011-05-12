@@ -26,7 +26,8 @@ class StencilKernel(object):
 
         # replace kernel with shadow version
         self.kernel = self.shadow_kernel
-        
+
+        self.specialized_sizes = None
 
     def remove_indentation(self, src):
         return src.lstrip()
@@ -41,6 +42,12 @@ class StencilKernel(object):
     def shadow_kernel(self, *args):
         if self.pure_python:
             return self.pure_python_kernel(*args)
+
+        # if already specialized to these sizes, just run
+        if self.specialized_sizes and self.specialized_sizes == [y.shape for y in args]:
+            print "match!"
+            self.mod.kernel(*[y.data for y in args])
+            return
 
         #FIXME: need to somehow match arg names to args
         argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
@@ -63,11 +70,14 @@ class StencilKernel(object):
         mod.toolchain.cflags.remove('-Os')
 #        print mod.toolchain.cflags
         mod.add_function(phase3)
-#       mod.compile()
-#       mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+
         myargs = [y.data for y in args]
-#       mod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
+
         mod.kernel(*myargs)
+
+        # save parameter sizes for next run
+        self.specialized_sizes = [x.shape for x in args]
+        print self.specialized_sizes
 
     # the actual Stencil AST Node
     class StencilInteriorIter(ast.AST):
