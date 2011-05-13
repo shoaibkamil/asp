@@ -1,6 +1,7 @@
 import asp
 from stencil_grid import *
 from stencil_kernel import *
+import numpy
 import time
 
 class Heat3D(StencilKernel):
@@ -12,10 +13,16 @@ class Heat3D(StencilKernel):
 
 in_grid = StencilGrid([258,258,258])
 out_grid = StencilGrid([258,258,258])
+cache_clear_grid = numpy.arange(258*258*258)
+
+def clear_cache(arr):
+    for x in xrange(258*258*258):
+        cache_clear_grid[x] -= 1
 
 k = Heat3D()
-k.kernel(in_grid, out_grid)
-k.kernel(in_grid, out_grid)
+for x in xrange(10):
+	clear_cache(cache_clear_grid)
+	k.kernel(in_grid, out_grid)
 
 #in_grid = StencilGrid([258,258,258])
 #out_grid = StencilGrid([258,258,258])

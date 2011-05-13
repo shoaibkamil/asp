@@ -56,7 +56,17 @@ class StencilKernel(object):
 
         phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
         debug_print(ast.dump(phase2))
-        phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
+        variants = [StencilKernel.StencilConvertAST(argdict).visit(phase2)]
+        variant_names = ["kernel_unroll_1"]
+        for x in [2,4,8,16,32,64]:
+            check_valid = max(map(
+                lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
+                args))
+            if check_valid == 0:
+                variants.append(StencilKernel.StencilConvertAST(argdict, unroll_factor=x).visit(phase2))
+                variant_names.append("kernel_unroll_%s" % x)
+
+#        print [x.name for x in variants]
 
 #                import pickle
 #                pickle.dump(phase3, open("out_ast", 'w'))
@@ -67,9 +77,10 @@ class StencilKernel(object):
         self.add_libraries(mod)
         mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
         print mod.toolchain.cflags
-        mod.toolchain.cflags.remove('-Os')
+	if mod.toolchain.cflags.count('-Os') > 0:
+            mod.toolchain.cflags.remove('-Os')
 #        print mod.toolchain.cflags
-        mod.add_function(phase3)
+        mod.add_function_with_variants(variants, "kernel", variant_names)
 
         myargs = [y.data for y in args]
 
@@ -178,6 +189,16 @@ class StencilKernel(object):
         # all arguments are PyObjects
         def visit_arguments(self, node):
             return [cpp_ast.Pointer(cpp_ast.Value("PyObject", self.visit(x))) for x in node.args[1:]]
+
+        # we want to rename the function based on the optimization parameters
+        def visit_FunctionDef(self, node):
+            
+            if not self.unroll_factor:
+                new_name = "%s_unroll_1" % node.name
+            else:
+                new_name = "%s_unroll_%s" % (node.name, self.unroll_factor)
+            new_node = ast.FunctionDef(new_name, node.args, node.body, node.decorator_list)
+            return super(StencilKernel.StencilConvertAST, self).visit_FunctionDef(new_node)
 
         def visit_StencilInteriorIter(self, node):
             # should catch KeyError here

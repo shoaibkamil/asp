@@ -148,7 +148,7 @@ class LoopUnroller(object):
             super(LoopUnroller.UnrollReplacer, self).__init__()
 
         def visit_CName(self, node):
-            print "node.name is ", node.name
+     #       print "node.name is ", node.name
             if node.name == self.loopvar:
                 return BinOp(CName(self.loopvar), "+", CNumber(self.increment))
             else:
@@ -157,7 +157,7 @@ class LoopUnroller(object):
     def unroll(self, node, factor, perfect=True):
         import copy
 
-        print "Called with %s", node.loopvar
+#        print "Called with %s", node.loopvar
 
         new_increment = BinOp(node.increment, "*", CNumber(factor))
 
