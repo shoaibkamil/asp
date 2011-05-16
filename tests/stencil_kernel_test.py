@@ -188,6 +188,32 @@ class VariantTests(unittest.TestCase):
         self.assertEqual(saved, kernel.mod)
         
 
+class StencilConvertASTCilkTests(unittest.TestCase):
+    def setUp(self):
+        class MyKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] = out_grid[x] + in_grid[y]
+
+
+        self.kernel = MyKernel()
+        self.in_grid = StencilGrid([10,10])
+        self.out_grid = StencilGrid([10,10])
+        self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
+
+    def test_cilk_gen(self):
+        import asp.codegen.python_ast as ast, re
+        
+        n = StencilKernel.StencilInteriorIter("in_grid",
+                              [ast.Pass()],
+                              ast.Name("targ", None))
+        result = StencilKernel.StencilConvertASTCilk(self.argdict).visit(n)
+        print(str(result))
+        import re
+        self.assertTrue(re.search("cilk_for", str(result)))
+        
 
 if __name__ == '__main__':
     unittest.main()
+

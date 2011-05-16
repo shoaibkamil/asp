@@ -8,7 +8,7 @@ from asp.util import *
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
-    def __init__(self):
+    def __init__(self, with_cilk=False):
         # we want to raise an exception if there is no kernel()
         # method defined.
         try:
@@ -28,6 +28,7 @@ class StencilKernel(object):
         self.kernel = self.shadow_kernel
 
         self.specialized_sizes = None
+        self.with_cilk = with_cilk
 
     def remove_indentation(self, src):
         return src.lstrip()
@@ -56,14 +57,18 @@ class StencilKernel(object):
 
         phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
         debug_print(ast.dump(phase2))
-        variants = [StencilKernel.StencilConvertAST(argdict).visit(phase2)]
+        if not self.with_cilk:
+            Converter = StencilKernel.StencilConvertAST
+        else:
+            Converter = StencilKernel.StencilConvertASTCilk
+        variants = [Converter(argdict).visit(phase2)]
         variant_names = ["kernel_unroll_1"]
         for x in [2,4,8,16,32,64]:
             check_valid = max(map(
                 lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
                 args))
             if check_valid == 0:
-                variants.append(StencilKernel.StencilConvertAST(argdict, unroll_factor=x).visit(phase2))
+                variants.append(Converter(argdict, unroll_factor=x).visit(phase2))
                 variant_names.append("kernel_unroll_%s" % x)
 
 #        print [x.name for x in variants]
@@ -75,9 +80,12 @@ class StencilKernel(object):
 
         mod = self.mod = asp_module.ASPModule()
         self.add_libraries(mod)
-        mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
+        if self.with_cilk:
+            mod.toolchain.cc = "icc"
+        else:
+            mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
         print mod.toolchain.cflags
-	if mod.toolchain.cflags.count('-Os') > 0:
+        if mod.toolchain.cflags.count('-Os') > 0:
             mod.toolchain.cflags.remove('-Os')
 #        print mod.toolchain.cflags
         mod.add_function_with_variants(variants, "kernel", variant_names)
@@ -200,7 +208,7 @@ class StencilKernel(object):
             new_node = ast.FunctionDef(new_name, node.args, node.body, node.decorator_list)
             return super(StencilKernel.StencilConvertAST, self).visit_FunctionDef(new_node)
 
-        def visit_StencilInteriorIter(self, node):
+        def gen_loops(self, node):
             # should catch KeyError here
             array = self.argdict[node.grid]
             dim = len(array.shape)
@@ -225,7 +233,12 @@ class StencilKernel(object):
                 else:
                     cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = cur_node.body
-        
+
+            return (cur_node, ret_node)
+
+        def visit_StencilInteriorIter(self, node):
+
+            cur_node, ret_node = self.gen_loops(node)
 
             body = cpp_ast.Block()
             body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
@@ -253,8 +266,6 @@ class StencilKernel(object):
             # unroll
             if self.unroll_factor:
                 ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
-
-
             
             return ret_node
 
@@ -279,6 +290,37 @@ class StencilKernel(object):
 
             debug_print(block)
             return block
+
+    class StencilConvertASTCilk(StencilConvertAST):
+        class CilkFor(cpp_ast.For):
+            def intro_line(self):
+                return "cilk_for (%s; %s; %s)" % (self.start, self.condition, str(self.update)[0:-1])
+
+        def gen_loops(self, node):
+            # should catch KeyError here
+            array = self.argdict[node.grid]
+            dim = len(array.shape)
+
+            ret_node = None
+            cur_node = None
+
+            for d in xrange(dim):
+                dim_var = self.gen_dim_var()
+
+                initial = cpp_ast.CNumber(array.ghost_depth)
+                end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth-1)
+                increment = cpp_ast.CNumber(1)
+                if d == 0:
+                    ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
+                    cur_node = ret_node
+                elif d == dim-1:
+                    cur_node.body = StencilKernel.StencilConvertASTCilk.CilkFor(dim_var, initial, end, increment, cpp_ast.Block())
+                    cur_node = cur_node.body
+                else:
+                    cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
+                    cur_node = cur_node.body
+
+            return (cur_node, ret_node)
 
 
 

@@ -10,7 +10,6 @@ class Heat3D(StencilKernel):
 			for y in in_grid.neighbors(x, 1):
 				out_grid[x] = out_grid[x] + (1.0/6.0)*in_grid[y]
 
-
 in_grid = StencilGrid([258,258,258])
 out_grid = StencilGrid([258,258,258])
 cache_clear_grid = numpy.arange(258*258*258)
@@ -21,7 +20,7 @@ def clear_cache(arr):
 
 k = Heat3D()
 for x in xrange(10):
-	clear_cache(cache_clear_grid)
+#	clear_cache(cache_clear_grid)
 	k.kernel(in_grid, out_grid)
 
 #in_grid = StencilGrid([258,258,258])
