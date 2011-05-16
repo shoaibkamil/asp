@@ -210,14 +210,11 @@ class StencilKernel(object):
 
             for d in xrange(dim):
                 dim_var = self.gen_dim_var()
-                #start = "int %s = %s" % (dim_var, str(array.ghost_depth))
-                #condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
-                #update = "%s++" % dim_var
+
                 initial = cpp_ast.CNumber(array.ghost_depth)
                 end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth-1)
                 increment = cpp_ast.CNumber(1)
                 if d == 0:
-                    #ret_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
                     ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = ret_node
                 elif d == dim-2:
