@@ -47,7 +47,7 @@ class MultipleFuncTests(unittest.TestCase):
         
     def test_running_multiple_variants_and_inputs(self):
         mod = asp_module.ASPModule()
-	key_func = lambda name, *args, **kwargs: (name, args) 
+	key_func = lambda name, *args, **_: (name, args) 
         mod.add_function_with_variants(
             ["void test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); }", 
              "void test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); }"] ,
@@ -55,9 +55,9 @@ class MultipleFuncTests(unittest.TestCase):
             ["test_1", "test_2"],
             key_func )
         val = 2000000
-        result1 = mod.test(1,val)
-        result2 = mod.test(1,val)
-        result3 = mod.test(val,1)
+        mod.test(1,val)
+        mod.test(1,val)
+        mod.test(val,1)
         self.assertNotEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",1,val)), # best time found for this input
             False)
@@ -67,7 +67,7 @@ class MultipleFuncTests(unittest.TestCase):
         self.assertEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",val,1)), # only one variant timed for this input
             False)
-        result4 = mod.test(val,1)
+        mod.test(val,1)
         self.assertNotEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",val,1)), # now both variants have been timed
             False)
@@ -76,13 +76,13 @@ class MultipleFuncTests(unittest.TestCase):
 
     def test_adding_variants_incrementally(self):
         mod = asp_module.ASPModule()
-	key_func = lambda name, *args, **kwargs: (name, args) 
+	key_func = lambda name, *args, **_: (name, args) 
         mod.add_function_with_variants(
             ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}"], 
             "test",
             ["test_1"],
             key_func )
-        result1 = mod.test(1,20000)
+        mod.test(1,20000)
         self.assertNotEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",1,20000)), # best time found for this input
             False)
@@ -93,8 +93,8 @@ class MultipleFuncTests(unittest.TestCase):
         self.assertEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",1,20000)), # time is no longer definitely best
             False)
-        result1 = mod.test(1,20000)
-        result2 = mod.test(1,20000)
+        mod.test(1,20000)
+        mod.test(1,20000)
         self.assertNotEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",1,20000)), # best time found again
             False)
@@ -102,16 +102,16 @@ class MultipleFuncTests(unittest.TestCase):
 
     def test_pickling_variants_data(self):
         mod = asp_module.ASPModule()
-	key_func = lambda name, *args, **kwargs: (name, args) 
+	key_func = lambda name, *args, **_: (name, args) 
         mod.add_function_with_variants(
             ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
              "PyObject* test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(b); for(; c > 0; c--) a = PyNumber_Add(a,b); return b;}"] ,
             "test",
             ["test_1", "test_2"],
             key_func )
-        result1 = mod.test(1,2)
-        result2 = mod.test(1,2)
-        result3 = mod.test(2,1)
+        mod.test(1,2)
+        mod.test(1,2)
+        mod.test(2,1)
         mod.save_method_timings("test")
         mod.clear_method_timings("test")
         mod.restore_method_timings("test")
@@ -127,7 +127,7 @@ class MultipleFuncTests(unittest.TestCase):
 
     def test_dealing_with_preidentified_compilation_errors(self):
         mod = asp_module.ASPModule()
-        key_func = lambda name, *args, **kwargs: (name, args)
+        key_func = lambda name, *args, **_: (name, args)
         mod.add_function_with_variants(
             ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
              "PyObject* test_2(PyObject* a, PyObject* b){ /*Dummy*/}",
@@ -138,9 +138,9 @@ class MultipleFuncTests(unittest.TestCase):
             [lambda name, *args, **kwargs: True]*3,
             [True, False, True],
             ['a', 'b'] )
-        result1 = mod.test(1,20000)
-        result2 = mod.test(1,20000)
-        result3 = mod.test(1,20000)
+        mod.test(1,20000)
+        mod.test(1,20000)
+        mod.test(1,20000)
         self.assertNotEqual(
             mod.compiled_methods["test"].database.get_oracular_best(key_func("test",1,20000)), # best time found for this input
             False)
@@ -148,9 +148,11 @@ class MultipleFuncTests(unittest.TestCase):
             mod.compiled_methods["test"].database.variant_times[("test",(1,20000))]['test_2'], # second variant was uncompilable
             -1)
 
+    # Disabled, currently failing
+    """
     def test_dealing_with_preidentified_runtime_errors(self):
         mod = asp_module.ASPModule()
-        key_func = lambda name, *args, **kwargs: (name, args)
+        key_func = lambda name, *args, **_: (name, args)
         mod.add_function_with_variants(
             ["PyObject* test_1(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
              "PyObject* test_2(PyObject* a, PyObject* b){ long c = PyInt_AS_LONG(a); for(; c > 0; c--) b = PyNumber_Add(b,a); return a;}", 
@@ -179,9 +181,7 @@ class MultipleFuncTests(unittest.TestCase):
         self.assertNotEqual(
             mod.compiled_methods["test"].database.variant_times[("test",(1,10000))]['test_2'], # second variant was runnable for 10000
             -1)
-
-    def test_dealing_with_preidentified_runtime_errors(self):
-        pass
+    """
 
 if __name__ == '__main__':
     unittest.main()

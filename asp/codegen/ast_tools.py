@@ -111,7 +111,7 @@ class ConvertAST(ast.NodeTransformer):
         return self.visit(node.value)
 
     
-    def visit_Pass(self, node):
+    def visit_Pass(self, _):
         return Expression()
     
     # by default, only do first statement in a module

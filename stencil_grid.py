@@ -38,7 +38,6 @@ class StencilGrid(object):
         self.neighbor_definition.append([tuple([0 for x in range(self.dim)])])
         self.neighbor_definition.append([])
 
-        import copy
         for x in range(self.dim):
             for y in [0, 1, -1]:
                 tmp = list(self.neighbor_definition[0][0])

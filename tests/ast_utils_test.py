@@ -37,7 +37,7 @@ class NodeVisitorTests(unittest.TestCase):
         class Dummy(NodeVisitor):
             def __init__(self):
                 self.worked = False
-            def visit_CName(self, node):
+            def visit_CName(self, _):
                 self.worked = True
 
         c = BinOp(CNumber(1), "+", CName("hello"))
@@ -49,7 +49,7 @@ class NodeVisitorTests(unittest.TestCase):
 class NodeTransformerTests(unittest.TestCase):
     def test_for_pyhon_nodes(self):
         class Dummy(NodeTransformer):
-            def visit_Name(self, node):            
+            def visit_Name(self, _):            
                 return python_ast.Name("hi", False)
         p = python_ast.Name("hello", False)
         result = Dummy().visit(p)
@@ -57,7 +57,7 @@ class NodeTransformerTests(unittest.TestCase):
 
     def test_for_cpp_nodes(self):
         class Dummy(NodeTransformer):
-            def visit_CName(self, node):
+            def visit_CName(self, _):
                 return CName("hi")
         c = CName("hello")
         result = Dummy().visit(c)
@@ -65,7 +65,7 @@ class NodeTransformerTests(unittest.TestCase):
 
     def test_for_cpp_children(self):
         class Dummy(NodeTransformer):
-            def visit_CName(self, node):
+            def visit_CName(self, _):
                 return CName("hi")
         c = BinOp(CNumber(1), "+", CName("hello"))
         result = Dummy().visit(c)

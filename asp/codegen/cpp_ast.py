@@ -19,6 +19,12 @@ class CNumber(Generable):
     def to_xml(self):
         return ElementTree.Element("CNumber", attrib={"num":str(self.num)})
 
+    def generate(self, with_semicolon=True):
+        if with_semicolon:
+            # This node type does not represent a complete C++ statement
+            raise ValueError
+        yield self.__str__()
+
 class CName(Generable):
     def __init__(self, name):
         self.name = name
@@ -30,12 +36,18 @@ class CName(Generable):
     def to_xml(self):
         return ElementTree.Element("CName", attrib={"name":str(self.name)})
 
+    def generate(self, with_semicolon=True):
+        if with_semicolon:
+            # This node type does not represent a complete C++ statement
+            raise ValueError
+        yield self.__str__()
+
 class Expression(Generable):
     def __str__(self):
         return ""
 
-    def generate(self):
-        yield str(self) + ';'
+    def generate(self, with_semicolon=True):
+        yield str(self) + (';' if with_semicolon else '')
 
 class BinOp(Expression):
     def __init__(self, left, op, right):

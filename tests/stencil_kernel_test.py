@@ -64,7 +64,7 @@ class StencilConvertASTTests(unittest.TestCase):
 		self.kernel = MyKernel()
 		self.in_grid = StencilGrid([10,10])
 		self.out_grid = StencilGrid([10,10])
-		self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
+		self.argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
 
 
 	def test_StencilConvertAST_array_macro(self):
