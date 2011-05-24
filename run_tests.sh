@@ -10,3 +10,4 @@ PYTHONPATH=`pwd` python tests/asp_module_tests.py
 PYTHONPATH=`pwd` python tests/stencil_kernel_test.py
 PYTHONPATH=`pwd` python tests/arraydoubler_test.py
 PYTHONPATH=`pwd` python tests/cpp_ast_test.py
+PYTHONPATH=`pwd` python tests/ast_tools_test.py
