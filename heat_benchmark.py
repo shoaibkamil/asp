@@ -10,18 +10,26 @@ class Heat3D(StencilKernel):
 			for y in in_grid.neighbors(x, 1):
 				out_grid[x] = out_grid[x] + (1.0/6.0)*in_grid[y]
 
-in_grid = StencilGrid([258,258,258])
-out_grid = StencilGrid([258,258,258])
-cache_clear_grid = numpy.arange(258*258*258)
-
 def clear_cache(arr):
-    for x in xrange(258*258*258):
-        cache_clear_grid[x] -= 1
+    for x in xrange(258*258*25):
+        cache_clear_grid[x] -= 1.0
 
-k = Heat3D()
-for x in xrange(10):
+for y in [34, 66, 130, 258]:
+	in_grid = StencilGrid([y,y,y])
+	out_grid = StencilGrid([y,y,y])
+	cache_clear_grid = numpy.arange(258*258*258)
+
+
+	k = Heat3D()
+	for x in xrange(4):
+		clear_cache(cache_clear_grid)
+		k.kernel(in_grid, out_grid)
+	print(k.mod.compiled_methods["kernel"].database.variant_times)
+
+#k = Heat3D(with_cilk=True)
+#for x in xrange(10):
 #	clear_cache(cache_clear_grid)
-	k.kernel(in_grid, out_grid)
+#	k.kernel(in_grid, out_grid)
 
 #in_grid = StencilGrid([258,258,258])
 #out_grid = StencilGrid([258,258,258])
@@ -36,9 +44,8 @@ for x in xrange(10):
 #				in_grid[(x,y-1,z)] +
 #				in_grid[(x,y,z+1)] +
 #				in_grid[(x,y,z-1)] )
-			
+#			
 #elapsed_time = time.time() - start_time
 
-print(k.mod.compiled_methods["kernel"].database.variant_times)
 #print(elapsed_time)
 

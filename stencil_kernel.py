@@ -38,6 +38,8 @@ class StencilKernel(object):
         mod.add_library("numpy",[numpy.get_include()+"/numpy"])
         mod.add_header("arrayobject.h")
         mod.add_to_init([cpp_ast.Statement("import_array();")])
+        if self.with_cilk:
+            mod.module.add_to_preamble([cpp_ast.Include("cilk/cilk.h", True)])
         
 
     def shadow_kernel(self, *args):
@@ -68,6 +70,7 @@ class StencilKernel(object):
                 lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
                 args))
             if check_valid == 0:
+                to_append = Converter(argdict, unroll_factor=x).visit(phase2)
                 variants.append(Converter(argdict, unroll_factor=x).visit(phase2))
                 variant_names.append("kernel_unroll_%s" % x)
 
@@ -82,17 +85,23 @@ class StencilKernel(object):
         self.add_libraries(mod)
         if self.with_cilk:
             mod.toolchain.cc = "icc"
+            mod.toolchain.cflags += ["-intel-extensions", "-fast"]
+            mod.toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
+            mod.toolchain.cflags.remove('-fwrapv')
         else:
             mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
         print mod.toolchain.cflags
         if mod.toolchain.cflags.count('-Os') > 0:
             mod.toolchain.cflags.remove('-Os')
-#        print mod.toolchain.cflags
+        if mod.toolchain.cflags.count('-O2') > 0:
+            mod.toolchain.cflags.remove('-O2')
+        print mod.toolchain.cflags
         mod.add_function_with_variants(variants, "kernel", variant_names)
 
         myargs = [y.data for y in args]
 
         mod.kernel(*myargs)
+	print "hHI"
 
         # save parameter sizes for next run
         self.specialized_sizes = [x.shape for x in args]
@@ -191,8 +200,13 @@ class StencilKernel(object):
             return var
 
         def gen_array_unpack(self):
-            str = "double* _my_%s = (double *) PyArray_DATA(%s);"
-            return '\n'.join([str % (x, x) for x in self.argdict.keys()])
+            ret =  [cpp_ast.Assign(cpp_ast.Pointer(cpp_ast.Value("double", "_my_"+x)), 
+                    cpp_ast.TypeCast(cpp_ast.Pointer(cpp_ast.Value("double", "")), cpp_ast.FunctionCall(cpp_ast.CName("PyArray_DATA"), params=[cpp_ast.CName(x)])))
+                    for x in self.argdict.keys()]
+            print "HAHA:", map(str, ret)
+            return ret
+#            str = "double* _my_%s = (double *) PyArray_DATA(%s);"
+#            return '\n'.join([str % (x, x) for x in self.argdict.keys()])
         
         # all arguments are PyObjects
         def visit_arguments(self, node):
@@ -244,7 +258,7 @@ class StencilKernel(object):
             body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
 
 
-            body.append(cpp_ast.Statement(self.gen_array_unpack()))
+            body.extend(self.gen_array_unpack())
             
             body.append(cpp_ast.Value("int", self.visit(node.target)))
             body.append(cpp_ast.Assign(self.visit(node.target),
@@ -252,7 +266,7 @@ class StencilKernel(object):
                                            node.grid, [cpp_ast.CName(x) for x in self.dim_vars])))
 
 
-
+            
 
             replaced_body = None
             for gridname in self.argdict.keys():
@@ -265,7 +279,10 @@ class StencilKernel(object):
 
             # unroll
             if self.unroll_factor:
-                ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
+                replacement = ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
+                for x in cur_node._fields:
+                    # hacky! TODO: fix this
+                    setattr(cur_node, x, getattr(replacement, x))
             
             return ret_node
 
@@ -294,7 +311,7 @@ class StencilKernel(object):
     class StencilConvertASTCilk(StencilConvertAST):
         class CilkFor(cpp_ast.For):
             def intro_line(self):
-                return "cilk_for (%s; %s; %s)" % (self.start, self.condition, str(self.update)[0:-1])
+                return "cilk_for (%s; %s; %s += %s)" % (self.start, self.condition, self.loopvar, self.increment)
 
         def gen_loops(self, node):
             # should catch KeyError here

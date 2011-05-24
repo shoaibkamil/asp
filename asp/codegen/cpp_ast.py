@@ -146,13 +146,13 @@ class TypeCast(Expression):
     # "type" should be a declaration with an empty variable name
     # e.g. TypeCast(Pointer(Value('int', '')), ...)
 
-    def __init__(self, type, value):
-        self.type = type
+    def __init__(self, tp, value):
+        self.tp = tp
         self.value = value
-        self._fields = ['type', 'value']
+        self._fields = ['tp', 'value']
 
     def __str__(self):
-        return "((%s)%s)" % (self.type.inline(), self.value)
+        return "((%s)%s)" % (self.tp.inline(), self.value)
 
 class ForInitializer(codepy.cgen.Initializer):
     def __str__(self):
@@ -239,6 +239,7 @@ class Pointer(codepy.cgen.Pointer):
     def __init__(self, subdecl):
         super(Pointer, self).__init__(subdecl)
         self._fields = ['subdecl']
+        print self.subdecl
         
     def to_xml(self):
         node = ElementTree.Element("Pointer")
@@ -284,4 +285,18 @@ class Assign(codepy.cgen.Assign):
         ElementTree.SubElement(node, "lvalue").append(self.lvalue.to_xml())
         ElementTree.SubElement(node, "rvalue").append(self.rvalue.to_xml())
         return node
-        
+
+    def generate(self):
+        lvalue = str(self.lvalue).rstrip().rstrip(';')
+        rvalue = str(self.rvalue)
+        yield "%s = %s;" % (lvalue, rvalue)
+
+class FunctionCall(codepy.cgen.Generable):
+    def __init__(self, fname, params=[]):
+        self.fname = fname
+        self.params = params
+        self._fields = ['fname', 'params']
+
+    def __str__(self):
+        return "%s(%s)" % (self.fname, ','.join(map(str, self.params)))
+
