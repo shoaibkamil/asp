@@ -140,4 +140,81 @@ class ConvertAST(ast.NodeTransformer):
         return [Pointer(Value("void",self.visit(x))) for x in node.args]
         
 
+class LoopUnroller(object):
+    class UnrollReplacer(NodeTransformer):
+        def __init__(self, loopvar, increment):
+            self.loopvar = loopvar
+            self.increment = increment
+            self.in_new_scope = False
+            self.inside_for = False
+            super(LoopUnroller.UnrollReplacer, self).__init__()
+
+        def visit_CName(self, node):
+#            print "node.name is ", node.name
+            if node.name == self.loopvar:
+                return BinOp(CName(self.loopvar), "+", CNumber(self.increment))
+            else:
+                return node
+        
+        def visit_Block(self, node):
+#            print "visiting Block...."
+            if self.inside_for:
+                old_scope = self.in_new_scope
+                self.in_new_scope = True
+#            print "visiting block in ", node
+                contents = [self.visit(x) for x in node.contents]
+                retnode = Block(contents=[x for x in contents if x != None])
+                self.in_new_scope = old_scope
+            else:
+                self.inside_for = True
+                contents = [self.visit(x) for x in node.contents]
+                retnode = Block(contents=[x for x in contents if x != None])
+
+            return retnode
+
+        # assigns take care of stuff like "int blah = foo"
+        def visit_Value(self, node):
+            if not self.in_new_scope:
+                return None
+            else:
+                return node
+            
+        def visit_Pointer(self, node):
+            if not self.in_new_scope:
+                return None
+            else:
+                return node
+
+        # ignore typecast declarators
+        def visit_TypeCast(self, node):
+            return TypeCast(node.tp, self.visit(node.value))
+
+        # make lvalue not a declaration
+        def visit_Assign(self, node):
+            if not self.in_new_scope:
+                if isinstance(node.lvalue, NestedDeclarator):
+                    tp, new_lvalue = node.lvalue.subdecl.get_decl_pair()
+                    rvalue = self.visit(node.rvalue)
+                    return Assign(CName(new_lvalue), rvalue)
+                if isinstance(node.lvalue, Declarator):
+                    tp, new_lvalue = node.lvalue.get_decl_pair()
+                    rvalue = self.visit(node.rvalue)
+                    return Assign(CName(new_lvalue), rvalue)
+            return Assign(self.visit(node.lvalue), self.visit(node.rvalue))
+
+    def unroll(self, node, factor, perfect=True):
+        import copy
+
+#        print "Called with %s", node.loopvar
+
+        new_increment = BinOp(node.increment, "*", CNumber(factor))
+
+        new_block = Block(contents=node.body.contents)
+        for x in xrange(1, factor):
+            new_extension = copy.deepcopy(node.body)
+            new_extension = LoopUnroller.UnrollReplacer(node.loopvar, x).visit(new_extension)
+            new_block.extend(new_extension.contents)
+
+        return For(node.loopvar, node.initial, node.end, new_increment, new_block)
+        
 

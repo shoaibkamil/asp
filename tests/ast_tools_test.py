@@ -47,7 +47,7 @@ class NodeVisitorTests(unittest.TestCase):
 
 
 class NodeTransformerTests(unittest.TestCase):
-    def test_for_pyhon_nodes(self):
+    def test_for_python_nodes(self):
         class Dummy(NodeTransformer):
             def visit_Name(self, _):            
                 return python_ast.Name("hi", False)
@@ -71,5 +71,38 @@ class NodeTransformerTests(unittest.TestCase):
         result = Dummy().visit(c)
         self.assertEqual(result.right.name, "hi")
         
+
+class LoopUnrollerTests(unittest.TestCase):
+    def test_unrolling_by_2(self):
+        # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
+        ast = For(
+            "i",
+            CNumber(0),
+            CNumber(7),
+            CNumber(1),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+        result = LoopUnroller().unroll(ast, 2)
+        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n}"
+        self.assertEqual(str(result), str(wanted_result))
+
+    def test_unrolling_by_4(self):
+    # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
+        ast = For(
+            "i",
+            CNumber(0),
+            CNumber(7),
+            CNumber(1),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+        result = LoopUnroller().unroll(ast, 4)
+        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 4)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n  a[(i + 3)] = (i + 3);\n}"
+
+        self.assertEqual(str(result), str(wanted_result))
+        
+        
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -43,6 +43,11 @@ class CName(Generable):
         yield self.__str__()
 
 class Expression(Generable):
+    def __init__(self):
+        super(Expression, self).__init__()
+        self._fields = []
+        
+
     def __str__(self):
         return ""
 
@@ -151,18 +156,22 @@ class TypeCast(Expression):
     # "type" should be a declaration with an empty variable name
     # e.g. TypeCast(Pointer(Value('int', '')), ...)
 
-    def __init__(self, type, value):
-        self.type = type
+    def __init__(self, tp, value):
+        self.tp = tp
         self.value = value
-        self._fields = ['type', 'value']
+        self._fields = ['tp', 'value']
 
     def __str__(self):
-        return "((%s)%s)" % (self.type.inline(), self.value)
+        return "((%s)%s)" % (self.tp.inline(), self.value)
+
+class ForInitializer(codepy.cgen.Initializer):
+    def __str__(self):
+        return super(ForInitializer, self).__str__()[0:-1]
 
 
-class For(codepy.cgen.For):
+class RawFor(codepy.cgen.For):
     def __init__(self, start, condition, update, body):
-        super(For, self).__init__(start, condition, update, body)
+        super(RawFor, self).__init__(start, condition, update, body)
         self._fields = ['start', 'condition', 'update', 'body']
 
     def to_xml(self):
@@ -184,6 +193,25 @@ class For(codepy.cgen.For):
             
         ElementTree.SubElement(node, "body").append(self.body.to_xml())
         return node
+
+class For(RawFor):
+    #TODO: setting initial,end,etc should update the field in the shadow
+    #TODO: should loopvar be a string or a CName?
+    def __init__(self, loopvar, initial, end, increment, body):
+        self.loopvar = loopvar
+        self.initial = initial
+        self.end = end
+        self.increment = increment
+        self._fields = ['start', 'condition', 'update', 'body']
+        super(For, self).__init__(
+            ForInitializer(Value("int", self.loopvar), self.initial),
+            BinOp(CName(self.loopvar), "<=", self.end),
+            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", increment)),
+            body)
+
+    def intro_line(self):
+        return "for (%s; %s; %s)" % (self.start, self.condition, str(self.update)[0:-1])
+
 
 class FunctionBody(codepy.cgen.FunctionBody):
     def __init__(self, fdecl, body):
@@ -266,4 +294,18 @@ class Assign(codepy.cgen.Assign):
         ElementTree.SubElement(node, "lvalue").append(self.lvalue.to_xml())
         ElementTree.SubElement(node, "rvalue").append(self.rvalue.to_xml())
         return node
-        
+
+    def generate(self):
+        lvalue = str(self.lvalue).rstrip().rstrip(';')
+        rvalue = str(self.rvalue)
+        yield "%s = %s;" % (lvalue, rvalue)
+
+class FunctionCall(codepy.cgen.Generable):
+    def __init__(self, fname, params=[]):
+        self.fname = fname
+        self.params = params
+        self._fields = ['fname', 'params']
+
+    def __str__(self):
+        return "%s(%s)" % (self.fname, ','.join(map(str, self.params)))
+

@@ -2,6 +2,13 @@ import unittest
 from asp.codegen.cpp_ast import *
 import xml.etree.ElementTree as ElementTree
 
+
+class ForTests(unittest.TestCase):
+    def test_init(self):
+        # For(loopvar, initial, end, increment)
+        f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
+        self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1))\n{\n}")
+
 class XMLTests(unittest.TestCase):
     def test_BinOp(self):
         t = BinOp(CNumber(5), '+', CName("foo"))
@@ -35,8 +42,8 @@ class XMLTests(unittest.TestCase):
         self.assertEqual(ElementTree.tostring(t.to_xml()),
                          "<ConditionalExpr><test><CName name=\"foo\" /></test><body><CName name=\"bar\" /></body><orelse><CName name=\"baz\" /></orelse></ConditionalExpr>")
 
-    def test_For(self):
-        t = For(CName("foo"), CName("bar"), CName("baz"), CName("bin"))
+    def test_RawFor(self):
+        t = RawFor(CName("foo"), CName("bar"), CName("baz"), CName("bin"))
         self.assertEqual(ElementTree.tostring(t.to_xml()),
                          "<For><start><CName name=\"foo\" /></start><condition><CName name=\"bar\" /></condition>"+
                          "<update><CName name=\"baz\" /></update><body><CName name=\"bin\" /></body></For>")

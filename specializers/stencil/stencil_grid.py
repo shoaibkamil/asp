@@ -16,6 +16,7 @@ class StencilGrid(object):
     # want this to be indexable
     def __getitem__(self, x):
         return self.data[x]
+
     def __setitem__(self, x, y):
         self.data[x] = y
 
@@ -57,7 +58,7 @@ class StencilGrid(object):
         import itertools
         all_dims = [range(self.ghost_depth,self.shape[x]-self.ghost_depth) for x in range(0,self.dim)]
         for item in itertools.product(*all_dims):
-            yield list(item)
+            yield tuple(item)
 
     def border_points(self):
         """
