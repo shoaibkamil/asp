@@ -169,6 +169,16 @@ class Stencil1dAnd3dTests(unittest.TestCase):
         self.assertEqual(self.out_grid[4], 2.0)
 
 
+    def test_3d_macro_definition(self):
+        in_grid = StencilGrid([10,10,10])
+        out_grid = StencilGrid([10,10,10])
+        argdict = {'in_grid':in_grid, 'out_grid':out_grid}
+
+        result = StencilKernel.StencilConvertAST(argdict).gen_array_macro_definition('in_grid')
+        import re
+#        self.assertTrue(re.match("#define _in_grid_array_macro(\w,\w,\w) (((\w
+        
+
 class VariantTests(unittest.TestCase):
     def test_no_regeneration_if_same_sizes(self):
         class My1DKernel(StencilKernel):

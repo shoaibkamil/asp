@@ -173,17 +173,27 @@ class StencilKernel(object):
             super(StencilKernel.StencilConvertAST, self).__init__()
 
         def gen_array_macro_definition(self, arg):
-            try:
-                array = self.argdict[arg]
-                defname = "_"+arg+"_array_macro"
-                params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
-                calc = "(_d%s)" % str(array.dim-1)
-                for x in range(1,array.dim):
-                    calc = "(%s + %s * (_d%s))" % (calc, str(array.shape[x-1]), str(array.dim-x-1))
-                return cpp_ast.Define(defname+params, calc)
+            array = self.argdict[arg]
+            defname = "_"+arg+"_array_macro"
+            params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
+            calc = "(_d%d" % (array.dim-1)
+            for x in range(0,array.dim-1):
+                calc += "+(_d%s * %s)" % (str(x), str(array.data.strides[x]/array.data.itemsize))
+            calc += ")"
+            return cpp_ast.Define(defname+params, calc)
 
-            except KeyError:
-                return cpp_ast.Comment("Not found argument: " + arg)
+        # def gen_array_macro_definition(self, arg):
+        #     try:
+        #         array = self.argdict[arg]
+        #         defname = "_"+arg+"_array_macro"
+        #         params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
+        #         calc = "(_d%s)" % str(array.dim-1)
+        #         for x in range(1,array.dim):
+        #             calc = "(%s + %s * (_d%s))" % (calc, str(array.shape[x-1]), str(array.dim-x-1))
+        #         return cpp_ast.Define(defname+params, calc)
+
+        #     except KeyError:
+        #         return cpp_ast.Comment("Not found argument: " + arg)
 
         def gen_array_macro(self, arg, point):
             name = "_%s_array_macro" % arg
@@ -200,8 +210,8 @@ class StencilKernel(object):
             return var
 
         def gen_array_unpack(self):
-            ret =  [cpp_ast.Assign(cpp_ast.Pointer(cpp_ast.Value("double", "_my_"+x)), 
-                    cpp_ast.TypeCast(cpp_ast.Pointer(cpp_ast.Value("double", "")), cpp_ast.FunctionCall(cpp_ast.CName("PyArray_DATA"), params=[cpp_ast.CName(x)])))
+            ret =  [cpp_ast.Assign(cpp_ast.Pointer(cpp_ast.Value("npy_double", "_my_"+x)), 
+                    cpp_ast.TypeCast(cpp_ast.Pointer(cpp_ast.Value("npy_double", "")), cpp_ast.FunctionCall(cpp_ast.CName("PyArray_DATA"), params=[cpp_ast.CName(x)])))
                     for x in self.argdict.keys()]
             print "HAHA:", map(str, ret)
             return ret
@@ -239,11 +249,11 @@ class StencilKernel(object):
                 if d == 0:
                     ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = ret_node
-                elif d == dim-2:
-                    pragma = cpp_ast.Pragma("omp parallel for")
-                    for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
-                    cur_node = for_node
+#                elif d == dim-2:
+#                    pragma = cpp_ast.Pragma("omp parallel for")
+#                    for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
+#                    cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
+#                    cur_node = for_node
                 else:
                     cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = cur_node.body
