@@ -34,14 +34,14 @@ class BasicTests(unittest.TestCase):
         # 2D
         grid = StencilGrid([5,5])
         pts = [x for x in grid.interior_points()]
-        self.failIf(pts[0] != [1,1])
+        self.failIf(list(pts[0]) != [1,1])
         self.failIf(len(pts) != 9)
 
     def test_interior_iterator_3D(self):
         # 3D
         grid = StencilGrid([5,5,5])
         pts = [x for x in grid.interior_points()]
-        self.failIf(pts[0] != [1,1,1])
+        self.failIf(list(pts[0]) != [1,1,1])
         self.failIf(len(pts) != 27)
     
     def test_neighbors_iterator(self):
