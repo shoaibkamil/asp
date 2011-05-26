@@ -1,4 +1,5 @@
 #!/bin/bash
+PYTHONPATH=../../:$PYTHONPATH
 
 if [ -z "${PYTHON}" ]
 then

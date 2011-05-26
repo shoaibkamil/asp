@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PYTHONPATH=../../:$PYTHONPATH
+
 echo PYTHONPATH
 echo ${PYTHONPATH}
 
