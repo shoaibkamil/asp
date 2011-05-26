@@ -239,7 +239,6 @@ class Pointer(codepy.cgen.Pointer):
     def __init__(self, subdecl):
         super(Pointer, self).__init__(subdecl)
         self._fields = ['subdecl']
-        print self.subdecl
         
     def to_xml(self):
         node = ElementTree.Element("Pointer")

@@ -90,22 +90,20 @@ class StencilKernel(object):
             mod.toolchain.cflags.remove('-fwrapv')
         else:
             mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
-        print mod.toolchain.cflags
+#        print mod.toolchain.cflags
         if mod.toolchain.cflags.count('-Os') > 0:
             mod.toolchain.cflags.remove('-Os')
         if mod.toolchain.cflags.count('-O2') > 0:
             mod.toolchain.cflags.remove('-O2')
-        print mod.toolchain.cflags
+        debug_print("toolchain" + str(mod.toolchain.cflags))
         mod.add_function_with_variants(variants, "kernel", variant_names)
 
         myargs = [y.data for y in args]
 
         mod.kernel(*myargs)
-	print "hHI"
 
         # save parameter sizes for next run
         self.specialized_sizes = [x.shape for x in args]
-        print self.specialized_sizes
 
     # the actual Stencil AST Node
     class StencilInteriorIter(ast.AST):
@@ -182,18 +180,6 @@ class StencilKernel(object):
             calc += ")"
             return cpp_ast.Define(defname+params, calc)
 
-        # def gen_array_macro_definition(self, arg):
-        #     try:
-        #         array = self.argdict[arg]
-        #         defname = "_"+arg+"_array_macro"
-        #         params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
-        #         calc = "(_d%s)" % str(array.dim-1)
-        #         for x in range(1,array.dim):
-        #             calc = "(%s + %s * (_d%s))" % (calc, str(array.shape[x-1]), str(array.dim-x-1))
-        #         return cpp_ast.Define(defname+params, calc)
-
-        #     except KeyError:
-        #         return cpp_ast.Comment("Not found argument: " + arg)
 
         def gen_array_macro(self, arg, point):
             name = "_%s_array_macro" % arg
@@ -213,10 +199,8 @@ class StencilKernel(object):
             ret =  [cpp_ast.Assign(cpp_ast.Pointer(cpp_ast.Value("npy_double", "_my_"+x)), 
                     cpp_ast.TypeCast(cpp_ast.Pointer(cpp_ast.Value("npy_double", "")), cpp_ast.FunctionCall(cpp_ast.CName("PyArray_DATA"), params=[cpp_ast.CName(x)])))
                     for x in self.argdict.keys()]
-            print "HAHA:", map(str, ret)
+
             return ret
-#            str = "double* _my_%s = (double *) PyArray_DATA(%s);"
-#            return '\n'.join([str % (x, x) for x in self.argdict.keys()])
         
         # all arguments are PyObjects
         def visit_arguments(self, node):
