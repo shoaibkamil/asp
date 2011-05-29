@@ -20,8 +20,8 @@ for y in [34, 66, 130, 258]:
 	cache_clear_grid = numpy.arange(258*258*258)
 
 
-	k = Heat3D()
-	for x in xrange(4):
+	k = Heat3D(with_cilk=True)
+	for x in xrange(8):
 		clear_cache(cache_clear_grid)
 		k.kernel(in_grid, out_grid)
 	print(k.mod.compiled_methods["kernel"].database.variant_times)

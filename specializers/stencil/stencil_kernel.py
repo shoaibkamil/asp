@@ -233,11 +233,11 @@ class StencilKernel(object):
                 if d == 0:
                     ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = ret_node
-#                elif d == dim-2:
-#                    pragma = cpp_ast.Pragma("omp parallel for")
-#                    for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-#                    cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
-#                    cur_node = for_node
+                elif d == dim-2:
+                    pragma = cpp_ast.Pragma("omp parallel for")
+                    for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
+                    cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
+                    cur_node = for_node
                 else:
                     cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = cur_node.body
@@ -324,7 +324,7 @@ class StencilKernel(object):
                 if d == 0:
                     ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = ret_node
-                elif d == dim-1:
+                elif d == dim-2:
                     cur_node.body = StencilKernel.StencilConvertASTCilk.CilkFor(dim_var, initial, end, increment, cpp_ast.Block())
                     cur_node = cur_node.body
                 else:

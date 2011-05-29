@@ -89,6 +89,8 @@ class ConvertAST(ast.NodeTransformer):
         return "*"
     def visit_Div(self, node):
         return "/"
+    def visit_Mod(self, node):
+        return "%"
 
     def visit_UnaryOp(self, node):
         return UnaryOp(self.visit(node.op),
@@ -138,6 +140,15 @@ class ConvertAST(ast.NodeTransformer):
     # only do the basic case: everything is void*,  no named args, no default values
     def visit_arguments(self, node):
         return [Pointer(Value("void",self.visit(x))) for x in node.args]
+
+    def visit_Call(self, node):
+        # we only handle calls that are casts; everything else (eventually) will be
+        # translated into callbacks into Python
+        if isinstance(node.func, ast.Name):
+            if node.func.id == "int":
+                return TypeCast(Value('int', ''), self.visit(node.args[0]))
+            if node.func.id == "abs":
+                return Call(CName("abs"), [self.visit(x) for x in node.args])
         
 
 class LoopUnroller(object):
