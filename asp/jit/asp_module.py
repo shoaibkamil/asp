@@ -18,17 +18,15 @@ class ASPModule(object):
     def __init__(self, use_cuda=False):
         self.compiled_methods = {}
         self.helper_method_names = []
-        self.backends = {}
-        self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
-                                          codepy.toolchain.guess_toolchain())
-        
 
-        #self.module = codepy.bpl.BoostPythonModule()
-        #self.toolchain = codepy.toolchain.guess_toolchain()
         self.cache_dir = "cache"
         self.dirty = False
         self.timing_enabled = True
         self.use_cuda = use_cuda
+
+        self.backends = {}
+        self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
+                                          codepy.toolchain.guess_toolchain())
         if use_cuda:
             #self.cuda_module = codepy.cuda.CudaModule(self.module)
             #self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
@@ -40,20 +38,20 @@ class ASPModule(object):
 
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[], backend="c++"):
-        #self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
         self.backends[backend].toolchain.add_library(feature, include_dirs, library_dirs, libraries)
         
     def add_cuda_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
         """
         Deprecated.  Use add_library(..., backend="cuda")
         """
-        self.nvcc_toolchain.add_library(feature, include_dirs, library_dirs, libraries)        
+        #self.nvcc_toolchain.add_library(feature, include_dirs, library_dirs, libraries)
+        self.add_library(feature, include_dirs, library_dirs, libraries, backend="cuda")
 
     def add_cuda_arch_spec(self, arch):
         archflag = '-arch='
         if 'sm_' not in arch: archflag += 'sm_' 
         archflag += arch
-        self.nvcc_toolchain.cflags += [archflag]
+        self.backends["cuda"].toolchain.cflags += [archflag]
 
     def add_header(self, include_file, backend="c++"):
         self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, False)])
@@ -62,7 +60,8 @@ class ASPModule(object):
         """
         Deprecated.  Use add_header(..., backend="cuda").
         """
-        self.cuda_module.add_to_preamble([cpp_ast.Include(include_file, False)])
+        #self.cuda_module.add_to_preamble([cpp_ast.Include(include_file, False)])
+        self.add_header(include_file, backend="cuda")
 
     def add_to_preamble(self, pa, backend="c++"):
         if isinstance(pa, str):
@@ -70,19 +69,24 @@ class ASPModule(object):
         self.backends[backend].module.add_to_preamble(pa)
 
     def add_to_cuda_preamble(self, pa):
+        """
+        Deprecated.  Use add_to_preamble(..., backend="cuda").
+        """
         if isinstance(pa, str):
             pa = [cpp_ast.Line(pa)]
-        self.cuda_module.add_to_preamble(pa)
-
+        self.add_to_preamble(pa, backend="cuda")
+        
     def add_to_init(self, stmt, backend="c++"):
         if isinstance(stmt, str):
             stmt = [cpp_ast.Line(stmt)]
         self.backends[backend].module.add_to_init(stmt)
 
     def add_to_cuda_module(self, block):
+        #FIXME: figure out use case for this and replace
         if isinstance(block, str):
             block = [cpp_ast.Line(block)]
-        self.cuda_module.add_to_module(block)
+        self.backends["cuda"].module.add_to_module(block)
+        
 
     def get_name_from_func(self, func):
         """
@@ -92,8 +96,10 @@ class ASPModule(object):
 
 
     def add_function_helper(self, func, fname=None, cuda_func=False, backend="c++"):
+        #FIXME: want to deprecate cuda_func parameter.  this should just pickup the module
+        #from the backend parameter.
         if cuda_func:
-            module = self.cuda_module
+            module = self.backends["cuda"].module
         else:
             module = self.backends["c++"].module
         
@@ -143,7 +149,7 @@ class ASPModule(object):
                 
     def compile(self):
         if self.use_cuda:
-            self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir=self.cache_dir)
+            self.compiled_module = self.backends["cuda"].module.compile(self.toolchain, self.backends["cuda"].toolchain, debug=True, cache_dir=self.cache_dir)
         else:
             self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain, debug=True, cache_dir=self.cache_dir)
         self.dirty = False
