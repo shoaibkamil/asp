@@ -28,9 +28,6 @@ class ASPModule(object):
         self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
                                           codepy.toolchain.guess_toolchain())
         if use_cuda:
-            #self.cuda_module = codepy.cuda.CudaModule(self.module)
-            #self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
-            #self.nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
             self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
                                                codepy.toolchain.guess_nvcc_toolchain())
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
@@ -44,7 +41,6 @@ class ASPModule(object):
         """
         Deprecated.  Use add_library(..., backend="cuda")
         """
-        #self.nvcc_toolchain.add_library(feature, include_dirs, library_dirs, libraries)
         self.add_library(feature, include_dirs, library_dirs, libraries, backend="cuda")
 
     def add_cuda_arch_spec(self, arch):
@@ -60,7 +56,6 @@ class ASPModule(object):
         """
         Deprecated.  Use add_header(..., backend="cuda").
         """
-        #self.cuda_module.add_to_preamble([cpp_ast.Include(include_file, False)])
         self.add_header(include_file, backend="cuda")
 
     def add_to_preamble(self, pa, backend="c++"):
