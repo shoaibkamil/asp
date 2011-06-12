@@ -28,7 +28,7 @@ class ASPModule(object):
         self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
                                           codepy.toolchain.guess_toolchain())
         if use_cuda:
-            self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
+            self.backends["cuda"] = ASPModule.ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
                                                codepy.toolchain.guess_nvcc_toolchain())
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
 
@@ -144,9 +144,12 @@ class ASPModule(object):
                 
     def compile(self):
         if self.use_cuda:
-            self.compiled_module = self.backends["cuda"].module.compile(self.toolchain, self.backends["cuda"].toolchain, debug=True, cache_dir=self.cache_dir)
+            self.compiled_module = self.backends["cuda"].module.compile(self.backends["c++"].module,
+                                                                        self.backends["cuda"].toolchain,
+                                                                        debug=True, cache_dir=self.cache_dir)
         else:
-            self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain, debug=True, cache_dir=self.cache_dir)
+            self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain,
+                                                                       debug=True, cache_dir=self.cache_dir)
         self.dirty = False
         
     def specialized_func(self, name):
