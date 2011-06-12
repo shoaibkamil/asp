@@ -5,26 +5,48 @@ import pickle
 from variant_history import *
 
 class ASPModule(object):
+
+    class ASPBackend(object):
+        """
+        Class to encapsulate a backend for Asp.  A backend is the combination of a module
+        (which contains the actual functions) and a compiler toolchain.
+        """
+        def __init__(self, module, toolchain):
+            self.module = module
+            self.toolchain = toolchain
     
     def __init__(self, use_cuda=False):
         self.compiled_methods = {}
         self.helper_method_names = []
-        self.module = codepy.bpl.BoostPythonModule()
-        self.toolchain = codepy.toolchain.guess_toolchain()
+        self.backends = {}
+        self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
+                                          codepy.toolchain.guess_toolchain())
+        
+
+        #self.module = codepy.bpl.BoostPythonModule()
+        #self.toolchain = codepy.toolchain.guess_toolchain()
         self.cache_dir = "cache"
         self.dirty = False
         self.timing_enabled = True
         self.use_cuda = use_cuda
         if use_cuda:
-            self.cuda_module = codepy.cuda.CudaModule(self.module)
-            self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
-            self.nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
+            #self.cuda_module = codepy.cuda.CudaModule(self.module)
+            #self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
+            #self.nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
+            self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
+                                               codepy.toolchain.guess_nvcc_toolchain())
+            self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
 
 
-    def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
-        self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
 
+    def add_library(self, feature, include_dirs, library_dirs=[], libraries=[], backend="c++"):
+        #self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
+        self.backends[backend].toolchain.add_library(feature, include_dirs, library_dirs, libraries)
+        
     def add_cuda_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
+        """
+        Deprecated.  Use add_library(..., backend="cuda")
+        """
         self.nvcc_toolchain.add_library(feature, include_dirs, library_dirs, libraries)        
 
     def add_cuda_arch_spec(self, arch):
@@ -33,26 +55,29 @@ class ASPModule(object):
         archflag += arch
         self.nvcc_toolchain.cflags += [archflag]
 
-    def add_header(self, include_file):
-        self.module.add_to_preamble([cpp_ast.Include(include_file, False)])
+    def add_header(self, include_file, backend="c++"):
+        self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, False)])
 
     def add_cuda_header(self, include_file):
+        """
+        Deprecated.  Use add_header(..., backend="cuda").
+        """
         self.cuda_module.add_to_preamble([cpp_ast.Include(include_file, False)])
 
-    def add_to_preamble(self, pa):
+    def add_to_preamble(self, pa, backend="c++"):
         if isinstance(pa, str):
             pa = [cpp_ast.Line(pa)]
-        self.module.add_to_preamble(pa)
+        self.backends[backend].module.add_to_preamble(pa)
 
     def add_to_cuda_preamble(self, pa):
         if isinstance(pa, str):
             pa = [cpp_ast.Line(pa)]
         self.cuda_module.add_to_preamble(pa)
 
-    def add_to_init(self, stmt):
+    def add_to_init(self, stmt, backend="c++"):
         if isinstance(stmt, str):
             stmt = [cpp_ast.Line(stmt)]
-        self.module.add_to_init(stmt)
+        self.backends[backend].module.add_to_init(stmt)
 
     def add_to_cuda_module(self, block):
         if isinstance(block, str):
@@ -66,11 +91,11 @@ class ASPModule(object):
         return func.fdecl.subdecl.name
 
 
-    def add_function_helper(self, func, fname=None, cuda_func=False):
+    def add_function_helper(self, func, fname=None, cuda_func=False, backend="c++"):
         if cuda_func:
             module = self.cuda_module
         else:
-            module = self.module
+            module = self.backends["c++"].module
         
         if isinstance(func, str):
             if fname == None:
@@ -120,7 +145,7 @@ class ASPModule(object):
         if self.use_cuda:
             self.compiled_module = self.cuda_module.compile(self.toolchain, self.nvcc_toolchain, debug=True, cache_dir=self.cache_dir)
         else:
-            self.compiled_module = self.module.compile(self.toolchain, debug=True, cache_dir=self.cache_dir)
+            self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain, debug=True, cache_dir=self.cache_dir)
         self.dirty = False
         
     def specialized_func(self, name):
