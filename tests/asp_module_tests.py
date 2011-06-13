@@ -1,5 +1,6 @@
 import unittest2 as unittest
 import asp.jit.asp_module as asp_module
+from mock import Mock
 
 class TimerTest(unittest.TestCase):
     def test_timer(self):
@@ -8,6 +9,28 @@ class TimerTest(unittest.TestCase):
 #         mod.add_function("void test(){;;;;}", "test")
 # #        mod.test()
 #         self.failUnless("test" in mod.times.keys())
+
+
+
+class SpecializedFunctionTests(unittest.TestCase):
+
+    def test_creating(self):
+        a = asp_module.SpecializedFunction("foo", None)
+        self.assertEqual(a.dirty, True)
+
+    def test_add_variant(self):
+        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        
+        a = asp_module.SpecializedFunction("foo", mock_backend)
+        a.add_variant("foo_1", "void foo_1(){return;}")
+        self.assertEqual(a.variant_names[0], "foo_1")
+        self.assertEqual(len(a.variant_funcs), 1)
+
+        # also check to make sure the backend added the function
+        self.assertTrue(mock_backend.module.add_function.called)
+
+        self.assertRaises(Exception, a.add_variant, "foo_1", None)
+
     
 
 class SingleFuncTests(unittest.TestCase):

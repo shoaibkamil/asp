@@ -18,12 +18,19 @@ class SpecializedFunction(object):
         self.variant_names = variant_names
         self.variant_funcs = variant_funcs
         self.backend = backend
+        self.dirty = True #FIXME: is this necessary here?
 
     def add_variant(self, variant_name, variant_func):
         """
-        Add a variant of this function.  Must have same call signature.
+        Add a variant of this function.  Must have same call signature.  Variant names must be unique.
+        The variant_func parameter should be a CodePy Function object or a string defining the function.
         """
-        pass
+        if variant_name in self.variant_names:
+            raise Exception("Attempting to add a variant with an already existing name %s to %s" %
+                            (variant_name, self.name))
+        self.variant_names.append(variant_name)
+        self.variant_funcs.append(variant_func)
+        self.backend.module.add_function(variant_func)
 
     def __call__(self, *args, **kwargs):
         """
