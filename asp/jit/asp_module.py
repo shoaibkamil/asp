@@ -4,12 +4,41 @@ import asp.codegen.cpp_ast as cpp_ast
 import pickle
 from variant_history import *
 
+
+class SpecializedFunction(object):
+    """
+    Class that encapsulates a function that is specialized.  It keeps track of variants,
+    their timing information, which backend, and whether the function is a helper function
+    or not.
+    """
+    
+    def __init__(self, name, backend, variant_names=[], variant_funcs=[], kind="regular"):
+        self.name = name
+        self.kind = kind
+        self.variant_names = variant_names
+        self.variant_funcs = variant_funcs
+        self.backend = backend
+
+    def add_variant(self, variant_name, variant_func):
+        """
+        Add a variant of this function.  Must have same call signature.
+        """
+        pass
+
+    def __call__(self, *args, **kwargs):
+        """
+        Calling an instance SpecializedFunction will actually call either the next variant to test,
+        or the already-determined best variant.
+        """
+        pass
+
+
 class ASPModule(object):
 
     class ASPBackend(object):
         """
-        Class to encapsulate a backend for Asp.  A backend is the combination of a module
-        (which contains the actual functions) and a compiler toolchain.
+        Class to encapsulate a backend for Asp.  A backend is the combination of a CodePy module
+        (which contains the actual functions) and a CodePy compiler toolchain.
         """
         def __init__(self, module, toolchain):
             self.module = module
