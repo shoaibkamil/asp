@@ -15,10 +15,12 @@ class SpecializedFunction(object):
     def __init__(self, name, backend, variant_names=[], variant_funcs=[], kind="regular"):
         self.name = name
         self.kind = kind
-        self.variant_names = variant_names
-        self.variant_funcs = variant_funcs
         self.backend = backend
+        self.variant_names = []
+        self.variant_funcs = []
         self.dirty = True #FIXME: is this necessary here?
+        for x in xrange(len(variant_names)):
+            self.add_variant(variant_names[x], variant_funcs[x])
 
     def add_variant(self, variant_name, variant_func):
         """
