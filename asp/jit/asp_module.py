@@ -83,7 +83,7 @@ class ASPModule(object):
         self.dirty = True
 
     def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), limit_funcs=None, compilable=None, param_names=None, cuda_func=False):
-        limit_funcs = limit_funcs or [lambda name, *args, **kwargs: True]*len(variant_names) 
+        limit_funcs = limit_funcs or [lambda *args, **kwargs: True]*len(variant_names)
         compilable = compilable or [True]*len(variant_names)
         param_names = param_names or ['Unknown']*len(variant_names)
         method_info = self.compiled_methods.get(func_name, None)
