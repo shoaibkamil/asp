@@ -18,6 +18,8 @@ class SpecializedFunction(object):
         self.backend = backend
         self.variant_names = []
         self.variant_funcs = []
+        self.variant_times = []
+        
         self.dirty = True #FIXME: is this necessary here?
         for x in xrange(len(variant_names)):
             self.add_variant(variant_names[x], variant_funcs[x])
@@ -39,8 +41,16 @@ class SpecializedFunction(object):
         Calling an instance SpecializedFunction will actually call either the next variant to test,
         or the already-determined best variant.
         """
-        pass
-
+        if len(self.variant_times) == len(self.variant_names):
+            return self.backend.module.__getattr__(self.variant_names[0]).__call__(*args, **kwargs)
+        else:
+            import time
+            
+            which = len(self.variant_times)
+            start = time.time()
+            ret_val =  self.backend.module.__getattr__(self.variant_names[which]).__call__(*args, **kwargs)
+            self.variant_times.append(time.time() - start)
+            return ret_val
 
 class ASPModule(object):
 
@@ -52,6 +62,7 @@ class ASPModule(object):
         def __init__(self, module, toolchain):
             self.module = module
             self.toolchain = toolchain
+
     
     def __init__(self, use_cuda=False):
         self.compiled_methods = {}

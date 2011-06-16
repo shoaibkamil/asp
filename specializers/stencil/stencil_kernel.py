@@ -112,6 +112,7 @@ class StencilKernel(object):
 
         # package arguments
         myargs = [y.data for y in args]
+        print myargs
         # and do the call 
         mod.kernel(*myargs)
 

@@ -13,32 +13,59 @@ class TimerTest(unittest.TestCase):
 
 
 class SpecializedFunctionTests(unittest.TestCase):
-    def setUp(self):
-        self.mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        
 
     def test_creating(self):
         a = asp_module.SpecializedFunction("foo", None)
         self.assertEqual(a.dirty, True)
 
-    def test_add_variant(self):
-        
-        a = asp_module.SpecializedFunction("foo", self.mock_backend)
+    def test_add_variant(self):        
+        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        a = asp_module.SpecializedFunction("foo", mock_backend)
         a.add_variant("foo_1", "void foo_1(){return;}")
         self.assertEqual(a.variant_names[0], "foo_1")
         self.assertEqual(len(a.variant_funcs), 1)
 
         # also check to make sure the backend added the function
-        self.assertTrue(self.mock_backend.module.add_function.called)
+        self.assertTrue(mock_backend.module.add_function.called)
 
         self.assertRaises(Exception, a.add_variant, "foo_1", None)
 
     def test_add_variant_at_instantiation(self):
-        a = asp_module.SpecializedFunction("foo", self.mock_backend,
+        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        a = asp_module.SpecializedFunction("foo", mock_backend,
                                            ["foo_1"], ["void foo_1(){return;}"])
         self.assertEqual(len(a.variant_funcs), 1)
-        self.assertTrue(self.mock_backend.module.add_function.called)
+        self.assertTrue(mock_backend.module.add_function.called)
 
-    
+    def test_call(self):
+        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        a = asp_module.SpecializedFunction("foo", mock_backend)
+        a.add_variant("foo_1", "void foo_1(){return;}")
+        # test a call
+        a()
+
+        # it should call foo() on the backend module
+        self.assertTrue(mock_backend.module.foo_1.called)
+
+    def test_calling_with_multiple_variants(self):
+        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        a = asp_module.SpecializedFunction("foo", mock_backend)
+        a.add_variant("foo_1", "void foo_1(){return;}")
+        a.add_variant("foo_2", "void foo_2(){}")
+        
+        # test 2 calls
+        a()
+        a()
+
+        # it should call both variants on the backend module
+        self.assertTrue(mock_backend.module.foo_1.called)
+        self.assertTrue(mock_backend.module.foo_2.called)
+        
+        
+
+
+        
 
 class SingleFuncTests(unittest.TestCase):
     pass
