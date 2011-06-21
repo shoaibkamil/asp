@@ -46,11 +46,23 @@ class StencilKernel(object):
         if self.pure_python:
             return self.pure_python_kernel(*args)
 
+        #FIXME: instead of doing this short-circuit, we should use the Asp infrastructure to
+        # do it, by passing in a lambda that does this check
         # if already specialized to these sizes, just run
         if self.specialized_sizes and self.specialized_sizes == [y.shape for y in args]:
             print "match!"
             self.mod.kernel(*[y.data for y in args])
             return
+
+        # otherwise, do the first-run flow
+
+        # check if we can specialize for this data
+        #FIXME: impelement.
+
+        # ask asp infrastructure for machine and platform info, including if cilk+ is available
+        #FIXME: impelement.  set self.with_cilk=true if cilk is available
+        
+        
 
         #FIXME: need to somehow match arg names to args
         argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
@@ -59,10 +71,15 @@ class StencilKernel(object):
 
         phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
         debug_print(ast.dump(phase2))
+
+        
+        # depending on whether cilk is available, we choose which converter to use
         if not self.with_cilk:
             Converter = StencilKernel.StencilConvertAST
         else:
             Converter = StencilKernel.StencilConvertASTCilk
+
+        # generate variant with no unrolling, then generate variants for various unrollings
         variants = [Converter(argdict).visit(phase2)]
         variant_names = ["kernel_unroll_1"]
         for x in [2,4,8,16,32,64]:
@@ -74,11 +91,6 @@ class StencilKernel(object):
                 variants.append(Converter(argdict, unroll_factor=x).visit(phase2))
                 variant_names.append("kernel_unroll_%s" % x)
 
-#        print [x.name for x in variants]
-
-#                import pickle
-#                pickle.dump(phase3, open("out_ast", 'w'))
-                
         from asp.jit import asp_module
 
         mod = self.mod = asp_module.ASPModule()
@@ -98,8 +110,9 @@ class StencilKernel(object):
         debug_print("toolchain" + str(mod.toolchain.cflags))
         mod.add_function_with_variants(variants, "kernel", variant_names)
 
+        # package arguments
         myargs = [y.data for y in args]
-
+        # and do the call 
         mod.kernel(*myargs)
 
         # save parameter sizes for next run

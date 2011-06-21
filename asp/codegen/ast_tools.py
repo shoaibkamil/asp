@@ -73,6 +73,9 @@ class ConvertAST(ast.NodeTransformer):
     def visit_Num(self, node):
         return CNumber(node.n)
 
+    def visit_Str(self, node):
+        return String(node.s)
+
     def visit_Name(self, node):
         return CName(node.id)
 
@@ -149,7 +152,13 @@ class ConvertAST(ast.NodeTransformer):
                 return TypeCast(Value('int', ''), self.visit(node.args[0]))
             if node.func.id == "abs":
                 return Call(CName("abs"), [self.visit(x) for x in node.args])
-        
+
+    def visit_Print(self, node):
+        text = str(self.visit(node.values[0])) if len(node.values) > 0 else ''
+        for fragment in node.values[1:]:
+            text += ' << \" \" << ' + str(self.visit(fragment))
+        return Print(text, node.nl)
+
 
 class LoopUnroller(object):
     class UnrollReplacer(NodeTransformer):

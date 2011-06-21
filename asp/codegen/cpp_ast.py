@@ -25,6 +25,13 @@ class CNumber(Generable):
             raise ValueError
         yield self.__str__()
 
+class String(Generable):
+    def __init__(self, text):
+        self.text = text
+
+    def generate(self):
+        yield '\"%s\"' % self.text
+
 class CName(Generable):
     def __init__(self, name):
         self.name = name
@@ -309,3 +316,13 @@ class FunctionCall(codepy.cgen.Generable):
     def __str__(self):
         return "%s(%s)" % (self.fname, ','.join(map(str, self.params)))
 
+class Print(Generable):
+    def __init__(self, text, newline):
+        self.text = text
+        self.newline = newline
+
+    def generate(self):
+        if self.newline:
+            yield 'std::cout << %s << std::endl;' % self.text
+        else:
+            yield 'std::cout << %s;' % self.text
