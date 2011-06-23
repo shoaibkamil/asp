@@ -153,14 +153,23 @@ class SingleFuncTests(unittest.TestCase):
         m.foo()
 
 
-"""
-
 class MultipleFuncTests(unittest.TestCase):
-    def test_adding_multiple_funcs(self):
+    def test_adding_multiple_variants(self):
         mod = asp_module.ASPModule()
-        mod.add_function("void test(){return;}", fname="test")
-        mod.add_function("void another(){return;}", fname="another")
-        mod.compile()
+        mod.add_function("foo", ["void foo_1(){};", "void foo_2(){};"],
+                         ["foo_1", "foo_2"])
+        self.assertTrue("foo_1" in mod.specialized_functions["foo"].variant_names)
+
+    def test_running_multiple_variants(self):
+        mod = asp_module.ASPModule()
+        mod = asp_module.ASPModule()
+        mod.add_function("foo", ["void foo_1(){};", "void foo_2(){};"],
+                         ["foo_1", "foo_2"])
+        mod.foo()
+        mod.foo()
+
+        self.assertEqual(len(mod.specialized_functions["foo"].variant_times), 2)
+"""
 
 
     def test_adding_multiple_versions(self):

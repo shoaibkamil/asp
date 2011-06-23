@@ -272,9 +272,12 @@ class ASPModule(object):
     #         self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
 
     def add_function(self, fname, funcs, variant_names=None, backend="c++"):
+        if not isinstance(funcs, list):
+            funcs = [funcs]
+            variant_names = [fname]
 
-        self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], variant_names=[fname],
-                                                                          variant_funcs=[funcs], kind="regular")
+        self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], variant_names,
+                                                                variant_funcs=funcs, kind="regular")
 
     def add_helper_function(self, fname, cuda_func=False):
         self.add_function_helper("", fname=fname, cuda_func=cuda_func)
