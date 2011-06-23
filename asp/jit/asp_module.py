@@ -84,69 +84,31 @@ class SpecializedFunction(object):
                             (variant_name, self.name))
         self.variant_names.append(variant_name)
         self.variant_funcs.append(variant_func)
-        self.backend.module.add_function(variant_func)
-
-    def __call__(self, *args, **kwargs):
-        """
-        Calling an instance SpecializedFunction will actually call either the next variant to test,
-        or the already-determined best variant.
-        """
-        if len(self.variant_times) == len(self.variant_names):
-            return self.backend.module.__getattr__(self.variant_names[0]).__call__(*args, **kwargs)
-        else:
-            import time
-            
-            which = len(self.variant_times)
-            start = time.time()
-            ret_val =  self.backend.module.__getattr__(self.variant_names[which]).__call__(*args, **kwargs)
-            self.variant_times.append(time.time() - start)
-            return ret_val
-
-
-class SpecializedFunction(object):
-    """
-    Class that encapsulates a function that is specialized.  It keeps track of variants,
-    their timing information, which backend, and whether the function is a helper function
-    or not.
-    """
-    
-    def __init__(self, name, backend, variant_names=[], variant_funcs=[], kind="regular"):
-        self.name = name
-        self.kind = kind
-        self.backend = backend
-        self.variant_names = []
-        self.variant_funcs = []
-        self.variant_times = []
         
-        self.dirty = True #FIXME: is this necessary here?
-        for x in xrange(len(variant_names)):
-            self.add_variant(variant_names[x], variant_funcs[x])
-
-    def add_variant(self, variant_name, variant_func):
-        """
-        Add a variant of this function.  Must have same call signature.  Variant names must be unique.
-        The variant_func parameter should be a CodePy Function object or a string defining the function.
-        """
-        if variant_name in self.variant_names:
-            raise Exception("Attempting to add a variant with an already existing name %s to %s" %
-                            (variant_name, self.name))
-        self.variant_names.append(variant_name)
-        self.variant_funcs.append(variant_func)
-        self.backend.module.add_function(variant_func)
+        if isinstance(variant_func, str):
+            self.backend.module.add_to_module([cpp_ast.Line(variant_func)])
+            self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
+        else:
+            self.backend.module.add_function(variant_func)
 
     def __call__(self, *args, **kwargs):
         """
         Calling an instance SpecializedFunction will actually call either the next variant to test,
         or the already-determined best variant.
         """
+        if self.dirty:
+            self.backend.compile()
+            self.dirty = False
+
         if len(self.variant_times) == len(self.variant_names):
-            return self.backend.module.__getattr__(self.variant_names[0]).__call__(*args, **kwargs)
+            return self.backend.get_compiled_function(self.variant_names[0]).__call__(*args, **kwargs)
         else:
             import time
             
             which = len(self.variant_times)
             start = time.time()
-            ret_val =  self.backend.module.__getattr__(self.variant_names[which]).__call__(*args, **kwargs)
+            ret_val = self.backend.get_compiled_function(self.variant_names[which]).__call__(*args, **kwargs)
+
             self.variant_times.append(time.time() - start)
             return ret_val
 
@@ -160,10 +122,28 @@ class ASPModule(object):
         def __init__(self, module, toolchain):
             self.module = module
             self.toolchain = toolchain
+            self.compiled_module = None
+            self.cache_dir="cache"
+
+        def compile(self):
+            #FIXME: different code path for cuda
+            self.compiled_module = self.module.compile(self.toolchain,
+                                                       debug=True, cache_dir=self.cache_dir)
+        def get_compiled_function(self, name):
+            """
+            Return a callable for a raw compiled function (that is, this must be a variant name rather than
+            a function name).
+            """
+            try:
+                func = getattr(self.compiled_module, name)
+            except:
+                raise Error("Function %s not found in compiled module." % (name,))
+
+            return func
 
     
     def __init__(self, use_cuda=False):
-        self.compiled_methods = {}
+        self.specialized_functions= {}
         self.helper_method_names = []
 
         self.cache_dir = "cache"
@@ -237,54 +217,64 @@ class ASPModule(object):
         return func.fdecl.subdecl.name
 
 
-    def add_function_helper(self, func, fname=None, cuda_func=False, backend="c++"):
+#    def add_function_helper(self, func, fname=None, cuda_func=False, backend="c++"):
         #FIXME: want to deprecate cuda_func parameter.  this should just pickup the module
         #from the backend parameter.
-        if cuda_func:
-            module = self.backends["cuda"].module
-        else:
-            module = self.backends["c++"].module
-        
-        if isinstance(func, str):
-            if fname == None:
-                raise Exception("Cannot add a function as a string without specifying the function's name")
-            module.add_to_module([cpp_ast.Line(func)])
-            module.add_to_init([cpp_ast.Statement(
-                        "boost::python::def(\"%s\", &%s)" % (fname, fname))])
-        else:
-            module.add_function(func)
-        self.dirty = True
 
-    def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), limit_funcs=None, compilable=None, param_names=None, cuda_func=False):
-        limit_funcs = limit_funcs or [lambda *args, **kwargs: True]*len(variant_names)
+        # OLD code:
+        # if cuda_func:
+        #     module = self.backends["cuda"].module
+        # else:
+        #     module = self.backends["c++"].module
         
-        compilable = compilable or [True]*len(variant_names)
-        param_names = param_names or ['Unknown']*len(variant_names)
-        method_info = self.compiled_methods.get(func_name, None)
-        if not method_info:
-            method_info = CodeVariants(variant_names, key_maker, param_names)
-            method_info.limiter.append(variant_names, limit_funcs, compilable)
-        else:
-            method_info.append(variant_names)
-            method_info.database.clear_oracle()
-            method_info.limiter.append(variant_names, limit_funcs, compilable)
-        for x in range(0,len(variant_funcs)):
-            self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
-        self.compiled_methods[func_name] = method_info
+        # if isinstance(func, str):
+        #     if fname == None:
+        #         raise Exception("Cannot add a function as a string without specifying the function's name")
+        #     module.add_to_module([cpp_ast.Line(func)])
+        #     module.add_to_init([cpp_ast.Statement(
+        #                 "boost::python::def(\"%s\", &%s)" % (fname, fname))])
+        # else:
+        #     module.add_function(func)
+        # self.dirty = True
 
-    def add_function(self, funcs, fname=None, variant_names=None, cuda_func=False):
-        """
-        self.add_function(func) takes func as either a generable AST or a string, or
-        list of variants in either format.
-        """
-        if variant_names:
-            self.add_function_with_variants(funcs, fname, variant_names, cuda_func=cuda_func)
-        else:
-            variant_funcs = [funcs]
-            if not fname:
-                fname = self.get_name_from_func(funcs)
-            variant_names = [fname]
-            self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
+
+        
+
+    # def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), limit_funcs=None, compilable=None, param_names=None, cuda_func=False):
+        
+    #     limit_funcs = limit_funcs or [lambda name, *args, **kwargs: True]*len(variant_names) 
+    #     compilable = compilable or [True]*len(variant_names)
+    #     param_names = param_names or ['Unknown']*len(variant_names)
+    #     method_info = self.compiled_methods.get(func_name, None)
+    #     if not method_info:
+    #         method_info = CodeVariants(variant_names, key_maker, param_names)
+    #         method_info.limiter.append(variant_names, limit_funcs, compilable)
+    #     else:
+    #         method_info.append(variant_names)
+    #         method_info.database.clear_oracle()
+    #         method_info.limiter.append(variant_names, limit_funcs, compilable)
+    #     for x in range(0,len(variant_funcs)):
+    #         self.add_function_helper(variant_funcs[x], fname=variant_names[x], cuda_func=cuda_func)
+    #     self.compiled_methods[func_name] = method_info
+
+    # def add_function(self, funcs, fname=None, variant_names=None, cuda_func=False):
+    #     """
+    #     self.add_function(func) takes func as either a generable AST or a string, or
+    #     list of variants in either format.
+    #     """
+    #     if variant_names:
+    #         self.add_function_with_variants(funcs, fname, variant_names, cuda_func=cuda_func)
+    #     else:
+    #         variant_funcs = [funcs]
+    #         if not fname:
+    #             fname = self.get_name_from_func(funcs)
+    #         variant_names = [fname]
+    #         self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
+
+    def add_function(self, fname, funcs, variant_names=None, backend="c++"):
+
+        self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], variant_names=[fname],
+                                                                          variant_funcs=[funcs], kind="regular")
 
     def add_helper_function(self, fname, cuda_func=False):
         self.add_function_helper("", fname=fname, cuda_func=cuda_func)
@@ -345,10 +335,10 @@ class ASPModule(object):
         method_info.database.clear()
 
     def __getattr__(self, name):
-        if name in self.compiled_methods:
+        if name in self.specialized_functions:
             if self.dirty:
                 self.compile()
-            return self.specialized_func(name)
+            return self.specialized_functions[name]
         elif name in self.helper_method_names:
             return self.helper_func(name)
         else:

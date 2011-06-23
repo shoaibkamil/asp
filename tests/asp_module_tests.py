@@ -1,5 +1,6 @@
 import unittest2 as unittest
 import asp.jit.asp_module as asp_module
+import asp.codegen.cpp_ast as cpp_ast 
 from mock import Mock
 
 class TimerTest(unittest.TestCase):
@@ -92,7 +93,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         self.assertEqual(len(a.variant_funcs), 1)
 
         # also check to make sure the backend added the function
-        self.assertTrue(mock_backend.module.add_function.called)
+        self.assertTrue(mock_backend.module.add_to_module.called)
 
         self.assertRaises(Exception, a.add_variant, "foo_1", None)
 
@@ -101,20 +102,31 @@ class SpecializedFunctionTests(unittest.TestCase):
         a = asp_module.SpecializedFunction("foo", mock_backend,
                                            ["foo_1"], ["void foo_1(){return;}"])
         self.assertEqual(len(a.variant_funcs), 1)
-        self.assertTrue(mock_backend.module.add_function.called)
+        self.assertTrue(mock_backend.module.add_to_module.called)
 
     def test_call(self):
-        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        # this is a complicated situation.  we want the backend to have a fake
+        # module, and that fake module should return a fake compiled module.
+        # we'll cheat by just returning itself.
+        mock_backend_module = Mock()
+        mock_backend_module.compile.return_value = mock_backend_module
+        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
         a = asp_module.SpecializedFunction("foo", mock_backend)
         a.add_variant("foo_1", "void foo_1(){return;}")
         # test a call
         a()
 
         # it should call foo() on the backend module
-        self.assertTrue(mock_backend.module.foo_1.called)
+        self.assertTrue(mock_backend_module.foo_1.called)
 
     def test_calling_with_multiple_variants(self):
-        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        # this is a complicated situation.  we want the backend to have a fake
+        # module, and that fake module should return a fake compiled module.
+        # we'll cheat by just returning itself.
+        mock_backend_module = Mock()
+        mock_backend_module.compile.return_value = mock_backend_module
+        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+
         a = asp_module.SpecializedFunction("foo", mock_backend)
         a.add_variant("foo_1", "void foo_1(){return;}")
         a.add_variant("foo_2", "void foo_2(){}")
@@ -124,12 +136,24 @@ class SpecializedFunctionTests(unittest.TestCase):
         a()
 
         # it should call both variants on the backend module
-        self.assertTrue(mock_backend.module.foo_1.called)
-        self.assertTrue(mock_backend.module.foo_2.called)
+        self.assertTrue(mock_backend_module.foo_1.called)
+        self.assertTrue(mock_backend_module.foo_2.called)
+
+class SingleFuncTests(unittest.TestCase):
+    def test_adding_function(self):
+        m = asp_module.ASPModule()
+        m.add_function("foo", "void foo(){return;}")
+
+        self.assertTrue(isinstance(m.specialized_functions["foo"],
+                                   asp_module.SpecializedFunction))
+
+    def test_adding_and_calling(self):
+        m = asp_module.ASPModule()
+        m.add_function("foo", "void foo(){return;}")
+        m.foo()
+
 
 """
-class SingleFuncTests(unittest.TestCase):
-    pass
 
 class MultipleFuncTests(unittest.TestCase):
     def test_adding_multiple_funcs(self):
