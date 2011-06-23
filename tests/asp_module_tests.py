@@ -83,7 +83,6 @@ class SpecializedFunctionTests(unittest.TestCase):
 
     def test_creating(self):
         a = asp_module.SpecializedFunction("foo", None)
-        self.assertEqual(a.dirty, True)
 
     def test_add_variant(self):        
         mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)

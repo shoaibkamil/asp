@@ -1,4 +1,4 @@
-import codepy, codepy.jit, codepy.toolchain, codepy.bpl
+import codepy, codepy.jit, codepy.toolchain, codepy.bpl, codepy.cuda
 from asp.util import *
 import asp.codegen.cpp_ast as cpp_ast
 import pickle
@@ -70,7 +70,6 @@ class SpecializedFunction(object):
         self.variant_funcs = []
         self.variant_times = []
         
-        self.dirty = True #FIXME: is this necessary here?
         for x in xrange(len(variant_names)):
             self.add_variant(variant_names[x], variant_funcs[x])
 
@@ -91,14 +90,15 @@ class SpecializedFunction(object):
         else:
             self.backend.module.add_function(variant_func)
 
+        self.backend.dirty = True
+
     def __call__(self, *args, **kwargs):
         """
         Calling an instance SpecializedFunction will actually call either the next variant to test,
         or the already-determined best variant.
         """
-        if self.dirty:
+        if self.backend.dirty:
             self.backend.compile()
-            self.dirty = False
 
         if len(self.variant_times) == len(self.variant_names):
             return self.backend.get_compiled_function(self.variant_names[0]).__call__(*args, **kwargs)
@@ -124,11 +124,22 @@ class ASPModule(object):
             self.toolchain = toolchain
             self.compiled_module = None
             self.cache_dir="cache"
+            self.dirty = True
 
         def compile(self):
-            #FIXME: different code path for cuda
-            self.compiled_module = self.module.compile(self.toolchain,
-                                                       debug=True, cache_dir=self.cache_dir)
+            """
+            Trigger a compile of this backend.  Note that CUDA needs to know about the C++
+            backend as well.
+            """
+            if isinstance(self.module, codepy.cuda.CudaModule):
+                self.compiled_module = self.backends["cuda"].module.compile(self.module.boost_module,
+                                                                            self.backends["cuda"].toolchain,
+                                                                            debug=True, cache_dir=self.cache_dir)
+            else:
+                self.compiled_module = self.module.compile(self.toolchain,
+                                                           debug=True, cache_dir=self.cache_dir)
+            self.dirty = False
+
         def get_compiled_function(self, name):
             """
             Return a callable for a raw compiled function (that is, this must be a variant name rather than
