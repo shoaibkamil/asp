@@ -10,6 +10,71 @@ class TimerTest(unittest.TestCase):
 # #        mod.test()
 #         self.failUnless("test" in mod.times.keys())
 
+class AspDBTests(unittest.TestCase):
+    def test_creating(self):
+        db = asp_module.AspDB("test_specializer")
+
+    def test_create_db_if_nonexistent(self):
+        db = asp_module.AspDB("test")
+        self.assertTrue(db.connection)
+    
+    def test_create_table(self):
+        db = asp_module.AspDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+        db.create_specializer_table()
+
+        db.connection.execute.assert_called_with(
+            'create table test (fname text, key text, perf real)')
+
+    def test_insert(self):
+        db = asp_module.AspDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+        db.table_exists = Mock(return_value = True)
+        db.create_specializer_table()
+
+        db.insert("func", "KEY", 4.321)
+
+        db.connection.execute.assert_called_with(
+                'insert into test values (?,?,?)', ("func", "KEY", 4.321))
+
+    def test_create_if_insert_into_nonexistent_table(self):
+        db = asp_module.AspDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+
+        # this is kind of a complicated situation.  we want the cursor to
+        # return an array when fetchall() is called on it, and we want this
+        # cursor to be created when the mock connection is asked for a cursor
+
+        mock_cursor = Mock()
+        mock_cursor.fetchall.return_value = []
+        db.connection.cursor.return_value = mock_cursor
+        db.create_specializer_table = Mock()
+
+        db.insert("func", "KEY", 4.321)
+
+        self.assertTrue(db.create_specializer_table.called)
+
+    def test_get(self):
+        db = asp_module.AspDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+        db.table_exists = Mock(return_value = True)
+        db.create_specializer_table()
+
+        # see note about mocks in test_create_if...
+
+        mock_cursor = Mock()
+        mock_cursor.fetchall.return_value = ['hello']
+        db.connection.cursor.return_value = mock_cursor
+        db.create_specializer_table = Mock()
+
+        db.get("func")
+
+        mock_cursor.execute.assert_called_with("select * from test where fname=?",
+            ("func",))
 
 
 class SpecializedFunctionTests(unittest.TestCase):
@@ -61,12 +126,8 @@ class SpecializedFunctionTests(unittest.TestCase):
         # it should call both variants on the backend module
         self.assertTrue(mock_backend.module.foo_1.called)
         self.assertTrue(mock_backend.module.foo_2.called)
-        
-        
 
-
-        
-
+"""
 class SingleFuncTests(unittest.TestCase):
     pass
 
@@ -206,7 +267,7 @@ class MultipleFuncTests(unittest.TestCase):
             -1)
 
     # Disabled, currently failing
-    """
+    ""
     def test_dealing_with_preidentified_runtime_errors(self):
         mod = asp_module.ASPModule()
         key_func = lambda name, *args, **_: (name, args)

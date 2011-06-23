@@ -3,6 +3,104 @@ from asp.util import *
 import asp.codegen.cpp_ast as cpp_ast
 import pickle
 from variant_history import *
+import sqlite3
+
+class AspDB(object):
+
+    def __init__(self, specializer):
+        """
+        specializer must be specified so we avoid namespace collisions.
+        """
+        self.specializer = specializer
+        self.connection = sqlite3.connect(":memory:")
+
+    def create_specializer_table(self):
+        self.connection.execute('create table '+self.specializer+' (fname text, key text, perf real)')
+        self.connection.commit()
+
+    def close(self):
+        self.connection.close()
+
+    def table_exists(self):
+        """
+        Test if a table corresponding to this specializer exists.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute('select name from sqlite_master where name="%s"' % self.connection)
+        return len(cursor.fetchall()) > 0
+
+    def insert(self, fname, key, value):
+        if (not self.table_exists()):
+                self.create_specializer_table()
+        self.connection.execute('insert into '+self.specializer+' values (?,?,?)',
+            (fname, key, value))
+        self.connection.commit()
+
+    def get(self, fname, key=None):
+        """
+        Return a list of entries.  If key is not specified, all entries from
+        fname are returned.
+        """
+        if not self.table_exists():
+            self.create_specializer_table()
+            return []
+
+        cursor = self.connection.cursor()
+        if key:
+            cursor.execute('select * from '+self.specializer+' where fname=? and key=?', 
+                (fname,key))
+        else:
+            cursor.execute('select * from '+self.specializer+' where fname=?', 
+                (fname,))
+        return cursor.fetchall()
+
+
+class SpecializedFunction(object):
+    """
+    Class that encapsulates a function that is specialized.  It keeps track of variants,
+    their timing information, which backend, and whether the function is a helper function
+    or not.
+    """
+    
+    def __init__(self, name, backend, variant_names=[], variant_funcs=[], kind="regular"):
+        self.name = name
+        self.kind = kind
+        self.backend = backend
+        self.variant_names = []
+        self.variant_funcs = []
+        self.variant_times = []
+        
+        self.dirty = True #FIXME: is this necessary here?
+        for x in xrange(len(variant_names)):
+            self.add_variant(variant_names[x], variant_funcs[x])
+
+    def add_variant(self, variant_name, variant_func):
+        """
+        Add a variant of this function.  Must have same call signature.  Variant names must be unique.
+        The variant_func parameter should be a CodePy Function object or a string defining the function.
+        """
+        if variant_name in self.variant_names:
+            raise Exception("Attempting to add a variant with an already existing name %s to %s" %
+                            (variant_name, self.name))
+        self.variant_names.append(variant_name)
+        self.variant_funcs.append(variant_func)
+        self.backend.module.add_function(variant_func)
+
+    def __call__(self, *args, **kwargs):
+        """
+        Calling an instance SpecializedFunction will actually call either the next variant to test,
+        or the already-determined best variant.
+        """
+        if len(self.variant_times) == len(self.variant_names):
+            return self.backend.module.__getattr__(self.variant_names[0]).__call__(*args, **kwargs)
+        else:
+            import time
+            
+            which = len(self.variant_times)
+            start = time.time()
+            ret_val =  self.backend.module.__getattr__(self.variant_names[which]).__call__(*args, **kwargs)
+            self.variant_times.append(time.time() - start)
+            return ret_val
 
 
 class SpecializedFunction(object):
@@ -159,6 +257,7 @@ class ASPModule(object):
 
     def add_function_with_variants(self, variant_funcs, func_name, variant_names, key_maker=lambda name, *args, **kwargs: (name), limit_funcs=None, compilable=None, param_names=None, cuda_func=False):
         limit_funcs = limit_funcs or [lambda *args, **kwargs: True]*len(variant_names)
+        
         compilable = compilable or [True]*len(variant_names)
         param_names = param_names or ['Unknown']*len(variant_names)
         method_info = self.compiled_methods.get(func_name, None)
