@@ -174,8 +174,8 @@ class SingleFuncTests(unittest.TestCase):
 
     def test_adding_and_calling(self):
         m = asp_module.ASPModule()
-        m.add_function("foo", "void foo(){return;}")
-        m.foo()
+        m.add_function("foo", "PyObject* foo(){Py_RETURN_TRUE;}")
+        self.assertTrue(m.foo())
 
     def test_db_integration(self):
         m = asp_module.ASPModule()
@@ -184,6 +184,14 @@ class SingleFuncTests(unittest.TestCase):
 
         # Now let's check the db for what's inside
         self.assertEqual(len(m.db.get("foo")), 1)
+
+    def test_helper_function(self):
+        m = asp_module.ASPModule()
+        m.add_helper_function("foo_helper", "PyObject* foo_helper(){Py_RETURN_TRUE;}")
+
+        self.assertTrue("foo_helper" in m.specialized_functions)
+
+        self.assertTrue(m.foo_helper())
          
 
 

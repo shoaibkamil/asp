@@ -327,6 +327,11 @@ class ASPModule(object):
     #         self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
 
     def add_function(self, fname, funcs, variant_names=None, backend="c++"):
+        """
+        Add a specialized function to the Asp module.  funcs can be a list of variants, but then
+        variant_names is required (also a list).  Each item in funcs should be a string function or
+        a cpp_ast FunctionDef.
+        """
         if not isinstance(funcs, list):
             funcs = [funcs]
             variant_names = [fname]
@@ -334,9 +339,14 @@ class ASPModule(object):
         self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
                                                                 variant_funcs=funcs)
 
-    def add_helper_function(self, fname, cuda_func=False):
-        self.add_function_helper("", fname=fname, cuda_func=cuda_func)
-        self.helper_method_names.append(fname)
+    def add_helper_function(self, fname, func, backend="c++"):
+        """
+        Add a helper function, which is a specialized function that it not timed and has a single variant.
+        """
+        self.specialized_functions[fname] = HelperFunction(fname, func, self.backends[backend])
+        
+
+
                 
     def compile(self):
         if self.use_cuda:
