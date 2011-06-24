@@ -5,13 +5,14 @@ import pickle
 from variant_history import *
 import sqlite3
 
-class AspDB(object):
+class ASPDB(object):
 
     def __init__(self, specializer):
         """
         specializer must be specified so we avoid namespace collisions.
         """
         self.specializer = specializer
+        # currently creating an in-memory db, but eventually this should get written to disk
         self.connection = sqlite3.connect(":memory:")
 
     def create_specializer_table(self):
@@ -21,13 +22,22 @@ class AspDB(object):
     def close(self):
         self.connection.close()
 
+    def key_function(self, *args, **kwargs):
+        """
+        Function to generate keys.  This should almost always be overridden by a specializer, to make
+        sure the information stored in the key is actually useful.
+        """
+        import hashlib
+        return hashlib.md5(str(args)+str(kwargs)).hexdigest()
+
     def table_exists(self):
         """
         Test if a table corresponding to this specializer exists.
         """
         cursor = self.connection.cursor()
-        cursor.execute('select name from sqlite_master where name="%s"' % self.connection)
-        return len(cursor.fetchall()) > 0
+        cursor.execute('select name from sqlite_master where name="%s"' % self.specializer)
+        result = cursor.fetchall()
+        return len(result) > 0
 
     def insert(self, fname, key, value):
         if (not self.table_exists()):
@@ -41,7 +51,7 @@ class AspDB(object):
         Return a list of entries.  If key is not specified, all entries from
         fname are returned.
         """
-        if not self.table_exists():
+        if (not self.table_exists()):
             self.create_specializer_table()
             return []
 
@@ -62,13 +72,14 @@ class SpecializedFunction(object):
     or not.
     """
     
-    def __init__(self, name, backend, variant_names=[], variant_funcs=[], kind="regular"):
+    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], kind="regular"):
         self.name = name
         self.kind = kind
         self.backend = backend
+        self.db = db
         self.variant_names = []
         self.variant_funcs = []
-        self.variant_times = []
+        self.variant_times = self.db.get(name)
         
         for x in xrange(len(variant_names)):
             self.add_variant(variant_names[x], variant_funcs[x])
@@ -109,7 +120,10 @@ class SpecializedFunction(object):
             start = time.time()
             ret_val = self.backend.get_compiled_function(self.variant_names[which]).__call__(*args, **kwargs)
 
-            self.variant_times.append(time.time() - start)
+            elapsed = time.time() - start
+            self.variant_times.append(elapsed)
+            #FIXME: where should key function live?
+            self.db.insert(self.name, self.db.key_function(args, kwargs), elapsed)
             return ret_val
 
 class ASPModule(object):
@@ -153,9 +167,14 @@ class ASPModule(object):
             return func
 
     
-    def __init__(self, use_cuda=False):
+    #FIXME: specializer should be required.
+    def __init__(self, specializer="default_specializer", key_func=None, use_cuda=False):
         self.specialized_functions= {}
         self.helper_method_names = []
+
+        self.db = ASPDB(specializer)
+        if key_func:
+            self.set_key_function(key_func)
 
         self.cache_dir = "cache"
         self.dirty = False
@@ -169,6 +188,14 @@ class ASPModule(object):
             self.backends["cuda"] = ASPModule.ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
                                                codepy.toolchain.guess_nvcc_toolchain())
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
+
+
+    def set_key_function(self, key_func):
+        """
+        Set the key function to use for entering things into the db. key_func should be a function that
+        takes (self, *args, **kwargs) and returns a string.
+        """
+        self.db.key_function = key_func
 
 
 
@@ -287,7 +314,7 @@ class ASPModule(object):
             funcs = [funcs]
             variant_names = [fname]
 
-        self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], variant_names,
+        self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
                                                                 variant_funcs=funcs, kind="regular")
 
     def add_helper_function(self, fname, cuda_func=False):

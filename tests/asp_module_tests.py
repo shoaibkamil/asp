@@ -11,16 +11,17 @@ class TimerTest(unittest.TestCase):
 # #        mod.test()
 #         self.failUnless("test" in mod.times.keys())
 
-class AspDBTests(unittest.TestCase):
+       
+class ASPDBTests(unittest.TestCase):
     def test_creating(self):
-        db = asp_module.AspDB("test_specializer")
+        db = asp_module.ASPDB("test_specializer")
 
     def test_create_db_if_nonexistent(self):
-        db = asp_module.AspDB("test")
+        db = asp_module.ASPDB("test")
         self.assertTrue(db.connection)
     
     def test_create_table(self):
-        db = asp_module.AspDB("test")
+        db = asp_module.ASPDB("test")
         db.close() # close the real connection so we can mock it out
         db.connection = Mock()
         db.create_specializer_table()
@@ -29,7 +30,7 @@ class AspDBTests(unittest.TestCase):
             'create table test (fname text, key text, perf real)')
 
     def test_insert(self):
-        db = asp_module.AspDB("test")
+        db = asp_module.ASPDB("test")
         db.close() # close the real connection so we can mock it out
         db.connection = Mock()
         db.table_exists = Mock(return_value = True)
@@ -41,7 +42,7 @@ class AspDBTests(unittest.TestCase):
                 'insert into test values (?,?,?)', ("func", "KEY", 4.321))
 
     def test_create_if_insert_into_nonexistent_table(self):
-        db = asp_module.AspDB("test")
+        db = asp_module.ASPDB("test")
         db.close() # close the real connection so we can mock it out
         db.connection = Mock()
 
@@ -59,7 +60,7 @@ class AspDBTests(unittest.TestCase):
         self.assertTrue(db.create_specializer_table.called)
 
     def test_get(self):
-        db = asp_module.AspDB("test")
+        db = asp_module.ASPDB("test")
         db.close() # close the real connection so we can mock it out
         db.connection = Mock()
         db.table_exists = Mock(return_value = True)
@@ -82,11 +83,11 @@ class SpecializedFunctionTests(unittest.TestCase):
         
 
     def test_creating(self):
-        a = asp_module.SpecializedFunction("foo", None)
+        a = asp_module.SpecializedFunction("foo", None, Mock())
 
     def test_add_variant(self):        
         mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
-        a = asp_module.SpecializedFunction("foo", mock_backend)
+        a = asp_module.SpecializedFunction("foo", mock_backend, Mock())
         a.add_variant("foo_1", "void foo_1(){return;}")
         self.assertEqual(a.variant_names[0], "foo_1")
         self.assertEqual(len(a.variant_funcs), 1)
@@ -98,7 +99,7 @@ class SpecializedFunctionTests(unittest.TestCase):
 
     def test_add_variant_at_instantiation(self):
         mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
-        a = asp_module.SpecializedFunction("foo", mock_backend,
+        a = asp_module.SpecializedFunction("foo", mock_backend, Mock(),
                                            ["foo_1"], ["void foo_1(){return;}"])
         self.assertEqual(len(a.variant_funcs), 1)
         self.assertTrue(mock_backend.module.add_to_module.called)
@@ -110,7 +111,9 @@ class SpecializedFunctionTests(unittest.TestCase):
         mock_backend_module = Mock()
         mock_backend_module.compile.return_value = mock_backend_module
         mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
-        a = asp_module.SpecializedFunction("foo", mock_backend)
+        mock_db = Mock()
+        mock_db.get.return_value = []
+        a = asp_module.SpecializedFunction("foo", mock_backend, mock_db)
         a.add_variant("foo_1", "void foo_1(){return;}")
         # test a call
         a()
@@ -125,8 +128,10 @@ class SpecializedFunctionTests(unittest.TestCase):
         mock_backend_module = Mock()
         mock_backend_module.compile.return_value = mock_backend_module
         mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+        mock_db = Mock()
+        mock_db.get.return_value = []
 
-        a = asp_module.SpecializedFunction("foo", mock_backend)
+        a = asp_module.SpecializedFunction("foo", mock_backend, mock_db)
         a.add_variant("foo_1", "void foo_1(){return;}")
         a.add_variant("foo_2", "void foo_2(){}")
         
@@ -150,6 +155,15 @@ class SingleFuncTests(unittest.TestCase):
         m = asp_module.ASPModule()
         m.add_function("foo", "void foo(){return;}")
         m.foo()
+
+    def test_db_integration(self):
+        m = asp_module.ASPModule()
+        m.add_function("foo", "void foo(){return;}")
+        m.foo()
+
+        # Now let's check the db for what's inside
+        self.assertEqual(len(m.db.get("foo")), 1)
+         
 
 
 class MultipleFuncTests(unittest.TestCase):
