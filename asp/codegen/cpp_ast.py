@@ -323,6 +323,6 @@ class Print(Generable):
 
     def generate(self):
         if self.newline:
-            yield 'std::cout << %s << std::endl;' % self.text
+            yield 'std::cout %s << std::endl;' % self.text
         else:
-            yield 'std::cout << %s;' % self.text
+            yield 'std::cout %s;' % self.text
