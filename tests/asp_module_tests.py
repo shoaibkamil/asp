@@ -143,6 +143,27 @@ class SpecializedFunctionTests(unittest.TestCase):
         self.assertTrue(mock_backend_module.foo_1.called)
         self.assertTrue(mock_backend_module.foo_2.called)
 
+class HelperFunctionTests(unittest.TestCase):
+    def test_creating(self):
+        f = asp_module.HelperFunction("foo", "void foo(){}", Mock())
+
+    def test_call(self):
+        # this is a complicated situation.  we want the backend to have a fake
+        # module, and that fake module should return a fake compiled module.
+        # we'll cheat by just returning itself.
+        mock_backend_module = Mock()
+        mock_backend_module.compile.return_value = mock_backend_module
+        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+        a = asp_module.HelperFunction("foo", "void foo(){}", mock_backend)
+        # test a call
+        a()
+
+        # it should call foo() on the backend module
+        self.assertTrue(mock_backend_module.foo.called)
+
+
+
+
 class SingleFuncTests(unittest.TestCase):
     def test_adding_function(self):
         m = asp_module.ASPModule()

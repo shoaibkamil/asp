@@ -72,9 +72,8 @@ class SpecializedFunction(object):
     or not.
     """
     
-    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], kind="regular"):
+    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[]):
         self.name = name
-        self.kind = kind
         self.backend = backend
         self.db = db
         self.variant_names = []
@@ -125,6 +124,24 @@ class SpecializedFunction(object):
             #FIXME: where should key function live?
             self.db.insert(self.name, self.db.key_function(args, kwargs), elapsed)
             return ret_val
+
+class HelperFunction(SpecializedFunction):
+    """
+    HelperFunction defines a SpecializedFunction that is not timed, and usually not called directly
+    (although it can be).
+    """
+    def __init__(self, name, func, backend):
+        self.name = name
+        self.backend = backend
+        self.variant_names, self.variant_funcs = [], []
+        self.add_variant(name, func)
+
+    def __call__(self, *args, **kwargs):
+        if self.backend.dirty:
+            self.backend.compile()
+        return self.backend.get_compiled_function(self.name).__call__(*args, **kwargs)
+
+
 
 class ASPModule(object):
 
@@ -315,7 +332,7 @@ class ASPModule(object):
             variant_names = [fname]
 
         self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
-                                                                variant_funcs=funcs, kind="regular")
+                                                                variant_funcs=funcs)
 
     def add_helper_function(self, fname, cuda_func=False):
         self.add_function_helper("", fname=fname, cuda_func=cuda_func)
