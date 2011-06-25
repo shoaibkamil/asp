@@ -16,7 +16,7 @@ class ASPDB(object):
         self.connection = sqlite3.connect(":memory:")
 
     def create_specializer_table(self):
-        self.connection.execute('create table '+self.specializer+' (fname text, key text, perf real)')
+        self.connection.execute('create table '+self.specializer+' (fname text, variant text, key text, perf real)')
         self.connection.commit()
 
     def close(self):
@@ -39,16 +39,16 @@ class ASPDB(object):
         result = cursor.fetchall()
         return len(result) > 0
 
-    def insert(self, fname, key, value):
+    def insert(self, fname, variant, key, value):
         if (not self.table_exists()):
                 self.create_specializer_table()
-        self.connection.execute('insert into '+self.specializer+' values (?,?,?)',
-            (fname, key, value))
+        self.connection.execute('insert into '+self.specializer+' values (?,?,?,?)',
+            (fname, variant, key, value))
         self.connection.commit()
 
-    def get(self, fname, key=None):
+    def get(self, fname, variant=None, key=None):
         """
-        Return a list of entries.  If key is not specified, all entries from
+        Return a list of entries.  If key and variant not specified, all entries from
         fname are returned.
         """
         if (not self.table_exists()):
@@ -56,23 +56,30 @@ class ASPDB(object):
             return []
 
         cursor = self.connection.cursor()
+        query = "select * from %s where fname=?" % (self.specializer,)
+        params = (fname,)
+
+        if variant:
+            query += " and variant=?"
+            params += (variant,)
+        
         if key:
-            cursor.execute('select * from '+self.specializer+' where fname=? and key=?', 
-                (fname,key))
-        else:
-            cursor.execute('select * from '+self.specializer+' where fname=?', 
-                (fname,))
+            query += " and key=?"
+            params += (key,)
+
+        cursor.execute(query, params)
+
         return cursor.fetchall()
 
 
 class SpecializedFunction(object):
     """
     Class that encapsulates a function that is specialized.  It keeps track of variants,
-    their timing information, which backend, and whether the function is a helper function
-    or not.
+    their timing information, which backend, and a function to determine if a variant
+    can run.
     """
     
-    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[]):
+    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], run_check_function=None):
         self.name = name
         self.backend = backend
         self.db = db
@@ -82,6 +89,16 @@ class SpecializedFunction(object):
         
         for x in xrange(len(variant_names)):
             self.add_variant(variant_names[x], variant_funcs[x])
+
+        if run_check_function:
+            self.run_check_function = run_check_function
+
+    def run_check_function(self, variant_name, *args, **kwargs):
+        """
+        Given a variant, check if it can run.  This should be overridden if certain variants can only run
+        for certain input values.
+        """
+        return True
 
     def add_variant(self, variant_name, variant_func):
         """
@@ -101,6 +118,13 @@ class SpecializedFunction(object):
             self.backend.module.add_function(variant_func)
 
         self.backend.dirty = True
+
+    def pick_next_variant(self):
+        """
+        Logic to pick the next variant to run.  If all variants have been run, then this should return the
+        fastest variant.
+        """
+        pass
 
     def __call__(self, *args, **kwargs):
         """
@@ -122,7 +146,7 @@ class SpecializedFunction(object):
             elapsed = time.time() - start
             self.variant_times.append(elapsed)
             #FIXME: where should key function live?
-            self.db.insert(self.name, self.db.key_function(args, kwargs), elapsed)
+            self.db.insert(self.name, self.variant_names[which], self.db.key_function(args, kwargs), elapsed)
             return ret_val
 
 class HelperFunction(SpecializedFunction):
@@ -348,60 +372,60 @@ class ASPModule(object):
 
 
                 
-    def compile(self):
-        if self.use_cuda:
-            self.compiled_module = self.backends["cuda"].module.compile(self.backends["c++"].module,
-                                                                        self.backends["cuda"].toolchain,
-                                                                        debug=True, cache_dir=self.cache_dir)
-        else:
-            self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain,
-                                                                       debug=True, cache_dir=self.cache_dir)
-        self.dirty = False
-        
-    def specialized_func(self, name):
-        import time
-        def error_func(*args, **kwargs):
-            raise Exception("No variant of method found to run on input size %s on the specified device" % str(args))
-        def special(*args, **kwargs):
-            method_info = self.compiled_methods[name]
-            key = method_info.make_key(name,*args,**kwargs)
-            v_id = method_info.selector.get_v_id_to_run(method_info.v_id_set, key,*args,**kwargs)
-            real_func = self.compiled_module.__getattribute__(v_id) if v_id else error_func
-            start_time = time.time() 
-            result = real_func(*args, **kwargs)
-            elapsed = time.time() - start_time
-            method_info.database.add_time( key, elapsed, v_id, method_info.v_id_set)
-            return result
-        return special
-
-    def helper_func(self, name):
-        def helper(*args, **kwargs):
-            real_func = self.compiled_module.__getattribute__(name)
-            return real_func(*args, **kwargs)
-        return helper
-
-    def save_method_timings(self, name, file_name=None):
-        method_info = self.compiled_methods[name]
-        f = open(file_name or self.cache_dir+'/'+name+'.vardump', 'w')
-        d = method_info.get_picklable_obj()
-        d.update(method_info.database.get_picklable_obj())
-        pickle.dump( d, f)
-        f.close()
-
-    def restore_method_timings(self, name, file_name=None):
-        method_info = self.compiled_methods[name]
-        try: 
-	    f = open(file_name or self.cache_dir+'/'+name+'.vardump', 'r')
-            obj = pickle.load(f)
-            if obj: method_info.set_from_pickled_obj(obj)
-            if obj: method_info.database.set_from_pickled_obj(obj, method_info.v_id_set)
-            f.close()
-        except IOError: pass
-
-    def clear_method_timings(self, name):
-        method_info = self.compiled_methods[name]
-        method_info.database.clear()
-
+#    def compile(self):
+#        if self.use_cuda:
+#            self.compiled_module = self.backends["cuda"].module.compile(self.backends["c++"].module,
+#                                                                        self.backends["cuda"].toolchain,
+#                                                                        debug=True, cache_dir=self.cache_dir)
+#        else:
+#            self.compiled_module = self.backends["c++"].module.compile(self.backends["c++"].toolchain,
+#                                                                       debug=True, cache_dir=self.cache_dir)
+#        self.dirty = False
+#        
+#    def specialized_func(self, name):
+#        import time
+#        def error_func(*args, **kwargs):
+#            raise Exception("No variant of method found to run on input size %s on the specified device" % str(args))
+#        def special(*args, **kwargs):
+#            method_info = self.compiled_methods[name]
+#            key = method_info.make_key(name,*args,**kwargs)
+#            v_id = method_info.selector.get_v_id_to_run(method_info.v_id_set, key,*args,**kwargs)
+#            real_func = self.compiled_module.__getattribute__(v_id) if v_id else error_func
+#            start_time = time.time() 
+#            result = real_func(*args, **kwargs)
+#            elapsed = time.time() - start_time
+#            method_info.database.add_time( key, elapsed, v_id, method_info.v_id_set)
+#            return result
+#        return special
+#
+#    def helper_func(self, name):
+#        def helper(*args, **kwargs):
+#            real_func = self.compiled_module.__getattribute__(name)
+#            return real_func(*args, **kwargs)
+#        return helper
+#
+#    def save_method_timings(self, name, file_name=None):
+#        method_info = self.compiled_methods[name]
+#        f = open(file_name or self.cache_dir+'/'+name+'.vardump', 'w')
+#        d = method_info.get_picklable_obj()
+#        d.update(method_info.database.get_picklable_obj())
+#        pickle.dump( d, f)
+#        f.close()
+#
+#    def restore_method_timings(self, name, file_name=None):
+#        method_info = self.compiled_methods[name]
+#        try: 
+#	    f = open(file_name or self.cache_dir+'/'+name+'.vardump', 'r')
+#            obj = pickle.load(f)
+#            if obj: method_info.set_from_pickled_obj(obj)
+#            if obj: method_info.database.set_from_pickled_obj(obj, method_info.v_id_set)
+#            f.close()
+#        except IOError: pass
+#
+#    def clear_method_timings(self, name):
+#        method_info = self.compiled_methods[name]
+#        method_info.database.clear()
+#
     def __getattr__(self, name):
         if name in self.specialized_functions:
             if self.dirty:

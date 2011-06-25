@@ -27,7 +27,7 @@ class ASPDBTests(unittest.TestCase):
         db.create_specializer_table()
 
         db.connection.execute.assert_called_with(
-            'create table test (fname text, key text, perf real)')
+            'create table test (fname text, variant text, key text, perf real)')
 
     def test_insert(self):
         db = asp_module.ASPDB("test")
@@ -36,10 +36,10 @@ class ASPDBTests(unittest.TestCase):
         db.table_exists = Mock(return_value = True)
         db.create_specializer_table()
 
-        db.insert("func", "KEY", 4.321)
+        db.insert("func", "func", "KEY", 4.321)
 
         db.connection.execute.assert_called_with(
-                'insert into test values (?,?,?)', ("func", "KEY", 4.321))
+                'insert into test values (?,?,?,?)', ("func", "func", "KEY", 4.321))
 
     def test_create_if_insert_into_nonexistent_table(self):
         db = asp_module.ASPDB("test")
@@ -55,7 +55,7 @@ class ASPDBTests(unittest.TestCase):
         db.connection.cursor.return_value = mock_cursor
         db.create_specializer_table = Mock()
 
-        db.insert("func", "KEY", 4.321)
+        db.insert("func", "v1", "KEY", 4.321)
 
         self.assertTrue(db.create_specializer_table.called)
 
@@ -142,6 +142,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         # it should call both variants on the backend module
         self.assertTrue(mock_backend_module.foo_1.called)
         self.assertTrue(mock_backend_module.foo_2.called)
+
 
 class HelperFunctionTests(unittest.TestCase):
     def test_creating(self):
