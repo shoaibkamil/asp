@@ -68,7 +68,12 @@ class SpecializedFunction(object):
     """
     Class that encapsulates a function that is specialized.  It keeps track of variants,
     their timing information, which backend, and a function to determine if a variant
-    can run.
+    can run as well as a function to generate keys from parameters.
+
+    The signature for run_check_function is run(self, variant_name, *args, **kwargs).
+    The signature for the key function is key(self, *args, **kwargs), where the args/kwargs are
+    what are passed to the specialized function.
+
     """
     
     def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], run_check_function=None, 
@@ -182,49 +187,54 @@ class HelperFunction(SpecializedFunction):
             self.backend.compile()
         return self.backend.get_compiled_function(self.name).__call__(*args, **kwargs)
 
+class ASPBackend(object):
+    """
+    Class to encapsulate a backend for Asp.  A backend is the combination of a CodePy module
+    (which contains the actual functions) and a CodePy compiler toolchain.
+    """
+    def __init__(self, module, toolchain):
+        self.module = module
+        self.toolchain = toolchain
+        self.compiled_module = None
+        self.cache_dir="cache"
+        self.dirty = True
+
+    def compile(self):
+        """
+        Trigger a compile of this backend.  Note that CUDA needs to know about the C++
+        backend as well.
+        """
+        if isinstance(self.module, codepy.cuda.CudaModule):
+            self.compiled_module = self.backends["cuda"].module.compile(self.module.boost_module,
+                                                                        self.backends["cuda"].toolchain,
+                                                                        debug=True, cache_dir=self.cache_dir)
+        else:
+            self.compiled_module = self.module.compile(self.toolchain,
+                                                       debug=True, cache_dir=self.cache_dir)
+        self.dirty = False
+
+    def get_compiled_function(self, name):
+        """
+        Return a callable for a raw compiled function (that is, this must be a variant name rather than
+        a function name).
+        """
+        try:
+            func = getattr(self.compiled_module, name)
+        except:
+            raise Error("Function %s not found in compiled module." % (name,))
+
+        return func
 
 
 class ASPModule(object):
+    """
+    ASPModule is the main coordination class for specializers.  A specializer creates an ASPModule to contain
+    all of its specialized functions, and adds functions/libraries/etc to the ASPModule.
 
-    class ASPBackend(object):
-        """
-        Class to encapsulate a backend for Asp.  A backend is the combination of a CodePy module
-        (which contains the actual functions) and a CodePy compiler toolchain.
-        """
-        def __init__(self, module, toolchain):
-            self.module = module
-            self.toolchain = toolchain
-            self.compiled_module = None
-            self.cache_dir="cache"
-            self.dirty = True
+    ASPModule uses ASPBackend instances for each backend, ASPDB for its backing db for recording timing info,
+    and instances of SpecializedFunction and HelperFunction for specialized and helper functions, respectively.
+    """
 
-        def compile(self):
-            """
-            Trigger a compile of this backend.  Note that CUDA needs to know about the C++
-            backend as well.
-            """
-            if isinstance(self.module, codepy.cuda.CudaModule):
-                self.compiled_module = self.backends["cuda"].module.compile(self.module.boost_module,
-                                                                            self.backends["cuda"].toolchain,
-                                                                            debug=True, cache_dir=self.cache_dir)
-            else:
-                self.compiled_module = self.module.compile(self.toolchain,
-                                                           debug=True, cache_dir=self.cache_dir)
-            self.dirty = False
-
-        def get_compiled_function(self, name):
-            """
-            Return a callable for a raw compiled function (that is, this must be a variant name rather than
-            a function name).
-            """
-            try:
-                func = getattr(self.compiled_module, name)
-            except:
-                raise Error("Function %s not found in compiled module." % (name,))
-
-            return func
-
-    
     #FIXME: specializer should be required.
     def __init__(self, specializer="default_specializer", use_cuda=False):
         self.specialized_functions= {}
