@@ -296,13 +296,6 @@ class ASPModule(object):
         self.backends["cuda"].module.add_to_module(block)
         
 
-    def get_name_from_func(self, func):
-        """
-        returns the name of a function from a CodePy FunctionBody object
-        """
-        return func.fdecl.subdecl.name
-
-
     def add_function(self, fname, funcs, variant_names=None, run_check_function=None, key_function=None, 
                      backend="c++"):
         """
