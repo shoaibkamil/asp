@@ -22,7 +22,7 @@ class ASPDB(object):
     def close(self):
         self.connection.close()
 
-    def key_function(self, *args, **kwargs):
+    def key(self, *args, **kwargs):
         """
         Function to generate keys.  This should almost always be overridden by a specializer, to make
         sure the information stored in the key is actually useful.
@@ -85,15 +85,15 @@ class SpecializedFunction(object):
         self.db = db
         self.variant_names = []
         self.variant_funcs = []
-        self.variant_times = self.db.get(name)
+        self.variant_times = {}
         
         for x in xrange(len(variant_names)):
             self.add_variant(variant_names[x], variant_funcs[x])
 
         if run_check_function:
-            self.run_check_function = run_check_function
+            self.run_check = run_check_function
 
-    def run_check_function(self, variant_name, *args, **kwargs):
+    def run_check(self, variant_name, *args, **kwargs):
         """
         Given a variant, check if it can run.  This should be overridden if certain variants can only run
         for certain input values.
@@ -119,35 +119,47 @@ class SpecializedFunction(object):
 
         self.backend.dirty = True
 
-    def pick_next_variant(self):
+    def pick_next_variant(self, *args, **kwargs):
         """
         Logic to pick the next variant to run.  If all variants have been run, then this should return the
         fastest variant.
         """
-        pass
+        # get variants that have run
+        already_run = self.db.get(self.name, key=self.db.key(args, kwargs))
+
+        if already_run == []:
+            already_run_variant_names = []
+        else:
+            already_run_variant_names = map(lambda x: x[1], already_run)
+
+        # which variants haven't yet run
+        candidates = set(self.variant_names) - set(already_run_variant_names)
+
+        # of these candidates, which variants *can* run
+        for x in candidates:
+            if self.run_check(x, args, kwargs):
+                return x
+
+        # if none left, pick fastest from those that have already run
+        return sorted(already_run, lambda x,y: cmp(x[3],y[3]))[0][1]
 
     def __call__(self, *args, **kwargs):
         """
-        Calling an instance SpecializedFunction will actually call either the next variant to test,
+        Calling an instance of SpecializedFunction will actually call either the next variant to test,
         or the already-determined best variant.
         """
         if self.backend.dirty:
             self.backend.compile()
 
-        if len(self.variant_times) == len(self.variant_names):
-            return self.backend.get_compiled_function(self.variant_names[0]).__call__(*args, **kwargs)
-        else:
-            import time
-            
-            which = len(self.variant_times)
-            start = time.time()
-            ret_val = self.backend.get_compiled_function(self.variant_names[which]).__call__(*args, **kwargs)
+        which = self.pick_next_variant(args, kwargs)
 
-            elapsed = time.time() - start
-            self.variant_times.append(elapsed)
-            #FIXME: where should key function live?
-            self.db.insert(self.name, self.variant_names[which], self.db.key_function(args, kwargs), elapsed)
-            return ret_val
+        import time
+        start = time.time()
+        ret_val = self.backend.get_compiled_function(which).__call__(*args, **kwargs)
+        elapsed = time.time() - start
+        #FIXME: where should key function live?
+        self.db.insert(self.name, which, self.db.key(args, kwargs), elapsed)
+        return ret_val
 
 class HelperFunction(SpecializedFunction):
     """
@@ -236,7 +248,7 @@ class ASPModule(object):
         Set the key function to use for entering things into the db. key_func should be a function that
         takes (self, *args, **kwargs) and returns a string.
         """
-        self.db.key_function = key_func
+        self.db.key = key_func
 
 
 
@@ -350,7 +362,7 @@ class ASPModule(object):
     #         variant_names = [fname]
     #         self.add_function_with_variants(variant_funcs, fname, variant_names, cuda_func=cuda_func)
 
-    def add_function(self, fname, funcs, variant_names=None, backend="c++"):
+    def add_function(self, fname, funcs, variant_names=None, run_check_function=None, backend="c++"):
         """
         Add a specialized function to the Asp module.  funcs can be a list of variants, but then
         variant_names is required (also a list).  Each item in funcs should be a string function or
@@ -361,7 +373,7 @@ class ASPModule(object):
             variant_names = [fname]
 
         self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
-                                                                variant_funcs=funcs)
+                                                                variant_funcs=funcs, run_check_function=run_check_function)
 
     def add_helper_function(self, fname, func, backend="c++"):
         """

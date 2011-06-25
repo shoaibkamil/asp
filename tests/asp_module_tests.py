@@ -137,11 +137,34 @@ class SpecializedFunctionTests(unittest.TestCase):
         
         # test 2 calls
         a()
+        # ensure the second one sees that foo_1 was called the first time
+        mock_db.get.return_value = [["foo", "foo_1", None, None]]
         a()
 
         # it should call both variants on the backend module
         self.assertTrue(mock_backend_module.foo_1.called)
         self.assertTrue(mock_backend_module.foo_2.called)
+
+    def test_pick_next_variant(self):
+        mock_db = Mock()
+        mock_db.get.return_value = []
+        a = asp_module.SpecializedFunction("foo", Mock(), mock_db)
+        a.add_variant("foo_1", "void foo_1(){return;}")
+        a.add_variant("foo_2", "void foo_2(){}")
+
+        self.assertEqual(a.pick_next_variant(), "foo_1")
+
+        # now if one has run
+        mock_db.get.return_value = [[None, "foo_1", None, None]]
+        self.assertEqual(a.pick_next_variant(), "foo_2")
+
+        # now if both have run
+        mock_db.get.return_value = [[None, "foo_1", None, 1.0],
+                                    [None, "foo_2", None, 2.0]]
+
+        self.assertEqual(a.pick_next_variant(), "foo_1")
+
+
 
 
 class HelperFunctionTests(unittest.TestCase):
@@ -211,7 +234,7 @@ class MultipleFuncTests(unittest.TestCase):
         mod.foo()
         mod.foo()
 
-        self.assertEqual(len(mod.specialized_functions["foo"].variant_times), 2)
+        self.assertEqual(len(mod.db.get("foo")), 2)
 """
 
 
