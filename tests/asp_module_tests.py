@@ -86,7 +86,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         a = asp_module.SpecializedFunction("foo", None, Mock())
 
     def test_add_variant(self):        
-        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        mock_backend = asp_module.ASPBackend(Mock(), None)
         a = asp_module.SpecializedFunction("foo", mock_backend, Mock())
         a.add_variant("foo_1", "void foo_1(){return;}")
         self.assertEqual(a.variant_names[0], "foo_1")
@@ -98,7 +98,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         self.assertRaises(Exception, a.add_variant, "foo_1", None)
 
     def test_add_variant_at_instantiation(self):
-        mock_backend = asp_module.ASPModule.ASPBackend(Mock(), None)
+        mock_backend = asp_module.ASPBackend(Mock(), None)
         a = asp_module.SpecializedFunction("foo", mock_backend, Mock(),
                                            ["foo_1"], ["void foo_1(){return;}"])
         self.assertEqual(len(a.variant_funcs), 1)
@@ -110,7 +110,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         # we'll cheat by just returning itself.
         mock_backend_module = Mock()
         mock_backend_module.compile.return_value = mock_backend_module
-        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+        mock_backend = asp_module.ASPBackend(mock_backend_module, None)
         mock_db = Mock()
         mock_db.get.return_value = []
         a = asp_module.SpecializedFunction("foo", mock_backend, mock_db)
@@ -127,7 +127,7 @@ class SpecializedFunctionTests(unittest.TestCase):
         # we'll cheat by just returning itself.
         mock_backend_module = Mock()
         mock_backend_module.compile.return_value = mock_backend_module
-        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+        mock_backend = asp_module.ASPBackend(mock_backend_module, None)
         mock_db = Mock()
         mock_db.get.return_value = []
 
@@ -177,7 +177,7 @@ class HelperFunctionTests(unittest.TestCase):
         # we'll cheat by just returning itself.
         mock_backend_module = Mock()
         mock_backend_module.compile.return_value = mock_backend_module
-        mock_backend = asp_module.ASPModule.ASPBackend(mock_backend_module, None)
+        mock_backend = asp_module.ASPBackend(mock_backend_module, None)
         a = asp_module.HelperFunction("foo", "void foo(){}", mock_backend)
         # test a call
         a()

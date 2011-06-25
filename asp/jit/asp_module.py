@@ -248,10 +248,10 @@ class ASPModule(object):
         self.use_cuda = use_cuda
 
         self.backends = {}
-        self.backends["c++"] = ASPModule.ASPBackend(codepy.bpl.BoostPythonModule(),
+        self.backends["c++"] = ASPBackend(codepy.bpl.BoostPythonModule(),
                                           codepy.toolchain.guess_toolchain())
         if use_cuda:
-            self.backends["cuda"] = ASPModule.ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
+            self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
                                                codepy.toolchain.guess_nvcc_toolchain())
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
 
