@@ -124,7 +124,7 @@ class ConvertAST(ast.NodeTransformer):
         return self.visit(node.body[0])
 
     def visit_Expr(self, node):
-        return Expression(self.visit(node.value))
+        return self.visit(node.value)
 
     # only single targets supported
     def visit_Assign(self, node):
