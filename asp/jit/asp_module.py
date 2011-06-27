@@ -63,6 +63,32 @@ class ASPDB(object):
 
         return cursor.fetchall()
 
+    def update(self, fname, variant, key, value):
+        """
+        Updates an entry in the db.  Overwrites the timing information with value.
+        """
+        if (not self.table_exists()):
+            self.create_specializer_table()
+            self.insert(fname, variant, key, value)
+            return
+
+        query = "update "+self.specializer+" set perf=? where fname=? and variant=? and key=?"
+        self.connection.execute(query, (value, fname, variant, key))
+        self.connection.commit()
+
+    def delete(self, fname, variant, key):
+        """
+        Deletes an entry from the db.
+        """
+        if (not self.table_exists()):
+            return
+
+        query = "delete from "+self.specializer+" where fname=? and variant=? and key=?"
+        self.connection.execute(query, (fname, variant, key))
+        self.connection.commit()
+
+            
+
 
 class SpecializedFunction(object):
     """

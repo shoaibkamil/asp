@@ -13,7 +13,7 @@ class TimerTest(unittest.TestCase):
 
        
 class ASPDBTests(unittest.TestCase):
-    def test_creating(self):
+    def test_creating_db(self):
         db = asp_module.ASPDB("test_specializer")
 
     def test_create_db_if_nonexistent(self):
@@ -77,6 +77,32 @@ class ASPDBTests(unittest.TestCase):
 
         mock_cursor.execute.assert_called_with("select * from test where fname=?",
             ("func",))
+
+    def test_update(self):
+        db = asp_module.ASPDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+        db.table_exists = Mock(return_value = True)
+
+        db.update("foo", "foo_v1", "KEY", 3.21)
+
+        db.connection.execute.assert_called_with("update test set perf=? where fname=? and variant=? and key=?",
+                                               (3.21, "foo", "foo_v1", "KEY"))
+
+    def test_delete(self):
+        db = asp_module.ASPDB("test")
+        db.close() # close the real connection so we can mock it out
+        db.connection = Mock()
+        db.table_exists = Mock(return_value = True)
+
+        db.delete("foo", "foo_v1", "KEY")
+
+        db.connection.execute.assert_called_with("delete from test where fname=? and variant=? and key=?",
+                                                 ("foo", "foo_v1", "KEY"))
+
+
+
+
 
 
 class SpecializedFunctionTests(unittest.TestCase):
