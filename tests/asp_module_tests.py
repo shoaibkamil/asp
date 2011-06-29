@@ -212,7 +212,16 @@ class HelperFunctionTests(unittest.TestCase):
         self.assertTrue(mock_backend_module.foo.called)
 
 
+class ASPModuleMiscTests(unittest.TestCase):
+    def test_generate(self):
+        a = asp_module.ASPModule()
+        mock_backend = Mock()
+        a.backends["c++"] = mock_backend
 
+        a.generate()
+
+        self.assertTrue(mock_backend.module.generate.called)
+        
 
 class SingleFuncTests(unittest.TestCase):
     def test_adding_function(self):

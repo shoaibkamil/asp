@@ -365,3 +365,14 @@ class ASPModule(object):
         else:
             raise AttributeError("No method %s found; did you add it?" % name)
 
+    def generate(self):
+        """
+        Utility function for, during development, dumping out the generated
+        source from all the underlying backends.
+        """
+        src = ""
+        for x in self.backends.keys():
+            src += str(self.backends[x].module.generate())
+
+        return x
+
