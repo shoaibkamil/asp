@@ -215,20 +215,29 @@ class LoopUnroller(object):
         # make lvalue not a declaration
         def visit_Assign(self, node):
             if not self.in_new_scope:
-                if isinstance(node.lvalue, NestedDeclarator):
+                new_lvalue = None
+                if isinstancye(node.lvalue, NestedDeclarator):
                     tp, new_lvalue = node.lvalue.subdecl.get_decl_pair()
-                    rvalue = self.visit(node.rvalue)
-                    return Assign(CName(new_lvalue), rvalue)
                 if isinstance(node.lvalue, Declarator):
                     tp, new_lvalue = node.lvalue.get_decl_pair()
                     rvalue = self.visit(node.rvalue)
                     return Assign(CName(new_lvalue), rvalue)
+
             return Assign(self.visit(node.lvalue), self.visit(node.rvalue))
 
-    def unroll(self, node, factor, perfect=True):
+    def unroll(self, node, factor):
         import copy
 
-#        print "Called with %s", node.loopvar
+        print "Called with %s", node.loopvar
+
+        num_iterations = node.end.num - node.initial.num + 1
+        print "Number of iterations: ", num_iterations
+
+        num_unrolls = num_iterations / factor
+        leftover = num_iterations % factor
+        loop_end = CNumber(node.end.num - leftover)
+        print "Number of unrolls: ", num_unrolls
+        print "Leftover iterations: ", leftover
 
         new_increment = BinOp(node.increment, "*", CNumber(factor))
 
@@ -238,6 +247,15 @@ class LoopUnroller(object):
             new_extension = LoopUnroller.UnrollReplacer(node.loopvar, x).visit(new_extension)
             new_block.extend(new_extension.contents)
 
-        return For(node.loopvar, node.initial, node.end, new_increment, new_block)
+        return_block = UnbracedBlock()
+
+        unrolled_for_node = For(node.loopvar, node.initial, loop_end, new_increment, new_block)
+        leftover_for_node = For(node.loopvar, loop_end, node.end, node.increment, node.block)
+
+        return_block.append(unrolled_for_node)
+        if leftover != 0:
+            return_block.append(leftover_for_node)
+
+        return return_block
         
 

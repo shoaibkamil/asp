@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 
 from asp.codegen.ast_tools import *
 from asp.codegen.cpp_ast import *
@@ -100,6 +100,18 @@ class LoopUnrollerTests(unittest.TestCase):
 
         self.assertEqual(str(result), str(wanted_result))
         
+    def test_imperfect_unrolling (self):
+        ast = For(
+            "i",
+            CNumber(0),
+            CNumber(8),
+            CNumber(1),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+        result = LoopUnroller().unroll(ast, 2)
+        print str(result)
+        wanted_result = "for (int i = 0; (i <= 8); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}"
+
         
 
 

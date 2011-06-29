@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 from asp.codegen.cpp_ast import *
 import xml.etree.ElementTree as ElementTree
 
