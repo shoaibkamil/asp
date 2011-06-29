@@ -1,4 +1,4 @@
-import unittest2 as unittest
+import unittest
 
 from asp.codegen.ast_tools import *
 from asp.codegen.cpp_ast import *
@@ -47,72 +47,56 @@ class NodeVisitorTests(unittest.TestCase):
 
 
 class NodeTransformerTests(unittest.TestCase):
+
+    class Dummy(NodeTransformer):
+        def visit_Name(self, _):
+            return python_ast.Name("hi", False)
+        def visit_CName(self, _):
+            return CName("hi")
+
     def test_for_python_nodes(self):
-        class Dummy(NodeTransformer):
-            def visit_Name(self, _):            
-                return python_ast.Name("hi", False)
         p = python_ast.Name("hello", False)
-        result = Dummy().visit(p)
+        result = self.Dummy().visit(p)
         self.assertEqual(result.id, "hi")
 
     def test_for_cpp_nodes(self):
-        class Dummy(NodeTransformer):
-            def visit_CName(self, _):
-                return CName("hi")
         c = CName("hello")
-        result = Dummy().visit(c)
+        result = self.Dummy().visit(c)
         self.assertEqual(result.name, "hi")
 
     def test_for_cpp_children(self):
-        class Dummy(NodeTransformer):
-            def visit_CName(self, _):
-                return CName("hi")
         c = BinOp(CNumber(1), "+", CName("hello"))
-        result = Dummy().visit(c)
+        result = self.Dummy().visit(c)
         self.assertEqual(result.right.name, "hi")
-        
+
 
 class LoopUnrollerTests(unittest.TestCase):
-    def test_unrolling_by_2(self):
+    def setUp(self):
         # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
-        ast = For(
+        self.test_ast = For(
             "i",
             CNumber(0),
             CNumber(7),
             CNumber(1),
             Block(contents=[Assign(Subscript(CName("a"), CName("i")),
                    CName("i"))]))
-        result = LoopUnroller().unroll(ast, 2)
+
+    def test_unrolling_by_2(self):
+        result = LoopUnroller().unroll(self.test_ast, 2)
         wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n}"
-        self.assertEqual(str(result), str(wanted_result))
+        self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
 
     def test_unrolling_by_4(self):
-    # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
-        ast = For(
-            "i",
-            CNumber(0),
-            CNumber(7),
-            CNumber(1),
-            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
-                   CName("i"))]))
-        result = LoopUnroller().unroll(ast, 4)
+        result = LoopUnroller().unroll(self.test_ast, 4)
         wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 4)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n  a[(i + 3)] = (i + 3);\n}"
 
-        self.assertEqual(str(result), str(wanted_result))
-        
-    def test_imperfect_unrolling (self):
-        ast = For(
-            "i",
-            CNumber(0),
-            CNumber(8),
-            CNumber(1),
-            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
-                   CName("i"))]))
-        result = LoopUnroller().unroll(ast, 2)
-        print str(result)
-        wanted_result = "for (int i = 0; (i <= 8); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}"
+        self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
 
-        
+    def test_imperfect_unrolling (self):
+        result = LoopUnroller().unroll(self.test_ast, 3)
+        wanted_result = "for (int i = 0; (i <= 5); i = (i + (1 * 3)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}\n" + "for (int i = 6; (i <= 7); i = (i + 1))\n{\n  a[i] = i;\n}"
+        self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
+
 
 
 
