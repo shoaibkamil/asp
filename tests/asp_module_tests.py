@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 import asp.jit.asp_module as asp_module
 
 class TimerTest(unittest.TestCase):

@@ -16,7 +16,7 @@ class NodeVisitor(ast.NodeVisitor):
                         self.visit(item)
             elif isinstance(value, ast.AST) or isinstance(value, Generable):
                 self.visit(value)
-	
+
 
 # unified class for *transforming* python and c++ AST nodes
 class NodeTransformer(ast.NodeTransformer):
@@ -59,14 +59,14 @@ class ASTNodeReplacer(ast.NodeTransformer):
 				if field != 'ctx' and node.__getattribute__(field) != value:
 					debug_print( str(node.__getattribute__(field)) + " != " + str(value) )
 					eql = False
-			
+
 		if eql:
 			import copy
 			debug_print( "Found something to replace!!!!" )
 			return copy.deepcopy(self.replacement)
 		else:
 			return self.generic_visit(node)
-	
+
 
 # class to convert from python AST to C++ AST
 class ConvertAST(ast.NodeTransformer):
@@ -115,10 +115,10 @@ class ConvertAST(ast.NodeTransformer):
     def visit_Index(self, node):
         return self.visit(node.value)
 
-    
+
     def visit_Pass(self, _):
         return Expression()
-    
+
     # by default, only do first statement in a module
     def visit_Module(self, node):
         return self.visit(node.body[0])
@@ -157,7 +157,7 @@ class ConvertAST(ast.NodeTransformer):
         if len(node.values) > 0:
             text = '<< ' + str(self.visit(node.values[0]))
         else:
-           text = ''
+            text = ''
         for fragment in node.values[1:]:
             text += ' << \" \" << ' + str(self.visit(fragment))
         return Print(text, node.nl)
@@ -173,18 +173,18 @@ class LoopUnroller(object):
             super(LoopUnroller.UnrollReplacer, self).__init__()
 
         def visit_CName(self, node):
-#            print "node.name is ", node.name
+            #print "node.name is ", node.name
             if node.name == self.loopvar:
                 return BinOp(CName(self.loopvar), "+", CNumber(self.increment))
             else:
                 return node
-        
+
         def visit_Block(self, node):
-#            print "visiting Block...."
+            #print "visiting Block...."
             if self.inside_for:
                 old_scope = self.in_new_scope
                 self.in_new_scope = True
-#            print "visiting block in ", node
+                #print "visiting block in ", node
                 contents = [self.visit(x) for x in node.contents]
                 retnode = Block(contents=[x for x in contents if x != None])
                 self.in_new_scope = old_scope
@@ -201,7 +201,7 @@ class LoopUnroller(object):
                 return None
             else:
                 return node
-            
+
         def visit_Pointer(self, node):
             if not self.in_new_scope:
                 return None
@@ -219,16 +219,43 @@ class LoopUnroller(object):
                     tp, new_lvalue = node.lvalue.subdecl.get_decl_pair()
                     rvalue = self.visit(node.rvalue)
                     return Assign(CName(new_lvalue), rvalue)
+
                 if isinstance(node.lvalue, Declarator):
                     tp, new_lvalue = node.lvalue.get_decl_pair()
                     rvalue = self.visit(node.rvalue)
                     return Assign(CName(new_lvalue), rvalue)
+
             return Assign(self.visit(node.lvalue), self.visit(node.rvalue))
 
-    def unroll(self, node, factor, perfect=True):
+    def unroll(self, node, factor):
+        """Given a For node, unrolls the loop with a given factor.
+
+        If the number of iterations in the given loop is not a multiple of
+        the unroll factor, a 'leftover' loop will be generated to run the
+        remaining iterations.
+
+        """
+
         import copy
 
-#        print "Called with %s", node.loopvar
+        #Number of iterations in the initial loop
+        num_iterations = node.end.num - node.initial.num + 1
+
+        #Integer division provides number of iterations
+        # in the unrolled loop
+        num_unrolls = num_iterations / factor
+
+        #Iterations left over after unrolled loop
+        leftover = num_iterations % factor
+
+        #End of unrolled loop, add one to get beginning of leftover loop
+        loop_end = CNumber(node.end.num - leftover)
+        leftover_begin = CNumber(node.end.num - leftover + 1)
+
+        debug_print("Loop unroller called with ", node.loopvar)
+        debug_print("Number of iterations: ", num_iterations)
+        debug_print("Number of unrolls: ", num_unrolls)
+        debug_print("Leftover iterations: ", leftover)
 
         new_increment = BinOp(node.increment, "*", CNumber(factor))
 
@@ -238,6 +265,26 @@ class LoopUnroller(object):
             new_extension = LoopUnroller.UnrollReplacer(node.loopvar, x).visit(new_extension)
             new_block.extend(new_extension.contents)
 
-        return For(node.loopvar, node.initial, node.end, new_increment, new_block)
-        
+        return_block = UnbracedBlock()
+
+        unrolled_for_node = For(
+            node.loopvar,
+            node.initial,
+            loop_end,
+            new_increment,
+            new_block)
+
+        leftover_for_node = For(
+            node.loopvar,
+            leftover_begin,
+            node.end,
+            node.increment,
+            node.body)
+
+        return_block.append(unrolled_for_node)
+
+        if leftover != 0:
+            return_block.append(leftover_for_node)
+
+        return return_block
 

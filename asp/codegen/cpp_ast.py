@@ -273,6 +273,13 @@ class Block(codepy.cgen.Block):
             node.append(x.to_xml())
         return node
 
+class UnbracedBlock(Block):
+    def generate(self):
+        for item in self.contents:
+            for item_line in item.generate():
+                yield " " + item_line
+
+
 class Define(codepy.cgen.Define):
     def __init__(self, symbol, value):
         super(Define, self).__init__(symbol, value)
