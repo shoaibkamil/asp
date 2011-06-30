@@ -218,11 +218,11 @@ class ASPBackend(object):
     Class to encapsulate a backend for Asp.  A backend is the combination of a CodePy module
     (which contains the actual functions) and a CodePy compiler toolchain.
     """
-    def __init__(self, module, toolchain):
+    def __init__(self, module, toolchain, cache_dir):
         self.module = module
         self.toolchain = toolchain
         self.compiled_module = None
-        self.cache_dir="cache"
+        self.cache_dir = cache_dir
         self.dirty = True
 
     def compile(self):
@@ -262,23 +262,32 @@ class ASPModule(object):
     """
 
     #FIXME: specializer should be required.
-    def __init__(self, specializer="default_specializer", use_cuda=False):
+    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False):
         self.specialized_functions= {}
         self.helper_method_names = []
 
         self.db = ASPDB(specializer)
+        
+        if cache_dir:
+            self.cache_dir = cache_dir
+        else:
+            import tempfile, os
+            self.cache_dir = tempfile.gettempdir() + "/asp_cache"
+            if not os.access(self.cache_dir, os.F_OK):
+                os.mkdir(self.cache_dir)
 
-        self.cache_dir = "cache"
         self.dirty = False
         self.timing_enabled = True
         self.use_cuda = use_cuda
 
         self.backends = {}
         self.backends["c++"] = ASPBackend(codepy.bpl.BoostPythonModule(),
-                                          codepy.toolchain.guess_toolchain())
+                                          codepy.toolchain.guess_toolchain(),
+                                          self.cache_dir)
         if use_cuda:
             self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
-                                               codepy.toolchain.guess_nvcc_toolchain())
+                                               codepy.toolchain.guess_nvcc_toolchain(),
+                                               self.cache_dir)
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
 
 
