@@ -96,19 +96,19 @@ class StencilKernel(object):
         mod = self.mod = asp_module.ASPModule()
         self.add_libraries(mod)
         if self.with_cilk:
-            mod.toolchain.cc = "icc"
-            mod.toolchain.cflags += ["-intel-extensions", "-fast"]
-            mod.toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
-            mod.toolchain.cflags.remove('-fwrapv')
+            mod.backends["c++"].toolchain.cc = "icc"
+            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast"]
+            mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
+            mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
         else:
-            mod.toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
+            mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
 #        print mod.toolchain.cflags
-        if mod.toolchain.cflags.count('-Os') > 0:
-            mod.toolchain.cflags.remove('-Os')
-        if mod.toolchain.cflags.count('-O2') > 0:
-            mod.toolchain.cflags.remove('-O2')
-        debug_print("toolchain" + str(mod.toolchain.cflags))
-        mod.add_function_with_variants(variants, "kernel", variant_names)
+        if mod.backends["c++"].toolchain.cflags.count('-Os') > 0:
+            mod.backends["c++"].toolchain.cflags.remove('-Os')
+        if mod.backends["c++"].toolchain.cflags.count('-O2') > 0:
+            mod.backends["c++"].toolchain.cflags.remove('-O2')
+        debug_print("toolchain" + str(mod.backends["c++"].toolchain.cflags))
+        mod.add_function("kernel", variants, variant_names)
 
         # package arguments
         myargs = [y.data for y in args]
