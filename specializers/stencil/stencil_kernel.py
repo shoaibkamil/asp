@@ -288,9 +288,7 @@ class StencilKernel(object):
             # unroll
             if self.unroll_factor:
                 replacement = ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
-                for x in cur_node._fields:
-                    # hacky! TODO: fix this
-                    setattr(cur_node, x, getattr(replacement, x))
+                ret_node = ast_tools.ASTNodeReplacer(cur_node, replacement).visit(ret_node)
             
             return ret_node
 
