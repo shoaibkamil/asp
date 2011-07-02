@@ -325,3 +325,23 @@ class LoopUnroller(object):
 
         return return_block
 
+
+class LoopBlocker(object):
+    def loop_block(self, node, block_size):
+        outer_incr_name = CName(node.loopvar + node.loopvar)
+
+        new_inner_for = For(
+            node.loopvar,
+            outer_incr_name,
+            FunctionCall("min", [BinOp(outer_incr_name, "+", CNumber(2)), node.end]),
+            CNumber(1),
+            node.body)
+
+        new_outer_for = For(
+            node.loopvar + node.loopvar,
+            node.initial,
+            node.end,
+            BinOp(node.increment, "*", CNumber(block_size)),
+            Block(contents=[new_inner_for]))
+        debug_print(new_outer_for)
+        return new_outer_for

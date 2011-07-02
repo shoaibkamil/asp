@@ -4,20 +4,6 @@ from asp.codegen.ast_tools import *
 from asp.codegen.cpp_ast import *
 import asp.codegen.python_ast as python_ast
 
-# class LoopBlockerTests(unittest.TestCase):
-#     def test_basic_blocking(self):
-#         # this is "for(int i=0, i<8; i+=1) { a[i] = i; }"
-#         ast = For(
-#             ForInitializer(Value("int", CName("i")), CNumber(0)),
-#             BinOp(CName("i"), "<", CNumber(8)),
-#             Assign(CName("i"), BinOp(CName("i"), "+", CNumber(1))),
-#             Block(contents=[Assign(Subscript(CName("a"), CName("i")),
-#                    CName("i"))]))
-#         wanted_output = "for (int ii=0; ii<8; ii += 2)\n{\nfor (int i=ii; i<min(ii+2,8); i+=1)\n{\na[i]=i;}}"
-#         output = str(LoopBlocker().loop_block(ast, 2))
-#         self.assertEqual(output, wanted_output)
-
-
 class NodeVisitorTests(unittest.TestCase):
     def test_for_python_nodes(self):
         class Dummy(NodeVisitor):
@@ -96,6 +82,22 @@ class LoopUnrollerTests(unittest.TestCase):
         result = LoopUnroller().unroll(self.test_ast, 3)
         wanted_result = "for (int i = 0; (i <= 5); i = (i + (1 * 3)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}\n" + "for (int i = 6; (i <= 7); i = (i + 1))\n{\n  a[i] = i;\n}"
         self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
+
+class LoopBlockerTests(unittest.TestCase):
+    def test_basic_blocking(self):
+        # this is "for(int i=0, i<=7; i+=1) { a[i] = i; }"
+        test_ast = For(
+            "i",
+            CNumber(0),
+            CNumber(7),
+            CNumber(1),
+            Block(contents=[Assign(Subscript(CName("a"), CName("i")),
+                   CName("i"))]))
+
+        wanted_output = "for(intii=0;(ii<=7);ii=(ii+(1*2)))\n{\nfor(inti=ii;(i<=min((ii+2),7));i=(i+1))\n{\na[i]=i;\n}\n}"
+        output = str(LoopBlocker().loop_block(test_ast, 2)).replace(' ', '')
+        self.assertEqual(output, wanted_output)
+
 
 
 
