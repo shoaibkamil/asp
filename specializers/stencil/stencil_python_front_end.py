@@ -66,7 +66,7 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
                 body = map(self.visit, node.body)
                 self.neighbor_target = None
                 self.neigbor_grid_id = None
-                distance = self.visit(node.iter.args[1]).n
+                distance = self.visit(node.iter.args[1])
                 return StencilNeighborIter(Identifier(self.neighbor_grid_id), distance, body)
             else:
                 return node
@@ -91,3 +91,6 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
 
     def visit_BinOp(self, node):
         return ScalarBinOp(self.visit(node.left), node.op, self.visit(node.right))
+
+    def visit_Num(self, node):
+        return Constant(node.n)

@@ -7,7 +7,7 @@ Identifier(name=string)
 
 Kernel(body=(StencilNeighborIter | OutputAssignment)*)
 
-StencilNeighborIter(grid=Identifier, distance=integer, body=OutputAssignment*)
+StencilNeighborIter(grid=Identifier, distance=Constant, body=OutputAssignment*)
 
 # Assigns Expr to current output element
 OutputAssignment(value=Expr)
@@ -71,8 +71,8 @@ class StencilNeighborIter(StencilNode):
         self._fields = ('grid', 'distance', 'body')
         super(StencilNeighborIter, self).__init__()
         assert_has_type(grid, Identifier)
-        assert_has_type(distance, IntType)
-        assert distance >= 0, "distance must be nonnegative but was: %d" % distance
+        assert_has_type(distance, Constant)
+        assert distance.value >= 0, "distance must be nonnegative but was: %d" % distance.value
         assert_is_list_of(body, OutputAssignment)
         self.grid = grid
         self.distance = distance

@@ -10,7 +10,7 @@ class BasicTests(unittest.TestCase):
         self.output_element = OutputElement()
         self.scalar_bin_op = ScalarBinOp(self.output_element, ast.Add(), self.neighbor)
         self.output_assignment = OutputAssignment(self.scalar_bin_op)
-        self.neighbor_iter = StencilNeighborIter(self.in_grid, 1, [self.output_assignment])
+        self.neighbor_iter = StencilNeighborIter(self.in_grid, Constant(1), [self.output_assignment])
         self.kernel = Kernel([self.neighbor_iter])
         self.empty_kernel = Kernel([])
         self.model = StencilModel([self.in_grid], self.kernel, self.empty_kernel)
@@ -42,11 +42,11 @@ class BasicTests(unittest.TestCase):
 
     def test_stencil_neighbor_init(self):
         for distance in range(0,10):
-            StencilNeighborIter(self.in_grid, distance, [self.output_assignment])
+            StencilNeighborIter(self.in_grid, Constant(distance), [self.output_assignment])
         with self.assertRaises(AssertionError):
-            StencilNeighborIter(self.in_grid, -10, [self.output_assignment])
+            StencilNeighborIter(self.in_grid, Constant(-10), [self.output_assignment])
         # Empty neighbor loop allowed
-        StencilNeighborIter(self.in_grid, distance, [])
+        StencilNeighborIter(self.in_grid, Constant(1), [])
 
     def test_Expr(self):
         assert_has_type(self.constant, Expr)
