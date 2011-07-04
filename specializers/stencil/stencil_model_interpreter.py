@@ -1,0 +1,72 @@
+from stencil_model import *
+import ast
+from assert_utils import *
+
+class StencilModelInterpreter(ast.NodeVisitor):
+    def __init__(self, stencil_model, input_grids, output_grid):
+        assert_has_type(stencil_model, StencilModel)
+        assert len(input_grids) == len(stencil_model.input_grids), 'Incorrect number of input grids'
+        self.model = stencil_model
+        self.input_grids = input_grids
+        self.output_grid = output_grid
+        super(StencilModelInterpreter, self).__init__()
+
+    def run(self):
+        self.visit(self.model)
+
+    def visit_StencilModel(self, node):
+        self.input_dict = dict()
+        for i in range(len(node.input_grids)):
+            self.input_dict[node.input_grids[i].name] = self.input_grids[i]
+            
+        for x in self.output_grid.interior_points():
+            self.current_output_point = x
+            self.visit(node.interior_kernel)
+        for x in self.output_grid.border_points():
+            self.current_output_point = x
+            self.visit(node.border_kernel)
+
+    def visit_Identifier(self, node):
+        return self.input_dict[node.name]
+
+    def visit_Kernel(self, node):
+        for statement in node.body:
+            self.visit(statement)
+
+    def visit_StencilNeighborIter(self, node):
+        grid = self.visit(node.grid)
+        distance = self.visit(node.distance)
+        self.current_neighbor_grid = grid
+        for x in grid.neighbors(self.current_output_point, 1):
+            self.current_neighbor_point = x
+            for statement in node.body:
+                self.visit(statement)
+
+    def visit_OutputAssignment(self, node):
+        self.output_grid[self.current_output_point] = self.visit(node.value)
+        
+    def visit_Constant(self, node):
+        return node.value
+
+    def visit_Neighbor(self, node):
+        return self.current_neighbor_grid[self.current_neighbor_point]
+
+    def visit_OutputElement(self, node):
+        return self.output_grid[self.current_output_point]
+
+    def visit_InputElement(self, node):
+        assert False, 'TODO'
+
+    def visit_ScalarBinOp(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        if type(node.op) is ast.Add:
+            return left + right
+        elif type(node.op) is ast.Sub:
+            return left - right
+        elif type(node.op) is ast.Mult:
+            return left * right
+        elif type(node.op) is ast.Div:
+            return left / right
+        elif type(node.op) is ast.FloorDiv:
+            return left // right

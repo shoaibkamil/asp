@@ -1,7 +1,7 @@
 '''
 Tree grammar for stencil semantic model, based on language specification and other feedback:
 
-StencilModel(input_grids=Identifier*, interior_kernel=Kernel, boundary_kernel=Kernel)
+StencilModel(input_grids=Identifier*, interior_kernel=Kernel, border_kernel=Kernel)
 
 Identifier(name=string)
 
@@ -35,15 +35,15 @@ class StencilNode(ast.AST):
         pass
 
 class StencilModel(StencilNode):
-    def __init__(self, input_grids, interior_kernel, boundary_kernel):
-        self._fields = ('input_grids', 'interior_kernel', 'boundary_kernel')
+    def __init__(self, input_grids, interior_kernel, border_kernel):
+        self._fields = ('input_grids', 'interior_kernel', 'border_kernel')
         super(StencilModel, self).__init__()
         assert_is_list_of(input_grids, Identifier)
         assert_has_type(interior_kernel, Kernel)
-        assert_has_type(boundary_kernel, Kernel)
+        assert_has_type(border_kernel, Kernel)
         self.input_grids = input_grids
         self.interior_kernel = interior_kernel
-        self.boundary_kernel = boundary_kernel
+        self.border_kernel = border_kernel
         self.perform_checks()
 
     def perform_checks(self):

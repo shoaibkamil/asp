@@ -26,12 +26,12 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
         self.input_arg_ids = arg_ids[1:-1]
         kernels = map(self.visit, node.body)
         interior_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'interior_points', kernels))
-        boundary_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'boundary_points', kernels))
+        border_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'border_points', kernels))
         assert len(interior_kernels) <= 1, 'Can only have one loop over interior points'
-        assert len(boundary_kernels) <= 1, 'Can only have one loop over boundary points'
+        assert len(border_kernels) <= 1, 'Can only have one loop over border points'
         return StencilModel(map(lambda x: Identifier(x), self.input_arg_ids),
                             interior_kernels[0] if len(interior_kernels) > 0 else Kernel([]),
-                            boundary_kernels[0] if len(boundary_kernels) > 0 else Kernel([]))
+                            border_kernels[0] if len(border_kernels) > 0 else Kernel([]))
 
     def visit_arguments(self, node):
         assert node.vararg == None, 'kernel function may not take variable argument list'
@@ -47,7 +47,7 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
             type(node.iter.func) is ast.Attribute):
 
             if (node.iter.func.attr == "interior_points" or
-                node.iter.func.attr == "boundary_points"):
+                node.iter.func.attr == "border_points"):
                 assert node.iter.args == [] and node.iter.starargs == None and node.iter.kwargs == None, 'Invalid argument list for %s()' % node.iter.func.attr
                 grid_id = self.visit(node.iter.func.value)
                 assert grid_id == self.output_arg_id, 'Can only iterate over %s of output grid "%s" but "%s" was given' % (node.iter.func.attr, self.output_arg_id, grid_id)

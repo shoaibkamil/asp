@@ -66,7 +66,8 @@ class StencilGrid(object):
         mode; in SEJITS mode, it should be executed only in the translated
         language/library.
         """
-        pass
+        # TODO
+        return []
 
 
     def neighbors(self, center, dist):
