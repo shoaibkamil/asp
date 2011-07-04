@@ -5,15 +5,16 @@ import ast
 
 class BasicTests(unittest.TestCase):
     def test_parse(self):
-        x = StencilPythonFrontEnd(dict()).parse(ast.parse(
+        python_ast = ast.parse(
 '''
 def kernel(self, in_grid, out_grid):
     for x in out_grid.interior_points():
         for y in in_grid.neighbors(x, 1):
             out_grid[x] = out_grid[x] + in_grid[y]
 '''
-                                               ))
-        assert_has_type(x, StencilModel)
+                              )
+        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        assert_has_type(stencil_model, StencilModel)
 
 if __name__ == '__main__':
     unittest.main()

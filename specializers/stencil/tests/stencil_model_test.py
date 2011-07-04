@@ -48,14 +48,14 @@ class BasicTests(unittest.TestCase):
         # Empty neighbor loop allowed
         StencilNeighborIter(self.in_grid, distance, [])
 
-    def test_assert_is_Expr(self):
-        assert_is_Expr(self.constant)
-        assert_is_Expr(self.neighbor)
-        assert_is_Expr(self.output_element)
-        assert_is_Expr(self.input_element)
-        assert_is_Expr(self.scalar_bin_op)
+    def test_Expr(self):
+        assert_has_type(self.constant, Expr)
+        assert_has_type(self.neighbor, Expr)
+        assert_has_type(self.output_element, Expr)
+        assert_has_type(self.input_element, Expr)
+        assert_has_type(self.scalar_bin_op, Expr)
         with self.assertRaises(AssertionError):
-            assert_is_Expr(2)
+            assert_has_type(2, Expr)
 
     def test_constant_init(self):
         Constant(0)

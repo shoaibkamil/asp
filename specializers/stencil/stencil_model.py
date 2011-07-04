@@ -30,12 +30,13 @@ from types import *
 from assert_utils import *
 import ast
 
-class StencilNode(object):
+class StencilNode(ast.AST):
     def __init__(self):
         pass
 
 class StencilModel(StencilNode):
     def __init__(self, inputGrids, interiorKernel, boundaryKernel):
+        self._fields = ('inputGrids', 'interiorKernel', 'boundaryKernel')
         super(StencilModel, self).__init__()
         assert_is_list_of(inputGrids, Identifier)
         assert_has_type(interiorKernel, Kernel)
@@ -54,17 +55,20 @@ class StencilModel(StencilNode):
 
 class Identifier(StencilNode):
     def __init__(self, name):
+        self._fields = ('name',)
         super(Identifier, self).__init__()
         self.name = name
 
 class Kernel(StencilNode):
     def __init__(self, body):
+        self._fields = ('body',)
         super(Kernel, self).__init__()
         assert_is_list_of(body, [StencilNeighborIter, OutputAssignment])
         self.body = body
 
 class StencilNeighborIter(StencilNode):
     def __init__(self, grid, distance, body):
+        self._fields = ('grid', 'distance', 'body')
         super(StencilNeighborIter, self).__init__()
         assert_has_type(grid, Identifier)
         assert_has_type(distance, IntType)
@@ -74,49 +78,50 @@ class StencilNeighborIter(StencilNode):
         self.distance = distance
         self.body = body
 
-def assert_is_Expr(value):
-    assert_has_type(value, [Constant,
-                            Neighbor,
-                            OutputElement,
-                            InputElement,
-                            ScalarBinOp])
+class Expr(StencilNode):
+    def __init__(self):
+        super(Expr, self).__init__()
 
 # Assigns value to current output element
 class OutputAssignment(StencilNode):
     def __init__(self, value):
+        self._fields = ('value',)
         super(OutputAssignment, self).__init__()
-        assert_is_Expr(value)
+        assert_has_type(value, Expr)
         self.value = value
 
-class Constant(StencilNode):
+class Constant(Expr):
     def __init__(self, value):
+        self._fields = ('value',)
         super(Constant, self).__init__()
         assert_has_type(value, [IntType, LongType, FloatType])
         self.value = value
 
-class Neighbor(StencilNode):
+class Neighbor(Expr):
     def __init__(self):
         super(Neighbor, self).__init__()
 
-class OutputElement(StencilNode):
+class OutputElement(Expr):
     def __init__(self):
         super(OutputElement, self).__init__()
 
 # Offsets are relative to current output element location, given
 # as a list of integers, one per dimension.
-class InputElement(StencilNode):
+class InputElement(Expr):
     def __init__(self, grid, offset_list):
+        self._fields = ('grid', 'offset_list')
         super(InputElement, self).__init__()
         assert_has_type(grid, Identifier)
         assert_is_list_of(offset_list, [IntType, LongType])
         self.grid = grid
         self.offset_list = offset_list
 
-class ScalarBinOp(StencilNode):
+class ScalarBinOp(Expr):
     def __init__(self, left, op, right):
+        self._fields = ('left', 'op', 'right')
         super(ScalarBinOp, self).__init__()
-        assert_is_Expr(left)
-        assert_is_Expr(right)
+        assert_has_type(left, Expr)
+        assert_has_type(right, Expr)
         assert(type(op) is ast.Add or
                type(op) is ast.Sub or
                type(op) is ast.Mult or
