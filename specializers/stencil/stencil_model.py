@@ -12,11 +12,11 @@ StencilNeighborIter(grid=Identifier, distance=integer, body=OutputAssignment*)
 # Assigns Expr to current output element
 OutputAssignment(value=Expr)
 
-Expr( value=( Constant      # int, long, or float
-            | Neighbor      # Refers to current neighbor inside a StencilNeighborIter
-            | OutputElement
-            | InputElement
-            | ScalarBinOp) )
+Expr = Constant      # int, long, or float
+     | Neighbor      # Refers to current neighbor inside a StencilNeighborIter
+     | OutputElement
+     | InputElement
+     | ScalarBinOp
 
 # Offsets are relative to current output element location, given as a list of integers,
 # one per dimension.
@@ -27,22 +27,8 @@ ScalarBinOp(left=Expr, op=('+'|'-'|'*'|'/'), right=Expr)
 '''
 
 from types import *
+from assert_utils import *
 import ast
-
-def assert_has_type(x, t, x_name='obj'):
-    if type(t) is ListType:
-        type_found = False
-        for t2 in t:
-            if isinstance(x, t2):
-                type_found = True
-        assert type_found, "%s is not one of the types %s: %s" % (x_name, t, `x`)
-    else:
-        assert isinstance(x, t), "%s is not %s: %s" % (x_name, t, `x`)
-
-def assert_is_list_of(lst, t, lst_name='list'):
-    assert_has_type(lst, ListType, lst_name)
-    for x in lst:
-        assert_has_type(x, t, "%s element" % lst_name)
 
 class StencilNode(object):
     def __init__(self):
@@ -88,21 +74,18 @@ class StencilNeighborIter(StencilNode):
         self.distance = distance
         self.body = body
 
+def assert_is_Expr(value):
+    assert_has_type(value, [Constant,
+                            Neighbor,
+                            OutputElement,
+                            InputElement,
+                            ScalarBinOp])
+
 # Assigns value to current output element
 class OutputAssignment(StencilNode):
     def __init__(self, value):
         super(OutputAssignment, self).__init__()
-        assert_has_type(value, Expr)
-        self.value = value
-
-class Expr(StencilNode):
-    def __init__(self, value):
-        super(Expr, self).__init__()
-        assert_has_type(value, [Constant,
-                                Neighbor,
-                                OutputElement,
-                                InputElement,
-                                ScalarBinOp])
+        assert_is_Expr(value)
         self.value = value
 
 class Constant(StencilNode):
@@ -132,9 +115,13 @@ class InputElement(StencilNode):
 class ScalarBinOp(StencilNode):
     def __init__(self, left, op, right):
         super(ScalarBinOp, self).__init__()
-        assert_has_type(left, Expr)
-        assert_has_type(right, Expr)
-        assert(op in [ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv])
+        assert_is_Expr(left)
+        assert_is_Expr(right)
+        assert(type(op) is ast.Add or
+               type(op) is ast.Sub or
+               type(op) is ast.Mult or
+               type(op) is ast.Div or
+               type(op) is ast.FloorDiv)
         self.left = left
         self.op = op
         self.right = right
