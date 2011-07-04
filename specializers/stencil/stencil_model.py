@@ -1,7 +1,7 @@
 '''
 Tree grammar for stencil semantic model, based on language specification and other feedback:
 
-StencilModel(inputGrids=Identifier*, interiorKernel=Kernel, boundaryKernel=Kernel)
+StencilModel(input_grids=Identifier*, interior_kernel=Kernel, boundary_kernel=Kernel)
 
 Identifier(name=string)
 
@@ -35,20 +35,20 @@ class StencilNode(ast.AST):
         pass
 
 class StencilModel(StencilNode):
-    def __init__(self, inputGrids, interiorKernel, boundaryKernel):
-        self._fields = ('inputGrids', 'interiorKernel', 'boundaryKernel')
+    def __init__(self, input_grids, interior_kernel, boundary_kernel):
+        self._fields = ('input_grids', 'interior_kernel', 'boundary_kernel')
         super(StencilModel, self).__init__()
-        assert_is_list_of(inputGrids, Identifier)
-        assert_has_type(interiorKernel, Kernel)
-        assert_has_type(boundaryKernel, Kernel)
-        self.inputGrids = inputGrids
-        self.interiorKernel = interiorKernel
-        self.boundaryKernel = boundaryKernel
+        assert_is_list_of(input_grids, Identifier)
+        assert_has_type(interior_kernel, Kernel)
+        assert_has_type(boundary_kernel, Kernel)
+        self.input_grids = input_grids
+        self.interior_kernel = interior_kernel
+        self.boundary_kernel = boundary_kernel
         self.perform_checks()
 
     def perform_checks(self):
         # TODO: Check that all input grid references in tree refer to
-        # identifiers in self.inputGrids
+        # identifiers in self.input_grids
 
         # TODO: Check that Neighbor only used inside StencilNeighborIter
         pass

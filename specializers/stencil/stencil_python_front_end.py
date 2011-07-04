@@ -25,8 +25,8 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
         self.output_arg_id = arg_ids[-1]
         self.input_arg_ids = arg_ids[1:-1]
         kernels = map(self.visit, node.body)
-        interior_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'interior', kernels))
-        boundary_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'boundary', kernels))
+        interior_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'interior_points', kernels))
+        boundary_kernels = map(lambda x: x['kernel'], filter(lambda x: x['kernel_type'] == 'boundary_points', kernels))
         assert len(interior_kernels) <= 1, 'Can only have one loop over interior points'
         assert len(boundary_kernels) <= 1, 'Can only have one loop over boundary points'
         return StencilModel(map(lambda x: Identifier(x), self.input_arg_ids),
@@ -46,14 +46,15 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
         if (type(node.iter) is ast.Call and
             type(node.iter.func) is ast.Attribute):
 
-            if node.iter.func.attr == "interior_points":
-                assert node.iter.args == [] and node.iter.starargs == None and node.iter.kwargs == None, 'Invalid argument list for interior_points()'
+            if (node.iter.func.attr == "interior_points" or
+                node.iter.func.attr == "boundary_points"):
+                assert node.iter.args == [] and node.iter.starargs == None and node.iter.kwargs == None, 'Invalid argument list for %s()' % node.iter.func.attr
                 grid_id = self.visit(node.iter.func.value)
-                assert grid_id == self.output_arg_id, 'Can only iterate over interior points of output grid "%s" but "%s" was given' % (self.output_arg_id, grid_id)
+                assert grid_id == self.output_arg_id, 'Can only iterate over %s of output grid "%s" but "%s" was given' % (node.iter.func.attr, self.output_arg_id, grid_id)
                 self.kernel_target = self.visit(node.target)
                 body = map(self.visit, node.body)
                 self.kernel_target = None
-                return {'kernel_type': 'interior', 'kernel': Kernel(body)}
+                return {'kernel_type': node.iter.func.attr, 'kernel': Kernel(body)}
 
             elif node.iter.func.attr == "neighbors":
                 assert len(node.iter.args) == 2 and node.iter.starargs == None and node.iter.kwargs == None, 'Invalid argument list for neighbors()'

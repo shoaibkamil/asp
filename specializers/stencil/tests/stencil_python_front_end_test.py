@@ -4,7 +4,7 @@ from assert_utils import *
 import ast
 
 class BasicTests(unittest.TestCase):
-    def test_parse(self):
+    def test_parse_interior(self):
         python_ast = ast.parse(
 '''
 def kernel(self, in_grid, out_grid):
@@ -15,6 +15,36 @@ def kernel(self, in_grid, out_grid):
                               )
         stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
         assert_has_type(stencil_model, StencilModel)
+        assert len(stencil_model.interior_kernel.body) > 0 and len(stencil_model.boundary_kernel.body) == 0
+
+    def test_parse_boundary(self):
+        python_ast = ast.parse(
+'''
+def kernel(self, in_grid, out_grid):
+    for x in out_grid.boundary_points():
+        for y in in_grid.neighbors(x, 1):
+            out_grid[x] = out_grid[x] + in_grid[y]
+'''
+                              )
+        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        assert_has_type(stencil_model, StencilModel)
+        assert len(stencil_model.interior_kernel.body) == 0 and len(stencil_model.boundary_kernel.body) > 0
+
+    def test_parse_both(self):
+        python_ast = ast.parse(
+'''
+def kernel(self, in_grid, out_grid):
+    for x in out_grid.interior_points():
+        for y in in_grid.neighbors(x, 1):
+            out_grid[x] = out_grid[x] + in_grid[y]
+    for x in out_grid.boundary_points():
+        for y in in_grid.neighbors(x, 1):
+            out_grid[x] = out_grid[x] + in_grid[y]
+'''
+                              )
+        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        assert_has_type(stencil_model, StencilModel)
+        assert len(stencil_model.interior_kernel.body) > 0 and len(stencil_model.boundary_kernel.body) > 0
 
 if __name__ == '__main__':
     unittest.main()
