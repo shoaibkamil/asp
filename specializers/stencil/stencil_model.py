@@ -44,14 +44,10 @@ class StencilModel(StencilNode):
         self.input_grids = input_grids
         self.interior_kernel = interior_kernel
         self.border_kernel = border_kernel
-        self.perform_checks()
+        self.verify()
 
-    def perform_checks(self):
-        # TODO: Check that all input grid references in tree refer to
-        # identifiers in self.input_grids
-
-        # TODO: Check that Neighbor only used inside StencilNeighborIter
-        pass
+    def verify(self):
+        StencilModelVerifier(self).verify()
 
 class Identifier(StencilNode):
     def __init__(self, name):
@@ -130,3 +126,27 @@ class ScalarBinOp(Expr):
         self.left = left
         self.op = op
         self.right = right
+
+class StencilModelVerifier(ast.NodeVisitor):
+    def __init__(self, stencil_model):
+        assert_has_type(stencil_model, StencilModel)
+        self.model = stencil_model
+        super(StencilModelVerifier, self).__init__()
+
+    def verify(self):
+        self.visit(self.model)
+
+    def visit_StencilModel(self, node):
+        self.input_grid_names = map(lambda x: x.name, node.input_grids)
+        self.generic_visit(node)
+
+    def visit_Identifier(self, node):
+        assert node.name in self.input_grid_names, 'Identifier %s not listed among input grid identifiers' % node.name
+
+    def visit_StencilNeighborIter(self, node):
+        self.in_stencil_neighbor_iter = True
+        self.generic_visit(node)
+        self.in_stencil_neighbor_iter = False
+
+    def visit_Neighbor(self, node):
+        assert self.in_stencil_neighbor_iter, 'Neighbor node allowed only inside StencilNeighborIter'
