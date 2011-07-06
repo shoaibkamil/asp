@@ -29,15 +29,11 @@ class StencilModelInterpreter(ast.NodeVisitor):
     def visit_Identifier(self, node):
         return self.input_dict[node.name]
 
-    def visit_Kernel(self, node):
-        for statement in node.body:
-            self.visit(statement)
-
     def visit_StencilNeighborIter(self, node):
         grid = self.visit(node.grid)
         distance = self.visit(node.distance)
         self.current_neighbor_grid = grid
-        for x in grid.neighbors(self.current_output_point, 1):
+        for x in grid.neighbors(self.current_output_point, distance):
             self.current_neighbor_point = x
             for statement in node.body:
                 self.visit(statement)
@@ -55,7 +51,9 @@ class StencilModelInterpreter(ast.NodeVisitor):
         return self.output_grid[self.current_output_point]
 
     def visit_InputElement(self, node):
-        assert False, 'TODO'
+        grid = self.visit(node.grid)
+        x = tuple(map(lambda a,b: a+b, list(self.current_output_point), node.offset_list))
+        return grid[x]
 
     def visit_ScalarBinOp(self, node):
         left = self.visit(node.left)
