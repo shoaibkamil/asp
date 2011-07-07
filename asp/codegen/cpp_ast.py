@@ -207,17 +207,23 @@ class For(RawFor):
     #TODO: setting initial,end,etc should update the field in the shadow
     #TODO: should loopvar be a string or a CName?
     def __init__(self, loopvar, initial, end, increment, body):
-        self.loopvar = loopvar
-        self.initial = initial
-        self.end = end
-        self.increment = increment
+        # use setattr on object so we don't use our special one during initialization
+        object.__setattr__(self, "loopvar", loopvar)
+        object.__setattr__(self, "initial", initial)
+        object.__setattr__(self, "end", end)
+        object.__setattr__(self, "increment", increment)
         self._fields = ['start', 'condition', 'update', 'body']
+
         super(For, self).__init__(
-#            ForInitializer(Value("int", self.loopvar), self.initial),
             Initializer(Value("int", self.loopvar), self.initial),
             BinOp(CName(self.loopvar), "<=", self.end),
-            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", increment)),
+            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", self.increment)),
             body)
+
+    def set_underlying_for(self):
+        self.start = Initializer(Value("int", self.loopvar), self.initial)
+        self.condition = BinOp(CName(self.loopvar), "<=", self.end)
+        self.update = Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", self.increment))
 
     def generate(self, with_semicolon=False):
         return super(For, self).generate()
@@ -226,6 +232,14 @@ class For(RawFor):
         return "for (%s; %s; %s)" % (self.start,
                                      self.condition,
                                      self.update)
+
+    def __setattr__(self, name, val):
+        # we want to convey changes to the for loop to the underlying
+        # representation.
+        object.__setattr__(self, name, val)
+        if name in ["loopvar", "initial", "end", "increment"]:
+            self.set_underlying_for()
+
 
 
 class FunctionBody(codepy.cgen.FunctionBody):

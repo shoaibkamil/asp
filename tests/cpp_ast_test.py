@@ -32,6 +32,11 @@ class ForTests(unittest.TestCase):
         f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
         self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1))\n{\n}")
 
+    def test_change_loopvar(self):
+        f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
+        f.loopvar = "j"
+        self.assertEqual(str(f), "for (int j = 0; (j <= 10); j = (j + 1))\n{\n}")
+
 @unittest.skip("Ignoring XML tests since we don't currently use XML representation.")
 class XMLTests(unittest.TestCase):
     def test_BinOp(self):
