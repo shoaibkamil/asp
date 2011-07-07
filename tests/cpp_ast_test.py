@@ -2,6 +2,29 @@ import unittest2 as unittest
 from asp.codegen.cpp_ast import *
 import xml.etree.ElementTree as ElementTree
 
+class GenerationTests(unittest.TestCase):
+    # these are simply regression tests for some of the more complicated ast
+    # nodes to make sure we don't muck them up when fixing our handling of
+    # semicolons.
+    def test_For(self):
+        f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
+        self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1))\n{\n}")
+
+    def test_BinOp(self):
+        b = BinOp(CNumber(5), "-", CNumber(5))
+        self.assertEqual(str(b), "(5 - 5)")
+
+    def test_Assign(self):
+        f = Assign(CName("foo"), BinOp(CNumber(5), "+", CNumber(5)))
+        self.assertEqual(str(f), "foo = (5 + 5)")
+
+    def test_UnaryOp(self):
+        u = UnaryOp("++", CName("foo"))
+        self.assertEqual(str(u), "(++(foo))")
+
+    def test_Block(self):
+        b = Block(contents=[FunctionCall(CName("foo")), FunctionCall(CName("boo"))])
+        self.assertEqual(str(b), "{\n  foo();\n  boo();\n}")
 
 class ForTests(unittest.TestCase):
     def test_init(self):
@@ -9,6 +32,7 @@ class ForTests(unittest.TestCase):
         f = For("i", CNumber(0), CNumber(10), CNumber(1), Block())
         self.assertEqual(str(f), "for (int i = 0; (i <= 10); i = (i + 1))\n{\n}")
 
+@unittest.skip("Ignoring XML tests since we don't currently use XML representation.")
 class XMLTests(unittest.TestCase):
     def test_BinOp(self):
         t = BinOp(CNumber(5), '+', CName("foo"))
