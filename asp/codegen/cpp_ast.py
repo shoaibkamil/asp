@@ -278,7 +278,6 @@ class Block(codepy.cgen.Block):
     def generate(self, with_semicolon=False):
         yield "{"
         for item in self.contents:
-            print item.__class__
             for item_line in item.generate(with_semicolon=True):
                 yield "  " + item_line
         yield "}"       
@@ -328,7 +327,6 @@ class Assign(codepy.cgen.Assign):
         return node
 
     def generate(self, with_semicolon=False):
-        print "in assign: ", self.lvalue.__class__
         lvalue = self.lvalue.generate(with_semicolon=False).next()
         rvalue = str(self.rvalue)
         yield "%s = %s" % (lvalue, rvalue) + (";" if with_semicolon else "")
