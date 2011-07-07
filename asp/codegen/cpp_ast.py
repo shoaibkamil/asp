@@ -162,7 +162,7 @@ class TypeCast(Expression):
         self.value = value
         self._fields = ['tp', 'value']
 
-    def generate(self):
+    def generate(self, with_semicolon=False):
         yield "((%s)%s)" % (self.tp.inline(), self.value)
 
 #class ForInitializer(codepy.cgen.Initializer):
