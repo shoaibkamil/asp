@@ -413,5 +413,5 @@ class ASPModule(object):
         for x in self.backends.keys():
             src += str(self.backends[x].module.generate())
 
-        return x
+        return src
 
