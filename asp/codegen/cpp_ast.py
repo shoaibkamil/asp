@@ -50,6 +50,9 @@ class Expression(Generable):
     def __init__(self):
         super(Expression, self).__init__()
         self._fields = []
+
+    def generate(self, with_semicolon=False):
+        yield ""
         
 
 class BinOp(Expression):
@@ -91,7 +94,7 @@ class Subscript(Expression):
         self.index = index
         self._fields = ['value', 'index']
 
-    def generate(self):
+    def generate(self, with_semicolon=False):
         yield "%s[%s]" % (self.value, self.index)
 
     def to_xml(self):
@@ -216,6 +219,9 @@ class For(RawFor):
             Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", increment)),
             body)
 
+    def generate(self, with_semicolon=False):
+        return super(For, self).generate()
+
     def intro_line(self):
         return "for (%s; %s; %s)" % (self.start,
                                      self.condition,
@@ -268,7 +274,14 @@ class Block(codepy.cgen.Block):
     def __init__(self, contents=[]):
         super(Block, self).__init__(contents)
         self._fields = ['contents']
-        
+
+    def generate(self, with_semicolon=False):
+        yield "{"
+        for item in self.contents:
+            print item.__class__
+            for item_line in item.generate(with_semicolon=True):
+                yield "  " + item_line
+        yield "}"       
     def to_xml(self):
         node = ElementTree.Element("Block")
         for x in self.contents:
@@ -276,7 +289,7 @@ class Block(codepy.cgen.Block):
         return node
 
 class UnbracedBlock(Block):
-    def generate(self):
+    def generate(self, with_semicolon=False):
         for item in self.contents:
             for item_line in item.generate(with_semicolon=True):
                 yield " " + item_line
@@ -286,6 +299,9 @@ class Define(codepy.cgen.Define):
     def __init__(self, symbol, value):
         super(Define, self).__init__(symbol, value)
         self._fields = ['symbol', 'value']
+
+    def generate(self, with_semicolon=False):
+        return super(Define, self).generate()
         
     def to_xml(self):
         return ElementTree.Element("Define", attrib={"symbol":self.symbol, "value":self.value})
@@ -312,6 +328,7 @@ class Assign(codepy.cgen.Assign):
         return node
 
     def generate(self, with_semicolon=False):
+        print "in assign: ", self.lvalue.__class__
         lvalue = self.lvalue.generate(with_semicolon=False).next()
         rvalue = str(self.rvalue)
         yield "%s = %s" % (lvalue, rvalue) + (";" if with_semicolon else "")
@@ -336,10 +353,4 @@ class Print(Generable):
         else:
             yield 'std::cout %s;' % self.text
 
-class Block(codepy.cgen.Block):
-    def generate(self, with_semicolon=False):
-        yield "{"
-        for item in self.contents:
-            for item_line in item.generate(with_semicolon=True):
-                yield "  " + item_line
-        yield "}"
+
