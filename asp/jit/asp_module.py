@@ -287,7 +287,8 @@ class ASPModule(object):
     """
 
     #FIXME: specializer should be required.
-    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False):
+    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False, use_cilk=False):
+            
         self.specialized_functions= {}
         self.helper_method_names = []
 
@@ -314,6 +315,10 @@ class ASPModule(object):
                                                codepy.toolchain.guess_nvcc_toolchain(),
                                                self.cache_dir)
             self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
+
+        if use_cilk:
+            self.backends["cilk"] = self.backends["c++"]
+            self.backends["cilk"].toolchain.cc = "icc"
 
 
 

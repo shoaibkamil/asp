@@ -221,6 +221,8 @@ class ASPModuleMiscTests(unittest.TestCase):
         a.generate()
 
         self.assertTrue(mock_backend.module.generate.called)
+
+
         
 
 class SingleFuncTests(unittest.TestCase):
