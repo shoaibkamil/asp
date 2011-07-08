@@ -183,6 +183,9 @@ class RawFor(codepy.cgen.For):
         super(RawFor, self).__init__(start, condition, update, body)
         self._fields = ['start', 'condition', 'update', 'body']
 
+    def generate(self, with_semicolon=False):
+        return super(RawFor, self).generate()
+
     def to_xml(self):
         node = ElementTree.Element("For")
         if (not isinstance(self.start, str)):
