@@ -12,7 +12,7 @@ class NodeVisitor(ast.NodeVisitor):
         for field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
-                    if isinstance(item, ast.AST):
+                    if isinstance(item, ast.AST) or isinstance(item, Generable):
                         self.visit(item)
             elif isinstance(value, ast.AST) or isinstance(value, Generable):
                 self.visit(value)

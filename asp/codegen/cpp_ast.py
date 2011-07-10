@@ -170,6 +170,10 @@ class TypeCast(Expression):
 #        return super(ForInitializer, self).__str__()[0:-1]
 
 class Initializer(codepy.cgen.Initializer):
+    def __init__(self, vdecl, data):
+        self._fields = ['vdecl', 'data']
+        super(Initializer, self).__init__(vdecl, data)
+
     def generate(self, with_semicolon=False):
         tp_lines, tp_decl = self.vdecl.get_decl_pair()
         tp_lines = list(tp_lines)
@@ -177,6 +181,13 @@ class Initializer(codepy.cgen.Initializer):
             yield line
         yield "%s %s = %s" % (tp_lines[-1], tp_decl, self.data) + (";" if with_semicolon else "")
     
+class Pragma(codepy.cgen.Pragma):
+    def __init__(self, value):
+        self._fields = ['value']
+        super(Pragma, self).__init__(value)
+
+    def generate(self, with_semicolon=False):
+        return super(Pragma, self).generate()
 
 class RawFor(codepy.cgen.For):
     def __init__(self, start, condition, update, body):
