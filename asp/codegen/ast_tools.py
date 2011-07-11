@@ -164,6 +164,22 @@ class ConvertAST(ast.NodeTransformer):
             text += ' << \" \" << ' + str(self.visit(fragment))
         return Print(text, node.nl)
 
+    def visit_Compare(self, node):
+        # only handles 1 thing on right side for now (1st op and comparator)
+        # also currently not handling: Is, IsNot, In, NotIn
+        ops = {'Eq':'==','NotEq':'!=','Lt':'<','LtE':'<=','Gt':'>','GtE':'>='}
+        op = ops[node.ops[0].__class__.__name__]
+        return Compare(self.visit(node.left), op, self.visit(node.comparators[0]))
+
+    def visit_If(self, node):
+        test = self.visit(node.test)
+        body = Block([self.visit(x) for x in node.body])
+        if node.orelse == []:
+            orelse = None
+        else:
+            orelse = Block([self.visit(x) for x in node.orelse])
+        return IfConv(test, body, orelse)
+
 
 class LoopUnroller(object):
     class UnrollReplacer(NodeTransformer):
