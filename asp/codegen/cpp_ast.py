@@ -13,17 +13,17 @@ class CNumber(Generable):
         self.num = num
         self._fields = []
 
-    def __str__(self):
-        return str(self.num)
+#    def __str__(self):
+#        return str(self.num)
 
     def to_xml(self):
         return ElementTree.Element("CNumber", attrib={"num":str(self.num)})
 
-    def generate(self, with_semicolon=True):
+    def generate(self, with_semicolon=False):
         if with_semicolon:
             # This node type does not represent a complete C++ statement
             raise ValueError
-        yield self.__str__()
+        yield str(self.num)
 
 class String(Generable):
     def __init__(self, text):
@@ -37,29 +37,23 @@ class CName(Generable):
         self.name = name
         self._fields = []
 
-    def __str__(self):
-        return str(self.name)
-
     def to_xml(self):
         return ElementTree.Element("CName", attrib={"name":str(self.name)})
 
-    def generate(self, with_semicolon=True):
+    def generate(self, with_semicolon=False):
         if with_semicolon:
             # This node type does not represent a complete C++ statement
             raise ValueError
-        yield self.__str__()
+        yield self.name
 
 class Expression(Generable):
     def __init__(self):
         super(Expression, self).__init__()
         self._fields = []
+
+    def generate(self, with_semicolon=False):
+        yield ""
         
-
-    def __str__(self):
-        return ""
-
-    def generate(self, with_semicolon=True):
-        yield str(self) + (';' if with_semicolon else '')
 
 class BinOp(Expression):
     def __init__(self, left, op, right):
@@ -68,8 +62,8 @@ class BinOp(Expression):
         self.right = right
         self._fields = ['left', 'right']
 
-    def __str__(self):
-        return "(%s %s %s)" % (self.left, self.op, self.right)
+    def generate(self, with_semicolon=False):
+        yield "(%s %s %s)" % (self.left, self.op, self.right) + (";" if with_semicolon else "")
 
     def to_xml(self):
         node = ElementTree.Element("BinOp", attrib={"op":str(self.op)})
@@ -85,8 +79,8 @@ class UnaryOp(Expression):
         self.operand = operand
         self._fields = ['operand']
 
-    def __str__(self):
-        return "(%s(%s))" % (self.op, self.operand)
+    def generate(self, with_semicolon=False):
+        yield "(%s(%s))" % (self.op, self.operand) + (";" if with_semicolon else "")
 
     def to_xml(self):
         node = ElementTree.Element("UnaryOp", attrib={"op":str(self.op)})
@@ -100,8 +94,8 @@ class Subscript(Expression):
         self.index = index
         self._fields = ['value', 'index']
 
-    def __str__(self):
-        return "%s[%s]" % (self.value, self.index)
+    def generate(self, with_semicolon=False):
+        yield "%s[%s]" % (self.value, self.index)
 
     def to_xml(self):
         node = ElementTree.Element("Subscript")
@@ -115,8 +109,8 @@ class Call(Expression):
         self.args = args
         self._fields = ['func', 'args']
 
-    def __str__(self):
-        return "%s(%s)" % (self.func, ", ".join(map(str, self.args)))
+    def generate(self, with_semicolon=False): 
+        yield "%s(%s)" % (self.func, ", ".join(map(str, self.args))) + (";" if with_semicolon else "")
 
     def to_xml(self):
         node = ElementTree.Element("Call", attrib={"func":str(self.func)})
@@ -132,8 +126,8 @@ class PostfixUnaryOp(Expression):
         self.op = op
         self._fields = ['op', 'operand']
 
-    def __str__(self):
-        return "((%s)%s)" % (self.operand, self.op)
+    def generate(self, with_semicolon=False):
+        yield "((%s)%s)" % (self.operand, self.op) + (";" if with_semicolon else "")
 
     def to_xml(self):
         node = ElementTree.Element("PostfixUnaryOp", attrib={"op":str(self.op)})
@@ -149,8 +143,8 @@ class ConditionalExpr(Expression):
         self.orelse = orelse
         self._fields = ['test', 'body', 'orelse']
 
-    def __str__(self):
-        return "(%s ? %s : %s)" % (self.test, self.body, self.orelse)
+    def generate(self, with_semicolon=False):
+        yield "(%s ? %s : %s)" % (self.test, self.body, self.orelse) + (";" if with_semicolon else "")
 
     def to_xml(self):
         node = ElementTree.Element("ConditionalExpr")
@@ -168,18 +162,40 @@ class TypeCast(Expression):
         self.value = value
         self._fields = ['tp', 'value']
 
-    def __str__(self):
-        return "((%s)%s)" % (self.tp.inline(), self.value)
+    def generate(self, with_semicolon=False):
+        yield "((%s)%s)" % (self.tp.inline(), self.value)
 
-class ForInitializer(codepy.cgen.Initializer):
-    def __str__(self):
-        return super(ForInitializer, self).__str__()[0:-1]
+#class ForInitializer(codepy.cgen.Initializer):
+#    def __str__(self):
+#        return super(ForInitializer, self).__str__()[0:-1]
 
+class Initializer(codepy.cgen.Initializer):
+    def __init__(self, vdecl, data):
+        self._fields = ['vdecl', 'data']
+        super(Initializer, self).__init__(vdecl, data)
+
+    def generate(self, with_semicolon=False):
+        tp_lines, tp_decl = self.vdecl.get_decl_pair()
+        tp_lines = list(tp_lines)
+        for line in tp_lines[:-1]:
+            yield line
+        yield "%s %s = %s" % (tp_lines[-1], tp_decl, self.data) + (";" if with_semicolon else "")
+    
+class Pragma(codepy.cgen.Pragma):
+    def __init__(self, value):
+        self._fields = ['value']
+        super(Pragma, self).__init__(value)
+
+    def generate(self, with_semicolon=False):
+        return super(Pragma, self).generate()
 
 class RawFor(codepy.cgen.For):
     def __init__(self, start, condition, update, body):
         super(RawFor, self).__init__(start, condition, update, body)
         self._fields = ['start', 'condition', 'update', 'body']
+
+    def generate(self, with_semicolon=False):
+        return super(RawFor, self).generate()
 
     def to_xml(self):
         node = ElementTree.Element("For")
@@ -205,19 +221,39 @@ class For(RawFor):
     #TODO: setting initial,end,etc should update the field in the shadow
     #TODO: should loopvar be a string or a CName?
     def __init__(self, loopvar, initial, end, increment, body):
-        self.loopvar = loopvar
-        self.initial = initial
-        self.end = end
-        self.increment = increment
+        # use setattr on object so we don't use our special one during initialization
+        object.__setattr__(self, "loopvar", loopvar)
+        object.__setattr__(self, "initial", initial)
+        object.__setattr__(self, "end", end)
+        object.__setattr__(self, "increment", increment)
         self._fields = ['start', 'condition', 'update', 'body']
+
         super(For, self).__init__(
-            ForInitializer(Value("int", self.loopvar), self.initial),
+            Initializer(Value("int", self.loopvar), self.initial),
             BinOp(CName(self.loopvar), "<=", self.end),
-            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", increment)),
+            Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", self.increment)),
             body)
 
+    def set_underlying_for(self):
+        self.start = Initializer(Value("int", self.loopvar), self.initial)
+        self.condition = BinOp(CName(self.loopvar), "<=", self.end)
+        self.update = Assign(CName(self.loopvar), BinOp(CName(self.loopvar), "+", self.increment))
+
+    def generate(self, with_semicolon=False):
+        return super(For, self).generate()
+
     def intro_line(self):
-        return "for (%s; %s; %s)" % (self.start, self.condition, str(self.update)[0:-1])
+        return "for (%s; %s; %s)" % (self.start,
+                                     self.condition,
+                                     self.update)
+
+    def __setattr__(self, name, val):
+        # we want to convey changes to the for loop to the underlying
+        # representation.
+        object.__setattr__(self, name, val)
+        if name in ["loopvar", "initial", "end", "increment"]:
+            self.set_underlying_for()
+
 
 
 class FunctionBody(codepy.cgen.FunctionBody):
@@ -266,7 +302,13 @@ class Block(codepy.cgen.Block):
     def __init__(self, contents=[]):
         super(Block, self).__init__(contents)
         self._fields = ['contents']
-        
+
+    def generate(self, with_semicolon=False):
+        yield "{"
+        for item in self.contents:
+            for item_line in item.generate(with_semicolon=True):
+                yield "  " + item_line
+        yield "}"       
     def to_xml(self):
         node = ElementTree.Element("Block")
         for x in self.contents:
@@ -274,9 +316,9 @@ class Block(codepy.cgen.Block):
         return node
 
 class UnbracedBlock(Block):
-    def generate(self):
+    def generate(self, with_semicolon=False):
         for item in self.contents:
-            for item_line in item.generate():
+            for item_line in item.generate(with_semicolon=True):
                 yield " " + item_line
 
 
@@ -284,6 +326,9 @@ class Define(codepy.cgen.Define):
     def __init__(self, symbol, value):
         super(Define, self).__init__(symbol, value)
         self._fields = ['symbol', 'value']
+
+    def generate(self, with_semicolon=False):
+        return super(Define, self).generate()
         
     def to_xml(self):
         return ElementTree.Element("Define", attrib={"symbol":self.symbol, "value":self.value})
@@ -309,10 +354,10 @@ class Assign(codepy.cgen.Assign):
         ElementTree.SubElement(node, "rvalue").append(self.rvalue.to_xml())
         return node
 
-    def generate(self):
-        lvalue = str(self.lvalue).rstrip().rstrip(';')
+    def generate(self, with_semicolon=False):
+        lvalue = self.lvalue.generate(with_semicolon=False).next()
         rvalue = str(self.rvalue)
-        yield "%s = %s;" % (lvalue, rvalue)
+        yield "%s = %s" % (lvalue, rvalue) + (";" if with_semicolon else "")
 
 class FunctionCall(codepy.cgen.Generable):
     def __init__(self, fname, params=[]):
@@ -320,16 +365,18 @@ class FunctionCall(codepy.cgen.Generable):
         self.params = params
         self._fields = ['fname', 'params']
 
-    def __str__(self):
-        return "%s(%s)" % (self.fname, ','.join(map(str, self.params)))
+    def generate(self, with_semicolon=False):
+        yield "%s(%s)" % (self.fname, ','.join(map(str, self.params))) + (";" if with_semicolon else "")
 
 class Print(Generable):
     def __init__(self, text, newline):
         self.text = text
         self.newline = newline
 
-    def generate(self):
+    def generate(self, with_semicolon=True):
         if self.newline:
             yield 'std::cout %s << std::endl;' % self.text
         else:
             yield 'std::cout %s;' % self.text
+
+

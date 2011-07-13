@@ -4,72 +4,73 @@ import python_ast as ast
 from asp.util import *
 
 
-# unified class for visiting python and c++ AST nodes
+
 class NodeVisitor(ast.NodeVisitor):
-    # adapted from Python source
+    """Unified class for visiting Python and C++ AST nodes, adapted from Python source."""
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
         for field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
-                    if isinstance(item, ast.AST):
+                    if isinstance(item, ast.AST) or isinstance(item, Generable):
                         self.visit(item)
             elif isinstance(value, ast.AST) or isinstance(value, Generable):
                 self.visit(value)
 
 
-# unified class for *transforming* python and c++ AST nodes
 class NodeTransformer(ast.NodeTransformer):
-    # adapted from Python source
-     def generic_visit(self, node):
-	        for field, old_value in ast.iter_fields(node):
-	            old_value = getattr(node, field, None)
-	            if isinstance(old_value, list):
-	                new_values = []
-	                for value in old_value:
-	                    if isinstance(value, ast.AST) or isinstance(value, Generable):
-	                        value = self.visit(value)
-	                        if value is None:
-	                            continue
-	                        elif not (isinstance(value, ast.AST) or isinstance(value, Generable)):
-	                            new_values.extend(value)
-	                            continue
-	                    new_values.append(value)
-	                old_value[:] = new_values
-	            elif isinstance(old_value, ast.AST) or isinstance(old_value, Generable):
-	                new_node = self.visit(old_value)
-	                if new_node is None:
-	                    delattr(node, field)
-	                else:
-	                    setattr(node, field, new_node)
-	        return node
+    """Unified class for *transforming* Python and C++ AST nodes, adapted from Python source"""
+    def generic_visit(self, node):
+        for field, old_value in ast.iter_fields(node):
+            old_value = getattr(node, field, None)
+            if isinstance(old_value, list):
+                new_values = []
+                for value in old_value:
+                    if isinstance(value, ast.AST) or isinstance(value, Generable):
+                        value = self.visit(value)
+                        if value is None:
+                            continue
+                        elif not (isinstance(value, ast.AST) or isinstance(value, Generable)):
+                            new_values.extend(value)
+                            continue
+                    new_values.append(value)
+                old_value[:] = new_values
+            elif isinstance(old_value, ast.AST) or isinstance(old_value, Generable):
+                new_node = self.visit(old_value)
+                if new_node is None:
+                    delattr(node, field)
+                else:
+                    setattr(node, field, new_node)
+        return node
 
 
-# class to replace python AST nodes
+
 class ASTNodeReplacer(ast.NodeTransformer):
-	def __init__(self, original, replacement):
-		self.original = original
-		self.replacement = replacement
+    """Class to replace Python AST nodes."""
+    def __init__(self, original, replacement):
+        self.original = original
+        self.replacement = replacement
 
-	def visit(self, node):
-		eql = False
-		if node.__class__ == self.original.__class__:
-			eql = True
-			for (field, value) in ast.iter_fields(self.original):
-				if field != 'ctx' and node.__getattribute__(field) != value:
-					debug_print( str(node.__getattribute__(field)) + " != " + str(value) )
-					eql = False
+    def visit(self, node):
+        eql = False
+        if node.__class__ == self.original.__class__:
+            eql = True
+            for (field, value) in ast.iter_fields(self.original):
+                if field != 'ctx' and node.__getattribute__(field) != value:
+                    debug_print( str(node.__getattribute__(field)) + " != " + str(value) )
+                    eql = False
 
-		if eql:
-			import copy
-			debug_print( "Found something to replace!!!!" )
-			return copy.deepcopy(self.replacement)
-		else:
-			return self.generic_visit(node)
+        if eql:
+            import copy
+            debug_print( "Found something to replace!!!!" )
+            return copy.deepcopy(self.replacement)
+        else:
+            return self.generic_visit(node)
 
 
-# class to convert from python AST to C++ AST
+
 class ConvertAST(ast.NodeTransformer):
+    """Class to convert from Python AST to C++ AST"""
     def visit_Num(self, node):
         return CNumber(node.n)
 
@@ -140,13 +141,14 @@ class ConvertAST(ast.NodeTransformer):
                                                 self.visit(node.args)),
                             Block([self.visit(x) for x in node.body]))
 
-    # only do the basic case: everything is void*,  no named args, no default values
+
     def visit_arguments(self, node):
+        """Only return the basic case: everything is void*,  no named args, no default values"""
         return [Pointer(Value("void",self.visit(x))) for x in node.args]
 
     def visit_Call(self, node):
-        # we only handle calls that are casts; everything else (eventually) will be
-        # translated into callbacks into Python
+        """We only handle calls that are casts; everything else (eventually) will be
+           translated into callbacks into Python."""
         if isinstance(node.func, ast.Name):
             if node.func.id == "int":
                 return TypeCast(Value('int', ''), self.visit(node.args[0]))

@@ -92,8 +92,8 @@ class StencilConvertASTTests(unittest.TestCase):
 
     def test_StencilConvertAST_array_unpack_to_double(self):
         result = StencilKernel.StencilConvertAST(self.argdict).gen_array_unpack()
-        self.assertEqual("\n".join([str(x) for x in result]), "npy_double *_my_out_grid = ((npy_double *)PyArray_DATA(out_grid));\n" +
-            "npy_double *_my_in_grid = ((npy_double *)PyArray_DATA(in_grid));")
+        self.assertEqual("\n".join([str(x) for x in result]), "npy_double *_my_out_grid = ((npy_double *)PyArray_DATA(out_grid))\n" +
+            "npy_double *_my_in_grid = ((npy_double *)PyArray_DATA(in_grid))")
 
     def test_visit_StencilInteriorIter(self):
         import asp.codegen.python_ast as ast, re
