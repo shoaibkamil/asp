@@ -1,6 +1,7 @@
 from stencil_model import *
 import ast
 from assert_utils import *
+from copy import deepcopy
 
 class StencilUnrollNeighborIter(ast.NodeTransformer):
     def __init__(self, stencil_model, input_grids, output_grid):
@@ -20,7 +21,7 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
 
     def run(self):
         self.visit(self.model)
-        StencilModelChecker(self.model).run()
+        StencilModelChecker().visit(self.model)
         StencilUnrollNeighborIter.NoNeighborIterChecker().visit(self.model)
 
     def visit_StencilModel(self, node):
@@ -47,7 +48,7 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
         for x in grid.neighbors(zero_point, distance):
             self.offset_list = list(x)
             for statement in node.body:
-                result.append(self.visit(statement.copy()))
+                result.append(self.visit(deepcopy(statement)))
         self.offset_list = None
         self.current_neighbor_grid = None
         return result

@@ -17,9 +17,9 @@ class BasicTests(unittest.TestCase):
 
         StencilModelInterpreter(model, [in_grid], out_grid).run()
         for x in out_grid.interior_points():
-            assert out_grid[x] == 4
+            self.assertEqual(out_grid[x], 4)
         for x in out_grid.border_points():
-            assert out_grid[x] == 0
+            self.assertEqual(out_grid[x], 0)
 
 if __name__ == '__main__':
     unittest.main()

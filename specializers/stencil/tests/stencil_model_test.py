@@ -1,6 +1,7 @@
 import unittest2 as unittest
 import ast
 from stencil_model import *
+from assert_utils import *
 
 class BasicTests(unittest.TestCase):
     def setUp(self):
