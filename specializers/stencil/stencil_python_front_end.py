@@ -1,3 +1,10 @@
+"""Takes a Python AST and converts it to a corresponding StencilModel.
+
+Throws an exception if the input does not represent a valid stencil
+kernel program. This is the first stage of processing and is done only
+once when a stencil class is initialized.
+"""
+
 from stencil_model import *
 from assert_utils import *
 import ast

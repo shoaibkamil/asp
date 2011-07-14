@@ -1,3 +1,6 @@
+"""A two-dimension grid of numeric values, used for input and output to a stencil kernel.
+"""
+
 import numpy
 
 class StencilGrid(object):

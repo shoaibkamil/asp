@@ -1,3 +1,11 @@
+"""Defines the semantic model, a tree data structure representing a valid stencil kernel program.
+
+The semantic model is specified using Asp's tree_grammar DSL.  The
+stencil_model classes have generated assertions and additional manual
+structural checks to prevent the construction of a tree not
+corresponding to a valid stencil kernel program.
+"""
+
 import types
 import ast
 from assert_utils import *

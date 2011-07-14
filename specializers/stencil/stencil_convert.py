@@ -1,3 +1,10 @@
+"""Takes an unrolled StencilModel and converts it to a C++ AST.
+
+The third stage in processing. Input must be processed with
+StencilUnrollNeighborIter first to remove neighbor loops and
+InputElementZeroOffset nodes. Done once per call.
+"""
+
 import ast
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools

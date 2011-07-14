@@ -1,3 +1,18 @@
+"""The main driver, intercepts the kernel() call and invokes the other components.
+
+Stencil kernel classes are subclassed from the StencilKernel class
+defined here. At initialization time, the text of the kernel() method
+is parsed into a Python AST, then converted into a StencilModel by
+stencil_python_front_end. The kernel() function is replaced by
+shadow_kernel(), which intercepts future calls to kernel().
+
+During each call to kernel(), stencil_unroll_neighbor_iter is called
+to unroll neighbor loops, stencil_convert is invoked to convert the
+model to C++, and an external compiler tool is invoked to generate a
+binary which then efficiently completes executing the call. The binary
+is cached for future calls.
+"""
+
 import numpy
 import inspect
 from stencil_grid import *

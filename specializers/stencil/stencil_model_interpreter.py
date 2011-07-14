@@ -1,3 +1,8 @@
+"""Takes a StencilModel and interprets it (slowly) in Python.
+
+Facilitates isolation of bugs between stages in the specializer.
+"""
+
 from stencil_model import *
 import ast
 from assert_utils import *

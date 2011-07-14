@@ -1,3 +1,10 @@
+"""Unrolls neighbor loops and InputElementZeroOffset nodes in a StencilModel.
+
+The second stage in stencil kernel processing, after
+stencil_python_front_end and before stencil_convert. This stage is
+done once per call because the dimensions of the input are needed.
+"""
+
 from stencil_model import *
 import ast
 from assert_utils import *

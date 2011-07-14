@@ -1,3 +1,6 @@
+"""Utilities for checking object types using assertions.
+"""
+
 from types import *
 
 def assert_has_type(x, t, x_name='obj'):
