@@ -379,4 +379,16 @@ class Print(Generable):
         else:
             yield 'std::cout %s;' % self.text
 
+class Compare(Generable):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.op = op
+        self.right = right
+        self._fields = ('left', 'op', 'right')
 
+    def generate(self, with_semicolon=False):
+        yield '%s %s %s' % (self.left, self.op, self.right)
+
+class IfConv(If):
+    def generate(self, with_semicolon=False):
+        return super(IfConv, self).generate()
