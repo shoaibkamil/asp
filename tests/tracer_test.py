@@ -2,6 +2,17 @@ import unittest2 as unittest
 from asp.tracer import *
 import asp.codegen.python_ast as past
 
+class TracerTests(unittest.TestCase):
+    def test_basic(self):
+        class Foo(object):
+            def bar(self, i):
+                b = 3
+                return i
+        f = Foo()
+        t = Tracer("bar", f)
+        t.trace("hi")
+        self.assertEqual(t.types["i"], type("hi"))
+
 class TracedFuncTests(unittest.TestCase):
     def setUp(self):
         self.func = "def foo():\n a=10\n b=5\n"

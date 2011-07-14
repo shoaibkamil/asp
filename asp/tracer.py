@@ -1,6 +1,38 @@
 import asp.codegen.ast_tools as ast_tools
 import asp.codegen.python_ast as p_ast
 
+class Tracer(object):
+    """
+    Class that traces execution of a method in a class, and returns a dict of 'types' of all
+    the LHS items and all the arguments.
+
+    To use: Tracer(method, instance) to create an instance, then do trace(*args, **kwargs).  
+    Type information will be in the .types dict.
+    """
+    def __init__(self, method, instance):
+        self.original_func = getattr(instance, method)
+        self.instance = instance
+        self.method = method
+        import inspect
+        original_ast = p_ast.parse(inspect.getsource(self.original_func).lstrip())
+        func_type = type(self.original_func)
+        self.traced_func = TracedFunc(original_ast)
+        setattr(instance, method, func_type(self.traced_func, instance.__class__))
+
+        self.types = {}
+
+    def trace(self, *args, **kwargs):
+        # call the instance's overridden method with the same args
+        getattr(self.instance, self.method).__call__(*args, **kwargs)
+
+        # now get the types out
+        self.types = getattr(self.instance, self.method).types
+
+        # revert the instance to the original method
+        setattr(self.instance, self.method, self.original_func)
+        
+
+
 class TracedFunc(object):
     """
     Class that encapsulate a method to trace.  Given a method definition, it transforms it into
