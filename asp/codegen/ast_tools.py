@@ -199,6 +199,10 @@ class ConvertAST(ast.NodeTransformer):
             orelse = Block([self.visit(x) for x in node.orelse])
         return IfConv(test, body, orelse)
 
+    def visit_Return(self, node):
+        return ReturnStatement(self.visit(node.value))
+
+
 
 class LoopUnroller(object):
     class UnrollReplacer(NodeTransformer):
