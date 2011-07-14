@@ -55,6 +55,10 @@ class StencilModelInterpreter(ast.NodeVisitor):
         x = tuple(map(lambda a,b: a+b, list(self.current_output_point), node.offset_list))
         return grid[x]
 
+    def visit_InputElementZeroOffset(self, node):
+        grid = self.visit(node.grid)
+        return grid[self.current_output_point]
+
     def visit_ScalarBinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)

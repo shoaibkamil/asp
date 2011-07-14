@@ -189,7 +189,7 @@ class %s(%s):
         )
 
     def generate_check(self, field):
-        return "assert %s, 'Invalid type %%s for field \\'%s\\' of rule \\'%s\\'' %% type(self.%s)" % (self.generate_check_helper("self.%s" % field[0], field[1] if len(field) > 1 else 'object'), field[0], self.name, field[0])
+        return "assert %s, 'Invalid type %%s for field \\'%s\\' of rule \\'%s\\' (value=%%s)' %% (type(self.%s), self.%s)" % (self.generate_check_helper("self.%s" % field[0], field[1] if len(field) > 1 else 'object'), field[0], self.name, field[0], field[0])
 
     def generate_check_helper(self, name, field_type):
         if isinstance(field_type, OneOf):

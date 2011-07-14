@@ -13,7 +13,7 @@ def kernel(self, in_grid, out_grid):
             out_grid[x] = out_grid[x] + in_grid[y]
 '''
                               )
-        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        stencil_model = StencilPythonFrontEnd().parse(python_ast)
         assert_has_type(stencil_model, StencilModel)
         assert len(stencil_model.interior_kernel.body) > 0 and len(stencil_model.border_kernel.body) == 0
 
@@ -26,7 +26,7 @@ def kernel(self, in_grid, out_grid):
             out_grid[x] = out_grid[x] + in_grid[y]
 '''
                               )
-        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        stencil_model = StencilPythonFrontEnd().parse(python_ast)
         assert_has_type(stencil_model, StencilModel)
         assert len(stencil_model.interior_kernel.body) == 0 and len(stencil_model.border_kernel.body) > 0
 
@@ -42,7 +42,7 @@ def kernel(self, in_grid, out_grid):
             out_grid[x] = out_grid[x] + in_grid[y]
 '''
                               )
-        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        stencil_model = StencilPythonFrontEnd().parse(python_ast)
         assert_has_type(stencil_model, StencilModel)
         assert len(stencil_model.interior_kernel.body) > 0 and len(stencil_model.border_kernel.body) > 0
 
@@ -55,7 +55,7 @@ def kernel(self, in_grid, out_grid):
             out_grid[x] = out_grid[x] - 1/4*in_grid[y] + 1.0/4*in_grid[y]
 '''
                               )
-        stencil_model = StencilPythonFrontEnd(dict()).parse(python_ast)
+        stencil_model = StencilPythonFrontEnd().parse(python_ast)
         assert_has_type(stencil_model, StencilModel)
 
 if __name__ == '__main__':

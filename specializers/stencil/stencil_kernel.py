@@ -1,10 +1,14 @@
 import numpy
 import inspect
 from stencil_grid import *
+from stencil_python_front_end import *
+from stencil_unroll_neighbor_iter import *
+from stencil_convert import *
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
 from asp.util import *
+import copy
 
 # may want to make this inherit from something else...
 class StencilKernel(object):
@@ -20,6 +24,7 @@ class StencilKernel(object):
         # its AST
         self.kernel_src = inspect.getsource(self.kernel)
         self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
+        self.model = StencilPythonFrontEnd().parse(self.kernel_ast)
 
         self.pure_python = False
         self.pure_python_kernel = self.kernel
@@ -62,33 +67,26 @@ class StencilKernel(object):
         # ask asp infrastructure for machine and platform info, including if cilk+ is available
         #FIXME: impelement.  set self.with_cilk=true if cilk is available
         
-        
+        input_grids = args[0:-1]
+        output_grid = args[-1]
+        model = copy.deepcopy(self.model)
+        model = StencilUnrollNeighborIter(model, input_grids, output_grid).run()
 
-        #FIXME: need to somehow match arg names to args
-        argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
-        argdict = dict(zip(argnames[1:], args))
-        debug_print(argdict)
-
-        phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
-        debug_print(ast.dump(phase2))
-
-        
         # depending on whether cilk is available, we choose which converter to use
         if not self.with_cilk:
-            Converter = StencilKernel.StencilConvertAST
+            Converter = StencilConvertAST
         else:
-            Converter = StencilKernel.StencilConvertASTCilk
+            Converter = StencilConvertASTCilk
 
         # generate variant with no unrolling, then generate variants for various unrollings
-        variants = [Converter(argdict).visit(phase2)]
+        variants = [Converter(model, input_grids, output_grid).run()]
         variant_names = ["kernel_unroll_1"]
         for x in [2,4,8,16,32,64]:
             check_valid = max(map(
                 lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
                 args))
             if check_valid == 0:
-                to_append = Converter(argdict, unroll_factor=x).visit(phase2)
-                variants.append(Converter(argdict, unroll_factor=x).visit(phase2))
+                variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
                 variant_names.append("kernel_unroll_%s" % x)
 
         from asp.jit import asp_module
@@ -110,245 +108,9 @@ class StencilKernel(object):
         debug_print("toolchain" + str(mod.backends["c++"].toolchain.cflags))
         mod.add_function("kernel", variants, variant_names)
 
-        # package arguments
+        # package arguments and do the call 
         myargs = [y.data for y in args]
-        print myargs
-        # and do the call 
         mod.kernel(*myargs)
 
         # save parameter sizes for next run
         self.specialized_sizes = [x.shape for x in args]
-
-    # the actual Stencil AST Node
-    class StencilInteriorIter(ast.AST):
-        def __init__(self, grid, body, target):
-          self.grid = grid
-          self.body = body
-          self.target = target
-          self._fields = ('grid', 'body', 'target')
-
-          super(StencilKernel.StencilInteriorIter, self).__init__()
-            
-    class StencilNeighborIter(ast.AST):
-        def __init__(self, grid, body, target, dist):
-            self.grid = grid
-            self.body = body
-            self.target = target
-            self.dist = dist
-            self._fields = ('grid', 'body', 'target', 'dist')
-            super (StencilKernel.StencilNeighborIter, self).__init__()
-
-
-    # separate files for different architectures
-    # class to convert from Python AST to an AST with special Stencil node
-    class StencilProcessAST(ast.NodeTransformer):
-        def __init__(self, argdict):
-            self.argdict = argdict
-            super(StencilKernel.StencilProcessAST, self).__init__()
-
-        
-        def visit_For(self, node):
-            debug_print("visiting a For...\n")
-            # check if this is the right kind of For loop
-            if (node.iter.__class__.__name__ == "Call" and
-                node.iter.func.__class__.__name__ == "Attribute"):
-                
-                debug_print("Found something to change...\n")
-
-                if (node.iter.func.attr == "interior_points"):
-                    grid = self.visit(node.iter.func.value).id     # do we need the name of the grid, or the obj itself?
-                    target = self.visit(node.target)
-                    body = map(self.visit, node.body)
-                    newnode = StencilKernel.StencilInteriorIter(grid, body, target)
-                    return newnode
-
-                elif (node.iter.func.attr == "neighbors"):
-                    debug_print(ast.dump(node) + "\n")
-                    target = self.visit(node.target)
-                    body = map(self.visit, node.body)
-                    grid = self.visit(node.iter.func.value).id
-                    dist = self.visit(node.iter.args[1]).n
-                    newnode = StencilKernel.StencilNeighborIter(grid, body, target, dist)
-                    return newnode
-
-                else:
-                    return node
-            else:
-                return node
-
-    class StencilConvertAST(ast_tools.ConvertAST):
-        
-        def __init__(self, argdict, unroll_factor=None):
-            self.argdict = argdict
-            self.dim_vars = []
-            self.unroll_factor = unroll_factor
-            super(StencilKernel.StencilConvertAST, self).__init__()
-
-        def gen_array_macro_definition(self, arg):
-            array = self.argdict[arg]
-            defname = "_"+arg+"_array_macro"
-            params = "(" + ','.join(["_d"+str(x) for x in xrange(array.dim)]) + ")"
-            calc = "(_d%d" % (array.dim-1)
-            for x in range(0,array.dim-1):
-                calc += "+(_d%s * %s)" % (str(x), str(array.data.strides[x]/array.data.itemsize))
-            calc += ")"
-            return cpp_ast.Define(defname+params, calc)
-
-
-        def gen_array_macro(self, arg, point):
-            name = "_%s_array_macro" % arg
-            #param = [cpp_ast.CNumber(x) for x in point]
-            return cpp_ast.Call(cpp_ast.CName(name), point)
-
-
-
-        def gen_dim_var(self):
-            import random
-            import string
-            var = "_" + ''.join(random.choice(string.letters) for i in xrange(8))
-            self.dim_vars.append(var)
-            return var
-
-        def gen_array_unpack(self):
-            ret =  [cpp_ast.Assign(cpp_ast.Pointer(cpp_ast.Value("npy_double", "_my_"+x)), 
-                    cpp_ast.TypeCast(cpp_ast.Pointer(cpp_ast.Value("npy_double", "")), cpp_ast.FunctionCall(cpp_ast.CName("PyArray_DATA"), params=[cpp_ast.CName(x)])))
-                    for x in self.argdict.keys()]
-
-            return ret
-        
-        # all arguments are PyObjects
-        def visit_arguments(self, node):
-            return [cpp_ast.Pointer(cpp_ast.Value("PyObject", self.visit(x))) for x in node.args[1:]]
-
-        # we want to rename the function based on the optimization parameters
-        def visit_FunctionDef(self, node):
-            
-            if not self.unroll_factor:
-                new_name = "%s_unroll_1" % node.name
-            else:
-                new_name = "%s_unroll_%s" % (node.name, self.unroll_factor)
-            new_node = ast.FunctionDef(new_name, node.args, node.body, node.decorator_list)
-            return super(StencilKernel.StencilConvertAST, self).visit_FunctionDef(new_node)
-
-        def gen_loops(self, node):
-            # should catch KeyError here
-            array = self.argdict[node.grid]
-            dim = len(array.shape)
-
-            ret_node = None
-            cur_node = None
-
-            for d in xrange(dim):
-                dim_var = self.gen_dim_var()
-
-                initial = cpp_ast.CNumber(array.ghost_depth)
-                end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth-1)
-                increment = cpp_ast.CNumber(1)
-                if d == 0:
-                    ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node = ret_node
-                elif d == dim-2:
-                    pragma = cpp_ast.Pragma("omp parallel for")
-                    for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
-                    cur_node = for_node
-                else:
-                    cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node = cur_node.body
-
-            return (cur_node, ret_node)
-
-        def visit_StencilInteriorIter(self, node):
-
-            cur_node, ret_node = self.gen_loops(node)
-
-            body = cpp_ast.Block()
-            body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-
-
-            body.extend(self.gen_array_unpack())
-            
-            body.append(cpp_ast.Value("int", self.visit(node.target)))
-            body.append(cpp_ast.Assign(self.visit(node.target),
-                                       self.gen_array_macro(
-                                           node.grid, [cpp_ast.CName(x) for x in self.dim_vars])))
-
-
-            
-
-            replaced_body = None
-            for gridname in self.argdict.keys():
-                replaced_body = [ast_tools.ASTNodeReplacer(
-                                ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
-            body.extend([self.visit(x) for x in replaced_body])
-
-            
-            cur_node.body = body
-
-            # unroll
-            if self.unroll_factor:
-                replacement = ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
-                ret_node = ast_tools.ASTNodeReplacer(cur_node, replacement).visit(ret_node)
-            
-            return ret_node
-
-        def visit_StencilNeighborIter(self, node):
-
-            block = cpp_ast.Block()
-            target = self.visit(node.target)
-            block.append(cpp_ast.Value("int", target))
-                     
-            grid = self.argdict[node.grid]
-            debug_print(node.dist)
-            for n in grid.neighbor_definition[node.dist]:
-                block.append(cpp_ast.Assign(
-                    target,
-                    self.gen_array_macro(node.grid,
-                                         map(lambda x,y: cpp_ast.BinOp(cpp_ast.CName(x), "+", cpp_ast.CNumber(y)),
-                                             self.dim_vars,
-                                             n))))
-
-                block.extend( [self.visit(z) for z in node.body] )
-                
-
-            debug_print(block)
-            return block
-
-    class StencilConvertASTCilk(StencilConvertAST):
-        class CilkFor(cpp_ast.For):
-            def intro_line(self):
-                return "cilk_for (%s; %s; %s += %s)" % (self.start, self.condition, self.loopvar, self.increment)
-
-        def gen_loops(self, node):
-            # should catch KeyError here
-            array = self.argdict[node.grid]
-            dim = len(array.shape)
-
-            ret_node = None
-            cur_node = None
-
-            for d in xrange(dim):
-                dim_var = self.gen_dim_var()
-
-                initial = cpp_ast.CNumber(array.ghost_depth)
-                end = cpp_ast.CNumber(array.shape[d]-array.ghost_depth-1)
-                increment = cpp_ast.CNumber(1)
-                if d == 0:
-                    ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node = ret_node
-                elif d == dim-2:
-                    cur_node.body = StencilKernel.StencilConvertASTCilk.CilkFor(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node = cur_node.body
-                else:
-                    cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
-                    cur_node = cur_node.body
-
-            return (cur_node, ret_node)
-
-
-
-
-
-
-
-

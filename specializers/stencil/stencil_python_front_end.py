@@ -5,8 +5,7 @@ from asp.util import *
 
 # class to convert from Python AST to StencilModel
 class StencilPythonFrontEnd(ast.NodeTransformer):
-    def __init__(self, argdict):
-        self.argdict = argdict
+    def __init__(self):
         super(StencilPythonFrontEnd, self).__init__()
 
     def parse(self, ast):
@@ -73,6 +72,11 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
         else:
             return node
 
+    def visit_AugAssign(self, node):
+        target = self.visit(node.target)
+        assert type(target) is OutputElement, 'Only assignments to current output element permitted'
+        return OutputAssignment(ScalarBinOp(OutputElement(), node.op, self.visit(node.value)))
+
     def visit_Assign(self, node):
         targets = map (self.visit, node.targets)
         assert len(targets) == 1 and type(targets[0]) is OutputElement, 'Only assignments to current output element permitted'
@@ -82,10 +86,14 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
         if type(node.slice) is ast.Index:
             grid_id = self.visit(node.value)
             target = self.visit(node.slice.value)
-            if grid_id == self.neighbor_grid_id and target == self.neighbor_target:
-                return Neighbor()
-            elif grid_id == self.output_arg_id and target == self.kernel_target:
+            if grid_id == self.output_arg_id and target == self.kernel_target:
                 return OutputElement()
+            elif target == self.kernel_target:
+                return InputElementZeroOffset(Identifier(grid_id))
+            elif grid_id == self.neighbor_grid_id and target == self.neighbor_target:
+                return Neighbor()
+            else:
+                return node
         else:
             return node
 

@@ -59,6 +59,7 @@ class ASTNodeReplacer(ast.NodeTransformer):
                 if field != 'ctx' and node.__getattribute__(field) != value:
                     debug_print( str(node.__getattribute__(field)) + " != " + str(value) )
                     eql = False
+                    break
 
         if eql:
             import copy
@@ -67,7 +68,33 @@ class ASTNodeReplacer(ast.NodeTransformer):
         else:
             return self.generic_visit(node)
 
+    # Based on NodeTransformer.generic_visit(), but visits all sub-nodes
+    # matching is_node(), not just those derived from ast.AST.
+    def generic_visit(self, node):
+        for field in node._fields:
+            old_value = getattr(node, field, None)
+            if isinstance(old_value, list):
+                new_values = []
+                for value in old_value:
+                    if is_node(value):
+                        value = self.visit(value)
+                        if value is None:
+                            continue
+                        elif not is_node(value):
+                            new_values.extend(value)
+                            continue
+                    new_values.append(value)
+                old_value[:] = new_values
+            elif is_node(old_value):
+                new_node = self.visit(old_value)
+                if new_node is None:
+                    delattr(node, field)
+                else:
+                    setattr(node, field, new_node)
+        return node
 
+def is_node(x):
+    return isinstance(x, ast.AST) or isinstance(x, codepy.cgen.Generable)
 
 class ConvertAST(ast.NodeTransformer):
     """Class to convert from Python AST to C++ AST"""

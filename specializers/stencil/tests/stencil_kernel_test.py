@@ -1,5 +1,9 @@
 import unittest2 as unittest
+import ast
 from stencil_kernel import *
+from stencil_python_front_end import *
+from stencil_unroll_neighbor_iter import *
+from stencil_convert import *
 from asp.util import *
 
 class BasicTests(unittest.TestCase):
@@ -10,10 +14,8 @@ class BasicTests(unittest.TestCase):
     def test_pure_python(self):
         class MyKernel(StencilKernel):
             def kernel(self, in_grid, out_grid):
-                print "Running kernel...\n"
                 for x in out_grid.interior_points():
                     out_grid[x] = in_grid[x]
-
 
         kernel = MyKernel()
         in_grid = StencilGrid([10,10])
@@ -21,36 +23,6 @@ class BasicTests(unittest.TestCase):
         kernel.pure_python = True
         kernel.kernel(in_grid, out_grid)
         self.failIf(in_grid[3,3] != out_grid[3,3])
-
-
-
-
-
-class StencilProcessASTTests(unittest.TestCase):
-    def setUp(self):
-        class MyKernel(StencilKernel):
-            def kernel(self, in_grid, out_grid):
-                for x in out_grid.interior_points():
-                    for y in in_grid.neighbors(x, 1):
-                        out_grid[x] += in_grid[y]
-
-
-        self.kernel = MyKernel()
-        self.in_grid = StencilGrid([10,10])
-        self.out_grid = StencilGrid([10,10])
-    
-    def test_get_kernel_body(self):
-        self.failIfEqual(self.kernel.kernel_ast, None)
-
-
-        
-    def test_StencilInteriorIter_and_StencilNeighborIter(self):
-        import re
-        argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
-        output_as_string = ast.dump(StencilKernel.StencilProcessAST(argdict).visit(self.kernel.kernel_ast))
-        self.assertTrue(re.search("StencilInteriorIter", output_as_string))
-        self.assertTrue(re.search("StencilNeighborIter", output_as_string))
-
 
 class StencilConvertASTTests(unittest.TestCase):
     def setUp(self):
@@ -60,63 +32,18 @@ class StencilConvertASTTests(unittest.TestCase):
                     for y in in_grid.neighbors(x, 1):
                         out_grid[x] = out_grid[x] + in_grid[y]
 
-
         self.kernel = MyKernel()
         self.in_grid = StencilGrid([10,10])
+        self.in_grids = [self.in_grid]
         self.out_grid = StencilGrid([10,10])
-        self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
-
-
-    def test_StencilConvertAST_array_macro(self):
-        import re
-        
-        result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro_definition('in_grid')
-
-        self.assertTrue(re.search("array_macro", str(result)))
-        self.assertTrue(re.search("#define", str(result)))
+        self.model = python_func_to_unrolled_model(MyKernel.kernel, self.in_grids, self.out_grid)
 
     def test_StencilConvertAST_array_macro_use(self):
         import asp.codegen.cpp_ast as cpp_ast
-        result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro('in_grid',
-                                                                               [cpp_ast.CNumber(3),
-                                                                                cpp_ast.CNumber(4)])
+        result = StencilConvertAST(self.model, self.in_grids, self.out_grid).gen_array_macro('in_grid',
+                                                                                             [cpp_ast.CNumber(3),
+                                                                                              cpp_ast.CNumber(4)])
         self.assertEqual(str(result), "_in_grid_array_macro(3, 4)")
-
-    def test_StencilConvertAST_array_replacement(self):
-        import asp.codegen.python_ast as ast
-        return True
-        n = ast.Subscript(ast.Name("grid", None), ast.Index(ast.Num(1)), None)
-        result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-        self.assertEqual(str(result), "_my_grid[1]")
-
-
-    def test_StencilConvertAST_array_unpack_to_double(self):
-        result = StencilKernel.StencilConvertAST(self.argdict).gen_array_unpack()
-        self.assertEqual("\n".join([str(x) for x in result]), "npy_double *_my_out_grid = ((npy_double *)PyArray_DATA(out_grid))\n" +
-            "npy_double *_my_in_grid = ((npy_double *)PyArray_DATA(in_grid))")
-
-    def test_visit_StencilInteriorIter(self):
-        import asp.codegen.python_ast as ast, re
-        
-        n = StencilKernel.StencilInteriorIter("in_grid",
-                              [ast.Pass()],
-                              ast.Name("targ", None))
-        result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-        debug_print(str(result))
-        self.assertTrue(re.search("For", str(type(result))))
-    
-    def test_visit_StencilNeighborIter(self):
-        import asp.codegen.python_ast as ast, re
-        n = StencilKernel.StencilNeighborIter("in_grid",
-                              [ast.parse("in_grid[x] = in_grid[x] + out_grid[y]").body[0]],
-                              ast.Name("y", None),
-                              1)
-        converter = StencilKernel.StencilConvertAST(self.argdict)
-        # visit_StencilNeighborIter expects to have dim vars defined already
-        converter.gen_dim_var()
-        converter.gen_dim_var()
-        result = converter.visit(n)
-        self.assertTrue(re.search("array_macro", str(result)))
 
     def test_whole_thing(self):
 
@@ -142,24 +69,10 @@ class Stencil1dAnd3dTests(unittest.TestCase):
 
         self.kernel = My1DKernel()
         self.in_grid = StencilGrid([10])
+        self.in_grids = [self.in_grid]
         self.out_grid = StencilGrid([10])
-        self.argdict =  {'in_grid_1d': self.in_grid, 'out_grid_1d': self.out_grid}
+        self.model = python_func_to_unrolled_model(My1DKernel.kernel, self.in_grids, self.out_grid)
         
-    def test_1d_gen_array_macro_definition(self):
-        result = StencilKernel.StencilConvertAST(self.argdict).gen_array_macro_definition('in_grid_1d')
-        self.assertEqual(result.__str__(), "#define _in_grid_1d_array_macro(_d0) (_d0)")
-
-
-    def test_1d_visit_StencilInteriorIter(self):
-
-        import asp.codegen.python_ast as ast, re
-        n = StencilKernel.StencilInteriorIter("in_grid_1d",
-                              [ast.Pass()],
-                              ast.Name("targ", None))
-        result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-
-        self.assertTrue(re.search("For", str(type(result))))
-
     def test_whole_thing(self):
         import numpy
         import numpy
@@ -168,16 +81,6 @@ class Stencil1dAnd3dTests(unittest.TestCase):
         print self.out_grid.data
         self.assertEqual(self.out_grid[4], 2.0)
 
-
-    def test_3d_macro_definition(self):
-        in_grid = StencilGrid([10,10,10])
-        out_grid = StencilGrid([10,10,10])
-        argdict = {'in_grid':in_grid, 'out_grid':out_grid}
-
-        result = StencilKernel.StencilConvertAST(argdict).gen_array_macro_definition('in_grid')
-        import re
-#        self.assertTrue(re.match("#define _in_grid_array_macro(\w,\w,\w) (((\w
-        
 
 class VariantTests(unittest.TestCase):
     def test_no_regeneration_if_same_sizes(self):
@@ -212,21 +115,10 @@ class StencilConvertASTCilkTests(unittest.TestCase):
         self.out_grid = StencilGrid([10,10])
         self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
 
-    """
-    def test_cilk_gen(self):
-        import asp.codegen.python_ast as ast, re
-        
-        n = StencilKernel.StencilInteriorIter("in_grid",
-                              [ast.Pass()],
-                              ast.Name("targ", None))
-        result = StencilKernel.StencilConvertASTCilk(self.argdict).visit(n)
-        print "CILK TEST"
-        print(str(result))
-        print "======="
-        import re
-        self.assertTrue(re.search("cilk_for", str(result)))
-    """
+def python_func_to_unrolled_model(func, in_grids, out_grid):
+    python_ast = ast.parse(inspect.getsource(func).lstrip())
+    model = StencilPythonFrontEnd().parse(python_ast)
+    return StencilUnrollNeighborIter(model, in_grids, out_grid).run()
 
 if __name__ == '__main__':
     unittest.main()
-

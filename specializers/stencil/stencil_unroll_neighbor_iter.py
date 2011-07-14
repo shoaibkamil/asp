@@ -19,10 +19,14 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
         def visit_StencilNeighborIter(self, node):
             assert False, 'Encountered StencilNeighborIter but all should have been removed'
 
+        def visit_InputElementZeroOffset(self, node):
+            assert False, 'Encountered InputElementZeroOffset but all should have been removed'
+
     def run(self):
         self.visit(self.model)
         StencilModelChecker().visit(self.model)
         StencilUnrollNeighborIter.NoNeighborIterChecker().visit(self.model)
+        return self.model
 
     def visit_StencilModel(self, node):
         self.input_dict = dict()
@@ -55,3 +59,8 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
 
     def visit_Neighbor(self, node):
         return InputElement(self.current_neighbor_grid_id, self.offset_list)
+
+    def visit_InputElementZeroOffset(self, node):
+        grid = self.input_dict[node.grid.name]
+        zero_point = tuple([0 for x in range(grid.dim)])
+        return InputElement(node.grid, zero_point)

@@ -8,6 +8,7 @@ parse('''
 
 StencilModel(input_grids=Identifier*, interior_kernel=Kernel, border_kernel=Kernel)
     check StencilModelStructuralConstraintsVerifier(self).verify()
+    check assert len(set([x.name for x in self.input_grids]))==len(self.input_grids), 'Input grids must have distinct names'
 
 Identifier(name)
 
@@ -23,6 +24,7 @@ Expr = Constant
      | Neighbor      # Refers to current neighbor inside a StencilNeighborIter
      | OutputElement # Refers to current output element
      | InputElement
+     | InputElementZeroOffset
      | ScalarBinOp
 
 Constant(value = types.IntType | types.LongType | types.FloatType)
@@ -30,6 +32,9 @@ Constant(value = types.IntType | types.LongType | types.FloatType)
 # Offsets are relative to current output element location, given as a list of integers,
 # one per dimension.
 InputElement(grid=Identifier, offset_list=types.IntType*)
+
+# Input element at same position as current output element
+InputElementZeroOffset(grid=Identifier)
 
 ScalarBinOp(left=Expr, op=(ast.Add|ast.Sub|ast.Mult|ast.Div|ast.FloorDiv), right=Expr)
 ''', globals(), checker='StencilModelChecker')
