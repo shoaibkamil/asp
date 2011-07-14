@@ -5,6 +5,22 @@ import numpy
 import ast
 
 class BasicTests(unittest.TestCase):
+    def test_identity(self):
+        in_grid = StencilGrid([5,5])
+        in_grid.data = numpy.ones([5,5])
+        out_grid = StencilGrid([5,5])
+        model = StencilModel([Identifier('in_grid')],
+                             Kernel([StencilNeighborIter(Identifier('in_grid'),
+                                                         Constant(1),
+                                                         [OutputAssignment(InputElementZeroOffset(Identifier('in_grid')))])]),
+                             Kernel([]))
+
+        StencilModelInterpreter(model, [in_grid], out_grid).run()
+        for x in out_grid.interior_points():
+            self.assertEqual(out_grid[x], 1)
+        for x in out_grid.border_points():
+            self.assertEqual(out_grid[x], 0)
+
     def test_add_neighbors(self):
         in_grid = StencilGrid([5,5])
         in_grid.data = numpy.ones([5,5])
