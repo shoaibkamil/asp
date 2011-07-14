@@ -34,5 +34,17 @@ class TracedFuncTests(unittest.TestCase):
         f(boo=22)
         self.assertEqual(f.types["boo"], type(22))
 
+    def test_with_class(self):
+        class Foo(object):
+            def bar(self):
+                b = "hi"
+        f = Foo()
+        import inspect
+        funcType = type(f.bar)
+        f.bar = funcType(TracedFunc(past.parse(inspect.getsource(f.bar).lstrip())), f, Foo)
+        f.bar()
+        self.assertEqual(f.bar.types["b"], type("hi"))
+        
+
 if __name__ == '__main__':
     unittest.main()

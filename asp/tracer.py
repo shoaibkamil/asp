@@ -73,6 +73,7 @@ class TracedFunc(object):
         print p_ast.dump(self.new_tree)
         
     def __call__(self, *args, **kwargs):
+        print self.fname, " called!"
         # compile & execute the definition.
         exec compile(self.new_tree, "NONE", "exec")
 
@@ -83,4 +84,4 @@ class TracedFunc(object):
             return retval
         else:
             self.types = eval(self.fname).__call__(*args, **kwargs)
-        
+
