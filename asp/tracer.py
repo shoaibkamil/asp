@@ -6,7 +6,7 @@ class Tracer(object):
     Class that traces execution of a method in a class, and returns a dict of 'types' of all
     the LHS items and all the arguments.
 
-    To use: Tracer(method, instance) to create an instance, then do trace(*args, **kwargs).  
+    To use: Tracer(method, instance) where method is a string to create an instance, then do trace(*args, **kwargs).  
     Type information will be in the .types dict.
     """
     def __init__(self, method, instance):
