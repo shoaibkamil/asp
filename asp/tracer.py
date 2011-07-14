@@ -36,6 +36,20 @@ class TracedFunc(object):
             newnode = p_ast.parse("return (_ts,)").body[0]
             newnode.value.elts.append(node.value)
             return newnode
+
+        def process_args(self, args):
+            #FIXME: only supports "simple" arguments right now
+            
+            return_nodes = []
+            all_args = args.args
+            if args.kwarg:
+                all_args += args.kwarg
+            
+            for arg in all_args:
+                newnode = p_ast.parse("_ts['%s'] = type(%s)\n" % (arg.id, arg.id)).body[0]
+                return_nodes.append(newnode)
+
+            return return_nodes
         
         def visit_FunctionDef(self, node):
             initializer = p_ast.parse("_ts = {}").body
@@ -44,7 +58,7 @@ class TracedFunc(object):
             else:
                 return_node = []
             new_body = [self.visit(x) for x in node.body]
-            new_body = initializer + new_body + return_node
+            new_body = initializer + self.process_args(node.args) + new_body + return_node
             return p_ast.FunctionDef(node.name, node.args, new_body, node.decorator_list)
         
     def __init__(self, tree):

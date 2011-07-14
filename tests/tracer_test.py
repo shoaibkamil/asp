@@ -22,5 +22,17 @@ class TracedFuncTests(unittest.TestCase):
         self.assertEqual(f(), 10)
         self.assertEqual(f.types["a"], type(10))
 
+    def test_with_parameters(self):
+        func = "def foo(v):\n pass\n"
+        f = TracedFunc(past.parse(func))
+        f(100)
+        self.assertEqual(f.types["v"], type(100))
+
+    def test_with_kwargs(self):
+        func = "def foo(boo=None):\n pass\n"
+        f = TracedFunc(past.parse(func))
+        f(boo=22)
+        self.assertEqual(f.types["boo"], type(22))
+
 if __name__ == '__main__':
     unittest.main()
