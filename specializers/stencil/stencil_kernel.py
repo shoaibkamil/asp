@@ -70,7 +70,7 @@ class StencilKernel(object):
         # do it, by passing in a lambda that does this check
         # if already specialized to these sizes, just run
         if self.specialized_sizes and self.specialized_sizes == [y.shape for y in args]:
-            print "match!"
+            debug_print("match!")
             self.mod.kernel(*[y.data for y in args])
             return
 

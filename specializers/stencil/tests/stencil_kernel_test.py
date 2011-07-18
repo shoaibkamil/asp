@@ -46,15 +46,9 @@ class StencilConvertASTTests(unittest.TestCase):
         self.assertEqual(str(result), "_in_grid_array_macro(3, 4)")
 
     def test_whole_thing(self):
-
         import numpy
         self.in_grid.data = numpy.ones([10,10])
-
-        print self.in_grid.data
-        
         self.kernel.kernel(self.in_grid, self.out_grid)
-        
-        print self.out_grid.data
         self.assertEqual(self.out_grid[5,5],4.0)
 
 
@@ -78,7 +72,6 @@ class Stencil1dAnd3dTests(unittest.TestCase):
         import numpy
         self.in_grid.data = numpy.ones([10])
         self.kernel.kernel(self.in_grid, self.out_grid)
-        print self.out_grid.data
         self.assertEqual(self.out_grid[4], 2.0)
 
 
