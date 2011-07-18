@@ -72,8 +72,8 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
                 body = map(self.visit, node.body)
                 self.neighbor_target = None
                 self.neigbor_grid_id = None
-                distance = self.visit(node.iter.args[1])
-                return StencilNeighborIter(Identifier(self.neighbor_grid_id), distance, body)
+                neighbors_id = self.visit(node.iter.args[1])
+                return StencilNeighborIter(Identifier(self.neighbor_grid_id), neighbors_id, body)
             else:
                 return node
         else:

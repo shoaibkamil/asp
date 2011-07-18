@@ -36,9 +36,9 @@ class StencilModelInterpreter(ast.NodeVisitor):
 
     def visit_StencilNeighborIter(self, node):
         grid = self.visit(node.grid)
-        distance = self.visit(node.distance)
+        neighbors_id = self.visit(node.neighbors_id)
         self.current_neighbor_grid = grid
-        for x in grid.neighbors(self.current_output_point, distance):
+        for x in grid.neighbors(self.current_output_point, neighbors_id):
             self.current_neighbor_point = x
             for statement in node.body:
                 self.visit(statement)

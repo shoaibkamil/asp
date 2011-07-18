@@ -52,11 +52,11 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
 
     def visit_StencilNeighborIter_return_list(self, node):
         grid = self.input_dict[node.grid.name]
-        distance = node.distance.value
+        neighbors_id = node.neighbors_id.value
         zero_point = tuple([0 for x in range(grid.dim)])
         result = []
         self.current_neighbor_grid_id = node.grid
-        for x in grid.neighbors(zero_point, distance):
+        for x in grid.neighbors(zero_point, neighbors_id):
             self.offset_list = list(x)
             for statement in node.body:
                 result.append(self.visit(deepcopy(statement)))
