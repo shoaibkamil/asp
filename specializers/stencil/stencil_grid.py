@@ -84,3 +84,6 @@ class StencilGrid(object):
         # return tuples for each neighbor
         for neighbor in self.neighbor_definition[neighbors_id]:
             yield tuple(map(lambda a,b: a+b, list(center), list(neighbor)))
+
+    def __repr__(self):
+        return self.data.__repr__()

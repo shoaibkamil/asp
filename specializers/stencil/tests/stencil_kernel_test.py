@@ -1,5 +1,6 @@
 import unittest2 as unittest
 import ast
+import math
 from stencil_kernel import *
 from stencil_python_front_end import *
 from stencil_unroll_neighbor_iter import *
@@ -108,27 +109,64 @@ class StencilConvertASTCilkTests(unittest.TestCase):
         self.out_grid = StencilGrid([10,10])
         self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
 
+class StencilConvert1DDeriativeTests(unittest.TestCase):
+    def setUp(self):
+        self.h = 0.01
+        self.points = 100
+        class DerivativeKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 0):
+                        out_grid[x] += in_grid[y]
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] -= 8*in_grid[y]
+                    for y in in_grid.neighbors(x, 2):
+                        out_grid[x] += 8*in_grid[y]
+                    for y in in_grid.neighbors(x, 3):
+                        out_grid[x] -= in_grid[y]
+                    out_grid[x] /= 12 * 0.01
+
+        self.kernel = DerivativeKernel()
+        self.in_grid = StencilGrid([self.points])
+        self.in_grid.ghost_depth = 2
+        self.in_grid.neighbor_definition = [ [(-2,)], [(-1,)], [(1,)], [(2,)] ]
+        self.out_grid = StencilGrid([self.points])
+        self.out_grid.ghost_depth = 2
+        self.expected_out_grid = StencilGrid([self.points])
+
+    def test_whole_thing(self):
+        import numpy
+        for xi in range(0,self.points):
+            x = xi * self.h
+            self.in_grid.data[(xi,)] = math.sin(x)
+            self.expected_out_grid[(xi,)] = math.cos(x) # Symbolic derivative
+
+        self.kernel.kernel(self.in_grid, self.out_grid)
+
+        for x in self.out_grid.interior_points():
+            self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])
+
 class StencilConvert2DLaplacianTests(unittest.TestCase):
     def setUp(self):
         self.h = 0.01
+        self.points = 10
         class LaplacianKernel(StencilKernel):
             def kernel(self, in_grid, out_grid):
                 for x in out_grid.interior_points():
                     for y in in_grid.neighbors(x, 1):
                         out_grid[x] += in_grid[y]
                     out_grid[x] -= 4*in_grid[x]
-                    out_grid[x] /= 0.0001 # h^2
+                    out_grid[x] /= 0.01 * 0.01
 
         self.kernel = LaplacianKernel()
-        self.in_grid = StencilGrid([10,10])
-        self.in_grids = [self.in_grid]
-        self.out_grid = StencilGrid([10,10])
-        self.expected_out_grid = StencilGrid([10,10])
+        self.in_grid = StencilGrid([self.points,self.points])
+        self.out_grid = StencilGrid([self.points,self.points])
+        self.expected_out_grid = StencilGrid([self.points,self.points])
 
     def test_whole_thing(self):
         import numpy
-        for xi in range(0,10):
-            for yi in range(0,10):
+        for xi in range(0,self.points):
+            for yi in range(0,self.points):
                 x = xi * self.h
                 y = yi * self.h
                 self.in_grid.data[(xi, yi)] = x**3 + y**3
