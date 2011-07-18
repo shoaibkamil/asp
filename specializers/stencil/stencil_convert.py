@@ -81,6 +81,9 @@ class StencilConvertAST(ast_tools.ConvertAST):
     def visit_OutputAssignment(self, node):
         return cpp_ast.Assign(self.visit(stencil_model.OutputElement()), self.visit(node.value))
 
+    def visit_Constant(self, node):
+        return node.value
+
     def visit_ScalarBinOp(self, node):
         return super(StencilConvertAST, self).visit_BinOp(ast.BinOp(node.left, node.op, node.right))
 

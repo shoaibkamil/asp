@@ -12,12 +12,12 @@ class BasicTests(unittest.TestCase):
         self.failUnlessRaises((Exception), StencilKernel)
     
     def test_pure_python(self):
-        class MyKernel(StencilKernel):
+        class IdentityKernel(StencilKernel):
             def kernel(self, in_grid, out_grid):
                 for x in out_grid.interior_points():
                     out_grid[x] = in_grid[x]
 
-        kernel = MyKernel()
+        kernel = IdentityKernel()
         in_grid = StencilGrid([10,10])
         out_grid = StencilGrid([10,10])
         kernel.pure_python = True
@@ -26,17 +26,17 @@ class BasicTests(unittest.TestCase):
 
 class StencilConvertASTTests(unittest.TestCase):
     def setUp(self):
-        class MyKernel(StencilKernel):
+        class IdentityKernel(StencilKernel):
             def kernel(self, in_grid, out_grid):
                 for x in out_grid.interior_points():
                     for y in in_grid.neighbors(x, 1):
                         out_grid[x] = out_grid[x] + in_grid[y]
 
-        self.kernel = MyKernel()
+        self.kernel = IdentityKernel()
         self.in_grid = StencilGrid([10,10])
         self.in_grids = [self.in_grid]
         self.out_grid = StencilGrid([10,10])
-        self.model = python_func_to_unrolled_model(MyKernel.kernel, self.in_grids, self.out_grid)
+        self.model = python_func_to_unrolled_model(IdentityKernel.kernel, self.in_grids, self.out_grid)
 
     def test_StencilConvertAST_array_macro_use(self):
         import asp.codegen.cpp_ast as cpp_ast
@@ -96,17 +96,49 @@ class VariantTests(unittest.TestCase):
 
 class StencilConvertASTCilkTests(unittest.TestCase):
     def setUp(self):
-        class MyKernel(StencilKernel):
+        class IdentityKernel(StencilKernel):
             def kernel(self, in_grid, out_grid):
                 for x in out_grid.interior_points():
                     for y in in_grid.neighbors(x, 1):
                         out_grid[x] = out_grid[x] + in_grid[y]
 
 
-        self.kernel = MyKernel()
+        self.kernel = IdentityKernel()
         self.in_grid = StencilGrid([10,10])
         self.out_grid = StencilGrid([10,10])
         self.argdict = argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
+
+class StencilConvert2DLaplacianTests(unittest.TestCase):
+    def setUp(self):
+        self.h = 0.01
+        class LaplacianKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] += in_grid[y]
+                    out_grid[x] -= 4*in_grid[x]
+                    out_grid[x] /= 0.0001 # h^2
+
+        self.kernel = LaplacianKernel()
+        self.in_grid = StencilGrid([10,10])
+        self.in_grids = [self.in_grid]
+        self.out_grid = StencilGrid([10,10])
+        self.expected_out_grid = StencilGrid([10,10])
+
+    def test_whole_thing(self):
+        import numpy
+        for xi in range(0,10):
+            for yi in range(0,10):
+                x = xi * self.h
+                y = yi * self.h
+                self.in_grid.data[(xi, yi)] = x**3 + y**3
+                self.expected_out_grid[(xi, yi)] = 6*x + 6*y # Symbolic Laplacian
+
+        self.kernel.kernel(self.in_grid, self.out_grid)
+
+        for x in range(1,9):
+            for y in range(1,9):
+                self.assertAlmostEqual(self.out_grid[(x,y)], self.expected_out_grid[(x,y)])
 
 def python_func_to_unrolled_model(func, in_grids, out_grid):
     python_ast = ast.parse(inspect.getsource(func).lstrip())

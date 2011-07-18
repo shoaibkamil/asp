@@ -35,8 +35,7 @@ class StencilKernel(object):
         except ValueError:
             raise Exception("No kernel method defined.")
 
-        # if the method is defined, let us introspect and find
-        # its AST
+        # get text of kernel() method and parse into a StencilModel
         self.kernel_src = inspect.getsource(self.kernel)
         self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
         self.model = StencilPythonFrontEnd().parse(self.kernel_ast)
@@ -75,9 +74,6 @@ class StencilKernel(object):
             return
 
         # otherwise, do the first-run flow
-
-        # check if we can specialize for this data
-        #FIXME: impelement.
 
         # ask asp infrastructure for machine and platform info, including if cilk+ is available
         #FIXME: impelement.  set self.with_cilk=true if cilk is available
