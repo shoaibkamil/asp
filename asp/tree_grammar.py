@@ -302,6 +302,6 @@ class %s(%s):
 ''' % (x, parent_map[x], x)
 
     if checker != None:
-        program = "import ast\n" + program + "\n" + generate_checker_class(checker, classes_with_rules)
+        program = "import ast\n" + program + "\n" + generate_checker_class(checker, classes_with_rules) + "\n"
 
     exec(program, global_dict)
