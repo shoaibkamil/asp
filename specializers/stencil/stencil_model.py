@@ -22,8 +22,8 @@ Identifier(name)
 
 Kernel(body=(StencilNeighborIter | OutputAssignment)*)
 
-StencilNeighborIter(grid=Identifier, distance=Constant, body=OutputAssignment*)
-    check assert self.distance.value >= 0, "distance must be nonnegative but was: %d" % self.distance.value
+StencilNeighborIter(grid=Identifier, neighbors_id=Constant, body=OutputAssignment*)
+    check assert self.neighbors_id.value >= 0, "neighbors_id must be nonnegative but was: %d" % self.neighbors_id.value
 
 # Assigns Expr to current output element
 OutputAssignment(value=Expr)
@@ -33,6 +33,7 @@ Expr = Constant
      | OutputElement # Refers to current output element
      | InputElement
      | InputElementZeroOffset
+     | InputElementExprIndex
      | ScalarBinOp
 
 Constant(value = types.IntType | types.LongType | types.FloatType)
@@ -44,7 +45,10 @@ InputElement(grid=Identifier, offset_list=types.IntType*)
 # Input element at same position as current output element
 InputElementZeroOffset(grid=Identifier)
 
-ScalarBinOp(left=Expr, op=(ast.Add|ast.Sub|ast.Mult|ast.Div|ast.FloorDiv), right=Expr)
+# Input element at an index given by an expression (must be 1D grid)
+InputElementExprIndex(grid=Identifier, index=Expr)
+
+ScalarBinOp(left=Expr, op=(ast.Add|ast.Sub|ast.Mult|ast.Div|ast.FloorDiv|ast.Mod), right=Expr)
 ''', globals(), checker='StencilModelChecker')
 
 # Verifies a few structural constraints (semantic properties) of the tree
