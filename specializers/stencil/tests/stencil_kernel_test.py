@@ -196,6 +196,7 @@ class StencilConvert3DBilateralTests(unittest.TestCase):
            self.filter[x] = scale * math.exp( -1.0 * (float(x)-mean) * (float(x)-mean) * divisor)
 
         self.kernel = BilateralKernel()
+        # because of the large number of neighbors, unrolling breaks gcc
         self.kernel.should_unroll = False
         self.out_grid = StencilGrid([self.points,self.points,self.points])
         self.out_grid.ghost_depth = 3
@@ -205,11 +206,8 @@ class StencilConvert3DBilateralTests(unittest.TestCase):
         self.in_grid = StencilGrid([self.points,self.points,self.points])
         self.in_grid.ghost_depth = 3
         # set neighbors to be everything within -3 to 3 of each 3D point in each direction
-        # HACK: using the full neighbor set breaks gcc with "g++: Internal error: Killed (program cc1plus)" after unrolling, par it down
         self.in_grid.neighbor_definition[1] = list(
             set([x for x in itertools.permutations([-1,-1,-1,-2,-2,-2,-3,-3,-3,0,0,0,1,1,1,2,2,2,3,3,3],3)]))
-        #self.in_grid.neighbor_definition[1] = list(
-        #    set([x for x in itertools.permutations([-1,-1,-1,-2,-2,-2,0,0,0,1,1,1,2,2,2],3)]))
 
     def test_whole_thing(self):
         import numpy
