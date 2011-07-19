@@ -27,7 +27,23 @@ class StencilConvertAST(ast_tools.ConvertAST):
 
     def run(self):
         self.model = self.visit(self.model)
+        assert_has_type(self.model, cpp_ast.FunctionBody)
+        StencilConvertAST.VerifyOnlyCppNodes().visit(self.model)
         return self.model
+
+    class VerifyOnlyCppNodes(ast_tools.NodeVisitorCustomNodes):
+        def visit(self, node):
+            for field, value in ast.iter_fields(node):
+                if type(value) in [StringType, IntType, LongType, FloatType]:
+                    pass
+                elif isinstance(value, list):
+                    for item in value:
+                        if ast_tools.is_cpp_node(item):
+                            self.visit(item)
+                elif ast_tools.is_cpp_node(value):
+                    self.visit(value)
+                else:
+                    assert False, 'Expected only codepy.cgen.Generable nodes and primitives but found %s' % value
 
     # Visitors
     
@@ -74,7 +90,7 @@ class StencilConvertAST(ast_tools.ConvertAST):
         # unroll
         if self.unroll_factor:
             replacement = ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
-            ret_node = ast_tools.ASTNodeReplacer(cur_node, replacement).visit(ret_node)
+            ret_node = ast_tools.ASTNodeReplacerCpp(cur_node, replacement).visit(ret_node)
 
         return ret_node
 

@@ -3,39 +3,49 @@ from cpp_ast import *
 import python_ast as ast
 from asp.util import *
 
+def is_cpp_node(x):
+    return isinstance(x, Generable)    
 
-
-class NodeVisitor(ast.NodeVisitor):
-    """Unified class for visiting Python and C++ AST nodes, adapted from Python source."""
+class NodeVisitorCustomNodes(ast.NodeVisitor):
+    # Based on NodeTransformer.generic_visit(), but visits all sub-nodes
+    # matching is_node(), not just those derived from ast.AST. By default
+    # behaves just like ast.NodeTransformer, but is_node() can be overridden.
     def generic_visit(self, node):
-        """Called if no explicit visitor function exists for a node."""
         for field, value in ast.iter_fields(node):
             if isinstance(value, list):
                 for item in value:
-                    if isinstance(item, ast.AST) or isinstance(item, Generable):
+                    if self.is_node(item):
                         self.visit(item)
-            elif isinstance(value, ast.AST) or isinstance(value, Generable):
+            elif self.is_node(value):
                 self.visit(value)
 
+    def is_node(self, x):
+        return isinstance(x, ast.AST)
 
-class NodeTransformer(ast.NodeTransformer):
-    """Unified class for *transforming* Python and C++ AST nodes, adapted from Python source"""
+class NodeVisitor(NodeVisitorCustomNodes):
+    def is_node(self, x):
+        return isinstance(x, ast.AST) or is_cpp_node(x)
+
+class NodeTransformerCustomNodes(ast.NodeTransformer):
+    # Based on NodeTransformer.generic_visit(), but visits all sub-nodes
+    # matching is_node(), not just those derived from ast.AST. By default
+    # behaves just like ast.NodeTransformer, but is_node() can be overridden.
     def generic_visit(self, node):
-        for field, old_value in ast.iter_fields(node):
+        for field in node._fields:
             old_value = getattr(node, field, None)
             if isinstance(old_value, list):
                 new_values = []
                 for value in old_value:
-                    if isinstance(value, ast.AST) or isinstance(value, Generable):
+                    if self.is_node(value):
                         value = self.visit(value)
                         if value is None:
                             continue
-                        elif not (isinstance(value, ast.AST) or isinstance(value, Generable)):
+                        elif not self.is_node(value):
                             new_values.extend(value)
                             continue
                     new_values.append(value)
                 old_value[:] = new_values
-            elif isinstance(old_value, ast.AST) or isinstance(old_value, Generable):
+            elif self.is_node(old_value):
                 new_node = self.visit(old_value)
                 if new_node is None:
                     delattr(node, field)
@@ -43,9 +53,15 @@ class NodeTransformer(ast.NodeTransformer):
                     setattr(node, field, new_node)
         return node
 
+    def is_node(self, x):
+        return isinstance(x, ast.AST)
 
+class NodeTransformer(NodeTransformerCustomNodes):
+    """Unified class for *transforming* Python and C++ AST nodes"""
+    def is_node(self, x):
+        return isinstance(x, ast.AST) or is_cpp_node(x)
 
-class ASTNodeReplacer(ast.NodeTransformer):
+class ASTNodeReplacer(NodeTransformer):
     """Class to replace Python AST nodes."""
     def __init__(self, original, replacement):
         self.original = original
@@ -68,33 +84,9 @@ class ASTNodeReplacer(ast.NodeTransformer):
         else:
             return self.generic_visit(node)
 
-    # Based on NodeTransformer.generic_visit(), but visits all sub-nodes
-    # matching is_node(), not just those derived from ast.AST.
-    def generic_visit(self, node):
-        for field in node._fields:
-            old_value = getattr(node, field, None)
-            if isinstance(old_value, list):
-                new_values = []
-                for value in old_value:
-                    if is_node(value):
-                        value = self.visit(value)
-                        if value is None:
-                            continue
-                        elif not is_node(value):
-                            new_values.extend(value)
-                            continue
-                    new_values.append(value)
-                old_value[:] = new_values
-            elif is_node(old_value):
-                new_node = self.visit(old_value)
-                if new_node is None:
-                    delattr(node, field)
-                else:
-                    setattr(node, field, new_node)
-        return node
-
-def is_node(x):
-    return isinstance(x, ast.AST) or isinstance(x, codepy.cgen.Generable)
+class ASTNodeReplacerCpp(ASTNodeReplacer):
+    def is_node(self, x):
+        return is_cpp_node(x)
 
 class ConvertAST(ast.NodeTransformer):
     """Class to convert from Python AST to C++ AST"""

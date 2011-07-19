@@ -221,7 +221,7 @@ class StencilConvert3DBilateralTests(unittest.TestCase):
         self.kernel.kernel(self.in_grid, self.filter, self.expected_out_grid)
 
         for x in self.out_grid.interior_points():
-            self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])
+            self.assertEqual(self.out_grid[x], self.expected_out_grid[x])
 
 def python_func_to_unrolled_model(func, in_grids, out_grid):
     python_ast = ast.parse(inspect.getsource(func).lstrip())
