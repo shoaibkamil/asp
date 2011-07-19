@@ -349,3 +349,56 @@ class LoopBlocker(object):
             Block(contents=[new_inner_for]))
         debug_print(new_outer_for)
         return new_outer_for
+
+class LoopSwitcher(NodeTransformer):
+    """
+    Class that switches two loops.  The user is responsible for making sure the switching
+    is valid (i.e. that the code can still compile/run).  Given two integers i,j this
+    class switches the ith and jth loops encountered.
+    """
+
+    
+    def __init__(self):
+        self.current_loop = -1
+        self.saved_first_loop = None
+        self.saved_second_loop = None
+        super(LoopSwitcher, self).__init__()
+
+    def switch(self, tree, i, j):
+        """Switch the i'th and j'th loops in tree."""
+        self.first_target = min(i,j)
+        self.second_target = max(i,j)
+
+        self.original_ast = tree
+        
+        return self.visit(tree)
+
+    def visit_For(self, node):
+        self.current_loop += 1
+
+        if self.current_loop == self.first_target:
+            # save the loop
+            debug_print("Saving loop")
+            self.saved_first_loop = node
+            new_body = self.visit(node.body)
+            # replace with the second loop (which has now been saved)
+            return For(self.saved_second_loop.loopvar,
+                       self.saved_second_loop.initial,
+                       self.saved_second_loop.end,
+                       self.saved_second_loop.increment,
+                       new_body)
+                       
+
+        if self.current_loop == self.second_target:
+            # save this
+            self.saved_second_loop = node
+            # replace this
+            debug_print("replacing loop")
+            return For(self.saved_first_loop.loopvar,
+                       self.saved_first_loop.initial,
+                       self.saved_first_loop.end,
+                       self.saved_first_loop.increment,
+                       node.body)
+        
+
+

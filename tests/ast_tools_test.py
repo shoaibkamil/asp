@@ -99,6 +99,20 @@ class LoopBlockerTests(unittest.TestCase):
         self.assertEqual(output, wanted_output)
 
 
+class LoopSwitcherTests(unittest.TestCase):
+    def test_basic_switching(self):
+        test_ast = For("i",
+                       CNumber(0),
+                       CNumber(7),
+                       CNumber(1),
+                       Block(contents=[For("j",
+                                       CNumber(0),
+                                       CNumber(3),
+                                       CNumber(1),
+                                       Block(contents=[Assign(CName("v"), CName("i"))]))]))
+        wanted_output = "for(intj=0;(j<=3);j=(j+1))\n{\nfor(inti=0;(i<=7);i=(i+1))\n{\nv=i;\n}\n}"
+        output = str(LoopSwitcher().switch(test_ast, 0, 1)).replace(' ','')
+        self.assertEqual(output, wanted_output)
 
 
 
