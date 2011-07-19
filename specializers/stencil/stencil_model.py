@@ -52,7 +52,7 @@ InputElementExprIndex(grid=Identifier, index=Expr)
 # Use a built-in pure math function
 MathFunction(name, args=Expr*)
     check assert self.name in math_functions.keys(), "Tried to use function \'%s\' not in math_functions list" % self.name
-    check assert len(self.args) == math_functions[self.name], "Expected %d arguments to math function \'%s\' but received %d arguments" % (self.name, math_functions[self.name], len(self.args))
+    check assert len(self.args) == math_functions[self.name], "Expected %d arguments to math function \'%s\' but received %d arguments" % (math_functions[self.name], self.name, len(self.args))
 
 ScalarBinOp(left=Expr, op=(ast.Add|ast.Sub|ast.Mult|ast.Div|ast.FloorDiv|ast.Mod), right=Expr)
 ''', globals(), checker='StencilModelChecker')

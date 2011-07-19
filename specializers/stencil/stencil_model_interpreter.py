@@ -64,6 +64,10 @@ class StencilModelInterpreter(ast.NodeVisitor):
         grid = self.visit(node.grid)
         return grid[self.current_output_point]
 
+    def visit_InputElementExprIndex(self, node):
+        grid = self.visit(node.grid)
+        return grid[self.visit(node.index)]
+
     def visit_ScalarBinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -77,3 +81,11 @@ class StencilModelInterpreter(ast.NodeVisitor):
             return left / right
         elif type(node.op) is ast.FloorDiv:
             return left // right
+
+    def visit_MathFunction(self, node):
+        if node.name == 'abs':
+            return abs(self.visit(node.args[0]))
+        elif node.name == 'int':
+            return int(self.visit(node.args[0]))
+        else:
+            assert False, 'Invalid math function %s' % node.name

@@ -47,5 +47,41 @@ class BasicTests(unittest.TestCase):
         for x in self.out_grid.border_points():
             self.assertEqual(self.out_grid[x], 0)
 
+    def test_function_expr_index(self):
+        self.helper_grid = StencilGrid([5])
+        self.helper_grid.data[1] = 7  # All elements of in_grid are set to 1
+        model = StencilModel([Identifier('in_grid'), Identifier('helper_grid')],
+                             Kernel([OutputAssignment(InputElementExprIndex(Identifier('helper_grid'),
+                                                                            InputElementZeroOffset(Identifier('in_grid'))))]),
+                             Kernel([]))
+
+        StencilModelInterpreter(model, [self.in_grid, self.helper_grid], self.out_grid).run()
+        for x in self.out_grid.interior_points():
+            self.assertEqual(self.out_grid[x], 7)
+        for x in self.out_grid.border_points():
+            self.assertEqual(self.out_grid[x], 0)
+
+    def test_function_abs(self):
+        model = StencilModel([Identifier('in_grid')],
+                             Kernel([OutputAssignment(MathFunction('abs', [Constant(-2)]))]),
+                             Kernel([]))
+
+        StencilModelInterpreter(model, [self.in_grid], self.out_grid).run()
+        for x in self.out_grid.interior_points():
+            self.assertEqual(self.out_grid[x], 2)
+        for x in self.out_grid.border_points():
+            self.assertEqual(self.out_grid[x], 0)
+
+    def test_function_int(self):
+        model = StencilModel([Identifier('in_grid')],
+                             Kernel([OutputAssignment(MathFunction('int', [Constant(2.5)]))]),
+                             Kernel([]))
+
+        StencilModelInterpreter(model, [self.in_grid], self.out_grid).run()
+        for x in self.out_grid.interior_points():
+            self.assertEqual(self.out_grid[x], 2)
+        for x in self.out_grid.border_points():
+            self.assertEqual(self.out_grid[x], 0)
+
 if __name__ == '__main__':
     unittest.main()
