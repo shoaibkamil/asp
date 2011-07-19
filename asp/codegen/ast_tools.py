@@ -376,6 +376,8 @@ class LoopSwitcher(NodeTransformer):
     def visit_For(self, node):
         self.current_loop += 1
 
+        debug_print("At loop %d, targets are %d and %d" % (self.current_loop, self.first_target, self.second_target))
+
         if self.current_loop == self.first_target:
             # save the loop
             debug_print("Saving loop")
@@ -401,4 +403,9 @@ class LoopSwitcher(NodeTransformer):
                        node.body)
         
 
+        return For(node.loopvar,
+                   node.initial,
+                   node.end,
+                   node.increment,
+                   self.visit(node.body))
 
