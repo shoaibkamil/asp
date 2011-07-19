@@ -104,5 +104,16 @@ def kernel(self, in_grid, out_grid):
         with self.assertRaises(AssertionError):
             stencil_model = StencilPythonFrontEnd().parse(python_ast)
 
+    def test_parse_bad_for(self):
+        python_ast = ast.parse(
+'''
+def kernel(self, in_grid, out_grid):
+    for x in [1,2,3]:
+        out_grid[x] = 1
+'''
+                              )
+        with self.assertRaises(AssertionError):
+            stencil_model = StencilPythonFrontEnd().parse(python_ast)
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,6 +6,7 @@ Facilitates isolation of bugs between stages in the specializer.
 from stencil_model import *
 import ast
 from assert_utils import *
+import math
 
 class StencilModelInterpreter(ast.NodeVisitor):
     def __init__(self, stencil_model, input_grids, output_grid):
@@ -82,10 +83,9 @@ class StencilModelInterpreter(ast.NodeVisitor):
         elif type(node.op) is ast.FloorDiv:
             return left // right
 
+    math_func_to_python_func = {'abs': abs, 'int': int}
+
     def visit_MathFunction(self, node):
-        if node.name == 'abs':
-            return abs(self.visit(node.args[0]))
-        elif node.name == 'int':
-            return int(self.visit(node.args[0]))
-        else:
-            assert False, 'Invalid math function %s' % node.name
+        func = self.math_func_to_python_func[node.name]
+        args = map(self.visit, node.args)
+        return apply(func, args)

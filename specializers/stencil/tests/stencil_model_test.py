@@ -34,6 +34,10 @@ class BasicTests(unittest.TestCase):
         # Empty model, does nothing
         StencilModel([], self.empty_kernel, self.empty_kernel)
 
+    def test_stencil_model_bad_neighbor(self):
+        with self.assertRaises(AssertionError):
+            StencilModel([self.in_grid], Kernel([OutputAssignment(Neighbor())]), self.empty_kernel)
+
     def test_kernel_init(self):
         Kernel([self.neighbor_iter])
         Kernel([self.constant_output_assignment])
