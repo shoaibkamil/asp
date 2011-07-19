@@ -1,6 +1,7 @@
 import unittest2 as unittest
 import ast
 import math
+import itertools
 from stencil_kernel import *
 from stencil_python_front_end import *
 from stencil_unroll_neighbor_iter import *
@@ -173,6 +174,53 @@ class StencilConvert2DLaplacianTests(unittest.TestCase):
                 self.expected_out_grid[(xi, yi)] = 6*x + 6*y # Symbolic Laplacian
 
         self.kernel.kernel(self.in_grid, self.out_grid)
+
+        for x in self.out_grid.interior_points():
+            self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])
+
+class StencilConvert3DBilateralTests(unittest.TestCase):
+    def setUp(self):
+        self.points = 10
+        class BilateralKernel(StencilKernel):
+           def kernel(self, in_img, filter, out_img):
+               for x in out_img.interior_points():
+                   for y in in_img.neighbors(x, 1):
+                       out_img[x] = out_img[x] + filter[abs(int(in_img[x]-in_img[y]))%255] * in_img[y]
+
+        self.filter = StencilGrid([256])
+        stdev = 40.0
+        mean = 0.0
+        scale = 1.0/(stdev*math.sqrt(2.0*math.pi))
+        divisor = 1.0 / (2.0 * stdev * stdev)
+        for x in xrange(256):
+           self.filter[x] = scale * math.exp( -1.0 * (float(x)-mean) * (float(x)-mean) * divisor)
+
+        self.kernel = BilateralKernel()
+        self.kernel.should_unroll = False
+        self.out_grid = StencilGrid([self.points,self.points,self.points])
+        self.out_grid.ghost_depth = 3
+        self.expected_out_grid = StencilGrid([self.points,self.points,self.points])
+        self.expected_out_grid.ghost_depth = 3
+
+        self.in_grid = StencilGrid([self.points,self.points,self.points])
+        self.in_grid.ghost_depth = 3
+        # set neighbors to be everything within -3 to 3 of each 3D point in each direction
+        # HACK: using the full neighbor set breaks gcc with "g++: Internal error: Killed (program cc1plus)" after unrolling, par it down
+        self.in_grid.neighbor_definition[1] = list(
+            set([x for x in itertools.permutations([-1,-1,-1,-2,-2,-2,-3,-3,-3,0,0,0,1,1,1,2,2,2,3,3,3],3)]))
+        #self.in_grid.neighbor_definition[1] = list(
+        #    set([x for x in itertools.permutations([-1,-1,-1,-2,-2,-2,0,0,0,1,1,1,2,2,2],3)]))
+
+    def test_whole_thing(self):
+        import numpy
+        for x in range(0,self.points):
+            for y in range(0,self.points):
+                for z in range(0,self.points):
+                    self.in_grid.data[(x, y, z)] = (x + y + z) % 256
+
+        self.kernel.kernel(self.in_grid, self.filter, self.out_grid)
+        self.kernel.pure_python = True
+        self.kernel.kernel(self.in_grid, self.filter, self.expected_out_grid)
 
         for x in self.out_grid.interior_points():
             self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])

@@ -97,6 +97,12 @@ class StencilConvertAST(ast_tools.ConvertAST):
                                          node.offset_list))
         return cpp_ast.Subscript("_my_" + node.grid.name, index)
 
+    def visit_InputElementExprIndex(self, node):
+        return cpp_ast.Subscript("_my_" + node.grid.name, self.visit(node.index))
+
+    def visit_MathFunction(self, node):
+        return cpp_ast.FunctionCall(cpp_ast.CName(node.name), params=map(self.visit, node.args))
+
     # Helper functions
     
     def gen_array_macro_definition(self, arg):

@@ -75,9 +75,9 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
                 neighbors_id = self.visit(node.iter.args[1])
                 return StencilNeighborIter(Identifier(self.neighbor_grid_id), neighbors_id, body)
             else:
-                return node
+                assert False, 'Invalid call in For loop argument \'%s\', can only iterate over interior_points, boder_points, or neighbor_points of a grid' % node.iter.func.attr
         else:
-            return node
+            assert False, 'Unexpected For loop \'%s\', can only iterate over interior_points, boder_points, or neighbor_points of a grid' % node
 
     def visit_AugAssign(self, node):
         target = self.visit(node.target)
@@ -99,13 +99,19 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
                 return InputElementZeroOffset(Identifier(grid_id))
             elif grid_id == self.neighbor_grid_id and target == self.neighbor_target:
                 return Neighbor()
+            elif isinstance(target, Expr):
+                return InputElementExprIndex(Identifier(grid_id), target)
             else:
-                return node
+                assert False, 'Unexpected subscript index \'%s\' on grid \'%s\'' % (target, grid_id)
         else:
-            return node
+            assert False, 'Unsupported subscript object \'%s\' on grid \'%s\'' % (node.slice, grid_id)
 
     def visit_BinOp(self, node):
         return ScalarBinOp(self.visit(node.left), node.op, self.visit(node.right))
 
     def visit_Num(self, node):
         return Constant(node.n)
+
+    def visit_Call(self, node):
+        assert isinstance(node.func, ast.Name), 'Cannot call expression'
+        return MathFunction(node.func.id, map(self.visit, node.args))

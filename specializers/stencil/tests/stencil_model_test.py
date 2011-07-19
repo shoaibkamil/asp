@@ -82,6 +82,7 @@ class BasicTests(unittest.TestCase):
         ScalarBinOp(self.output_element, ast.Mult(), self.neighbor)
         ScalarBinOp(self.output_element, ast.Div(), self.neighbor)
         ScalarBinOp(self.output_element, ast.FloorDiv(), self.neighbor)
+        ScalarBinOp(self.output_element, ast.Mod(), self.neighbor)
         for op in [ast.Mod, ast.Pow, ast.LShift, ast.RShift, ast.BitOr, ast.BitXor, ast.BitAnd]:
             with self.assertRaises(AssertionError):
                 ScalarBinOp(self.output_element, op, self.neighbor)

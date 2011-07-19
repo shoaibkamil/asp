@@ -35,6 +35,7 @@ Expr = Constant
      | InputElementZeroOffset
      | InputElementExprIndex
      | ScalarBinOp
+     | MathFunction
 
 Constant(value = types.IntType | types.LongType | types.FloatType)
 
@@ -48,14 +49,23 @@ InputElementZeroOffset(grid=Identifier)
 # Input element at an index given by an expression (must be 1D grid)
 InputElementExprIndex(grid=Identifier, index=Expr)
 
+# Use a built-in pure math function
+MathFunction(name, args=Expr*)
+    check assert self.name in math_functions.keys(), "Tried to use function \'%s\' not in math_functions list" % self.name
+    check assert len(self.args) == math_functions[self.name], "Expected %d arguments to math function \'%s\' but received %d arguments" % (self.name, math_functions[self.name], len(self.args))
+
 ScalarBinOp(left=Expr, op=(ast.Add|ast.Sub|ast.Mult|ast.Div|ast.FloorDiv|ast.Mod), right=Expr)
 ''', globals(), checker='StencilModelChecker')
+
+# Gives number of arguments for each math function
+math_functions = {'int':1, 'abs':1}
 
 # Verifies a few structural constraints (semantic properties) of the tree
 class StencilModelStructuralConstraintsVerifier(ast.NodeVisitor):
     def __init__(self, stencil_model):
         assert_has_type(stencil_model, StencilModel)
         self.model = stencil_model
+        self.in_stencil_neighbor_iter = False
         super(StencilModelStructuralConstraintsVerifier, self).__init__()
 
     def verify(self):

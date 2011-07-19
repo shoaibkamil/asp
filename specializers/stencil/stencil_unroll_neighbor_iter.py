@@ -71,3 +71,9 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
         grid = self.input_dict[node.grid.name]
         zero_point = tuple([0 for x in range(grid.dim)])
         return InputElement(node.grid, zero_point)
+
+    def visit_InputElementExprIndex(self, node):
+        grid = self.input_dict[node.grid.name]
+        assert grid.dim == 1, 'Grid \'%s\' has dimension %s but expected dimension 1 because this kernel indexes into it using an expression' % (grid, grid.dim)
+        self.generic_visit(node)
+        return node

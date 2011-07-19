@@ -42,6 +42,7 @@ class StencilKernel(object):
 
         self.pure_python = False
         self.pure_python_kernel = self.kernel
+        self.should_unroll = True
 
         # replace kernel with shadow version
         self.kernel = self.shadow_kernel
@@ -92,13 +93,14 @@ class StencilKernel(object):
         # generate variant with no unrolling, then generate variants for various unrollings
         variants = [Converter(model, input_grids, output_grid).run()]
         variant_names = ["kernel_unroll_1"]
-        for x in [2,4,8,16,32,64]:
-            check_valid = max(map(
-                lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
-                args))
-            if check_valid == 0:
-                variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
-                variant_names.append("kernel_unroll_%s" % x)
+        if self.should_unroll:
+            for x in [2,4,8,16,32,64]:
+                check_valid = max(map(
+                    lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
+                    args))
+                if check_valid == 0:
+                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
+                    variant_names.append("kernel_unroll_%s" % x)
 
         from asp.jit import asp_module
 
