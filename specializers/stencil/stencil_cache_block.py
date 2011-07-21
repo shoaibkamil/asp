@@ -46,7 +46,8 @@ class StencilCacheBlocker(object):
 
         # now we move all the outer strip-mined loops to be outermost
         for x in xrange(1,len(factors)):
-            self.bubble(tree, 2*x, x)
+            if factors[x] > 0:
+                tree = self.bubble(tree, 2*x, x)
     
         return tree
         
