@@ -3,7 +3,13 @@ import asp.codegen.ast_tools as ast_tools
 
 
 class StencilCacheBlocker(object):
+    """
+    Class that takes a tree of perfectly-nested For loops (as in a stencil) and performs standard cache blocking
+    on them.  Usage: StencilCacheBlocker().block(tree, factors) where factors is a tuple, one for each loop nest
+    in the original tree.
+    """
     class StripMineLoopByIndex(ast_tools.NodeTransformer):
+        """Helper class that strip mines a loop of a particular index in the nest."""
         def __init__(self, index, factor):
             self.current_idx = -1
             self.target_idx = index
@@ -28,20 +34,27 @@ class StencilCacheBlocker(object):
                            self.visit(node.body))
             
     def block(self, tree, factors):
+        """Main method in StencilCacheBlocker.  Used to block the loops in the tree."""
         # first we apply strip mining to the loops given in factors
         for x in xrange(len(factors)):
             print "Doing loop %d by %d" % (x*2, factors[x])
-            tree = StencilCacheBlocker.StripMineLoopByIndex(x*2, factors[x]).visit(tree)
+
+            # we may want to not block a particular loop, e.g. when doing Rivera/Tseng blocking
+            if factors[x] > 0:
+                tree = StencilCacheBlocker.StripMineLoopByIndex(x*2, factors[x]).visit(tree)
             print tree
 
         # now we move all the outer strip-mined loops to be outermost
-
         for x in xrange(1,len(factors)):
             self.bubble(tree, 2*x, x)
     
         return tree
         
     def bubble(self, tree, index, new_index):
+        """
+        Helper function to 'bubble up' a loop at index to be at new_index (new_index < index)
+        while preserving the ordering of the loops between index and new_index.
+        """
         for x in xrange(index-new_index):
             print "In bubble, switching %d and %d" % (index-x-1, index-x)
             ast_tools.LoopSwitcher().switch(tree, index-x-1, index-x)
