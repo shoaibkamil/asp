@@ -1,6 +1,29 @@
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
+from stencil_convert import *
 
+class StencilConvertASTBlocked(StencilConvertAST):
+    class FindInnerMostLoop(ast_tools.NodeVisitor):
+        def __init__(self):
+            self.inner_most = None
+
+        def find(self, node):
+            self.visit(node)
+            return self.inner_most
+        
+        def visit_For(self, node):
+            self.inner_most = node
+            self.visit(node.body)
+        
+    def gen_loops(self, node):
+        inner, unblocked = super(StencilConvertASTBlocked, self).gen_loops(node)
+
+        blocked = StencilCacheBlocker().block(unblocked, (2,2))
+
+        # need to update inner to point to the innermost in the new blocked version
+        inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
+        assert(inner != None)
+        return [inner,blocked]
 
 class StencilCacheBlocker(object):
     """

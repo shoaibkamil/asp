@@ -1,6 +1,37 @@
 import unittest2 as unittest
 from asp.codegen.cpp_ast import *
 from stencil_cache_block import *
+from stencil_kernel import *
+
+class StencilConvertASTBlockedTests(unittest.TestCase):
+    def setUp(self):
+        class IdentityKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] = out_grid[x] + in_grid[y]
+
+        self.kernel = IdentityKernel()
+        self.in_grid = StencilGrid([10,10])
+        self.in_grids = [self.in_grid]
+        self.out_grid = StencilGrid([10,10])
+        self.model = python_func_to_unrolled_model(IdentityKernel.kernel, self.in_grids, self.out_grid)
+
+    def test_gen_loops(self):
+        converter = StencilConvertASTBlocked(self.model, self.in_grids, self.out_grid)
+        result = converter.gen_loops(self.model)
+        wanted = """for (int x1x1 = 1; (x1x1 <= 8); x1x1 = (x1x1 + (1 * 2)))
+        {
+        for (int x2x2 = 1; (x2x2 <= 8); x2x2 = (x2x2 + (1 * 2)))
+        for (int x1 = x1x1; (x1 <= min((x1x1 + 2),8)); x1 = (x1 + 1))
+        {
+        for (int x2 = x2x2; (x2 <= min((x2x2 + 2),8)); x2 = (x2 + 1))
+        {
+        }
+        }
+        }"""
+        self.assertEqual(wanted.replace(' ',''), str(result[1]).replace(' ',''))
+
 
 class CacheBlockerTests(unittest.TestCase):
     def test_2d(self):
@@ -99,6 +130,13 @@ class CacheBlockerTests(unittest.TestCase):
         }"""
         self.assertEqual(str(StencilCacheBlocker().block(loop, (2,2,0))).replace(' ',''),
                          wanted.replace(' ', ''))
+
+
+def python_func_to_unrolled_model(func, in_grids, out_grid):
+    python_ast = ast.parse(inspect.getsource(func).lstrip())
+    model = StencilPythonFrontEnd().parse(python_ast)
+    return StencilUnrollNeighborIter(model, in_grids, out_grid).run()
+
 if __name__ == '__main__':
     unittest.main()
 
