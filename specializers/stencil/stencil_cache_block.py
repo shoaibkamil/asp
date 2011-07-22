@@ -40,13 +40,13 @@ class StencilCacheBlocker(object):
             print "Doing loop %d by %d" % (x*2, factors[x])
 
             # we may want to not block a particular loop, e.g. when doing Rivera/Tseng blocking
-            if factors[x] > 0:
+            if factors[x] > 1:
                 tree = StencilCacheBlocker.StripMineLoopByIndex(x*2, factors[x]).visit(tree)
             print tree
 
         # now we move all the outer strip-mined loops to be outermost
         for x in xrange(1,len(factors)):
-            if factors[x] > 0:
+            if factors[x] > 1:
                 tree = self.bubble(tree, 2*x, x)
     
         return tree
@@ -58,5 +58,5 @@ class StencilCacheBlocker(object):
         """
         for x in xrange(index-new_index):
             print "In bubble, switching %d and %d" % (index-x-1, index-x)
-            ast_tools.LoopSwitcher().switch(tree, index-x-1, index-x)
+            tree = ast_tools.LoopSwitcher().switch(tree, index-x-1, index-x)
         return tree
