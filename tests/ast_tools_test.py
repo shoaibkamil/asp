@@ -80,7 +80,7 @@ class LoopUnrollerTests(unittest.TestCase):
 
     def test_imperfect_unrolling (self):
         result = LoopUnroller().unroll(self.test_ast, 3)
-        wanted_result = "for (int i = 0; (i <= 5); i = (i + (1 * 3)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}\n" + "for (int i = 6; (i <= 7); i = (i + 1))\n{\n  a[i] = i;\n}"
+        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 3)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}\n" + "for (int i = (3*((7+1)/3)); (i <= 7); i = (i + 1))\n{\n  a[i] = i;\n}"
         self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
 
 class LoopBlockerTests(unittest.TestCase):
@@ -94,7 +94,7 @@ class LoopBlockerTests(unittest.TestCase):
             Block(contents=[Assign(Subscript(CName("a"), CName("i")),
                    CName("i"))]))
 
-        wanted_output = "for(intii=0;(ii<=7);ii=(ii+(1*2)))\n{\nfor(inti=ii;(i<=min((ii+2),7));i=(i+1))\n{\na[i]=i;\n}\n}"
+        wanted_output = "for(intii=0;(ii<=7);ii=(ii+(1*2)))\n{\nfor(inti=ii;(i<=min((ii+1),7));i=(i+1))\n{\na[i]=i;\n}\n}"
         output = str(LoopBlocker().loop_block(test_ast, 2)).replace(' ', '')
         self.assertEqual(output, wanted_output)
 

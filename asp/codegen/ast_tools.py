@@ -279,24 +279,17 @@ class LoopUnroller(object):
 
         import copy
 
-        #Number of iterations in the initial loop
-        num_iterations = node.end.num - node.initial.num + 1
-
-        #Integer division provides number of iterations
-        # in the unrolled loop
-        num_unrolls = num_iterations / factor
-
-        #Iterations left over after unrolled loop
-        leftover = num_iterations % factor
-
-        #End of unrolled loop, add one to get beginning of leftover loop
-        loop_end = CNumber(node.end.num - leftover)
-        leftover_begin = CNumber(node.end.num - leftover + 1)
-
-        debug_print("Loop unroller called with ", node.loopvar)
-        debug_print("Number of iterations: ", num_iterations)
-        debug_print("Number of unrolls: ", num_unrolls)
-        debug_print("Leftover iterations: ", leftover)
+        # we can't precalculate the number of leftover iterations in the case that
+        # the number of iterations are not known a priori, so we build an Expression
+        # and let the compiler deal with it
+        leftover_begin = BinOp(CNumber(factor),
+                               "*", 
+                               BinOp(BinOp(node.end, "+", 1), "/", CNumber(factor)))
+        
+#        debug_print("Loop unroller called with ", node.loopvar)
+#        debug_print("Number of iterations: ", num_iterations)
+#        debug_print("Number of unrolls: ", num_unrolls)
+#        debug_print("Leftover iterations: ", leftover)
 
         new_increment = BinOp(node.increment, "*", CNumber(factor))
 
@@ -311,7 +304,7 @@ class LoopUnroller(object):
         unrolled_for_node = For(
             node.loopvar,
             node.initial,
-            loop_end,
+            node.end,
             new_increment,
             new_block)
 
@@ -322,9 +315,13 @@ class LoopUnroller(object):
             node.increment,
             node.body)
 
+
         return_block.append(unrolled_for_node)
 
-        if leftover != 0:
+        # if we *know* this loop has no leftover iterations, then
+        # we return without the leftover loop
+        if not (isinstance(node.initial, CNumber) and isinstance(node.end, CNumber) and
+           ((node.end.num - node.initial.num + 1) % factor == 0)):
             return_block.append(leftover_for_node)
 
         return return_block
@@ -337,7 +334,10 @@ class LoopBlocker(object):
         new_inner_for = For(
             node.loopvar,
             outer_incr_name,
-            FunctionCall("min", [BinOp(outer_incr_name, "+", CNumber(2)), node.end]),
+            FunctionCall("min", [BinOp(outer_incr_name, 
+                                       "+", 
+                                       CNumber(block_size-1)), 
+                                 node.end]),
             CNumber(1),
             node.body)
 
