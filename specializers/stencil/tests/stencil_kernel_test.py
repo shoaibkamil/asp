@@ -7,7 +7,6 @@ from stencil_python_front_end import *
 from stencil_unroll_neighbor_iter import *
 from stencil_convert import *
 from asp.util import *
-
 class BasicTests(unittest.TestCase):
     def test_init(self):
         # if no kernel method is defined, it should fail
@@ -25,7 +24,6 @@ class BasicTests(unittest.TestCase):
         kernel.pure_python = True
         kernel.kernel(in_grid, out_grid)
         self.failIf(in_grid[3,3] != out_grid[3,3])
-
 class StencilConvertASTTests(unittest.TestCase):
     def setUp(self):
         class IdentityKernel(StencilKernel):
@@ -53,7 +51,6 @@ class StencilConvertASTTests(unittest.TestCase):
         self.kernel.kernel(self.in_grid, self.out_grid)
         self.assertEqual(self.out_grid[5,5],4.0)
 
-
 class Stencil1dAnd3dTests(unittest.TestCase):
     def setUp(self):
         class My1DKernel(StencilKernel):
@@ -76,7 +73,6 @@ class Stencil1dAnd3dTests(unittest.TestCase):
         self.kernel.kernel(self.in_grid, self.out_grid)
         self.assertEqual(self.out_grid[4], 2.0)
 
-
 class VariantTests(unittest.TestCase):
     def test_no_regeneration_if_same_sizes(self):
         class My1DKernel(StencilKernel):
@@ -95,7 +91,6 @@ class VariantTests(unittest.TestCase):
         kernel.kernel(in_grid, out_grid)
         self.assertEqual(saved, kernel.mod)
         
-
 class StencilConvertASTCilkTests(unittest.TestCase):
     def setUp(self):
         class IdentityKernel(StencilKernel):
@@ -221,7 +216,7 @@ class StencilConvert3DBilateralTests(unittest.TestCase):
         self.kernel.kernel(self.in_grid, self.filter, self.expected_out_grid)
 
         for x in self.out_grid.interior_points():
-            self.assertEqual(self.out_grid[x], self.expected_out_grid[x])
+            self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])
 
 def python_func_to_unrolled_model(func, in_grids, out_grid):
     python_ast = ast.parse(inspect.getsource(func).lstrip())

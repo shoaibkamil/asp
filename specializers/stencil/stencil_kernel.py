@@ -86,7 +86,8 @@ class StencilKernel(object):
 
         # depending on whether cilk is available, we choose which converter to use
         if not self.with_cilk:
-            Converter = StencilConvertAST
+            import stencil_cache_block
+            Converter = stencil_cache_block.StencilConvertASTBlocked
         else:
             Converter = StencilConvertASTCilk
 
@@ -96,7 +97,8 @@ class StencilKernel(object):
         if self.should_unroll:
             for x in [2,4,8,16,32,64]:
                 check_valid = max(map(
-                    lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
+                    # dividing by 2 is wrong, should divide by cache block size
+                    lambda y: (y.shape[-1]-2*y.ghost_depth/2) % x,
                     args))
                 if check_valid == 0:
                     variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())

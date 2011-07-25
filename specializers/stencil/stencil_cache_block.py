@@ -14,16 +14,29 @@ class StencilConvertASTBlocked(StencilConvertAST):
         def visit_For(self, node):
             self.inner_most = node
             self.visit(node.body)
-        
+    
+#    def __init__(self, model, input_grids, output_grid, unroll_factor=None):    
+#    	super(StencilConvertASTBlocked, self).__init__(model, input_grids, output_grid, None)
+    		
     def gen_loops(self, node):
         inner, unblocked = super(StencilConvertASTBlocked, self).gen_loops(node)
 
-        blocked = StencilCacheBlocker().block(unblocked, (2,2))
+        blocked = StencilCacheBlocker().block(unblocked, (2,1))
 
         # need to update inner to point to the innermost in the new blocked version
         inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
+        print "INNER: ", inner
         assert(inner != None)
         return [inner,blocked]
+
+    def visit_StencilModel(self, node):
+        ret = super(StencilConvertASTBlocked, self).visit_StencilModel(node)
+        print "in VISIT", str(ret)
+
+    
+        macro = cpp_ast.Define("min(_a,_b)", "(_a < _b ?  _a : _b)")
+        ret.body.contents.insert(0, macro)
+        return ret
 
 class StencilCacheBlocker(object):
     """
