@@ -212,7 +212,7 @@ class SpecializedFunction(object):
         if self.backend.dirty:
             self.backend.compile()
 
-        which = self.pick_next_variant(args, kwargs)
+        which = self.pick_next_variant(*args, **kwargs)
 
         import time
         start = time.time()
