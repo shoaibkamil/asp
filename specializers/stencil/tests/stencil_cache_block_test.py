@@ -3,6 +3,39 @@ from asp.codegen.cpp_ast import *
 from stencil_cache_block import *
 from stencil_kernel import *
 
+class StencilConvertASTTests(unittest.TestCase):
+    def setUp(self):
+        class IdentityKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] = out_grid[x] + in_grid[y]
+
+        self.kernel = IdentityKernel()
+        self.in_grid = StencilGrid([130,130])
+        self.in_grids = [self.in_grid]
+        self.out_grid = StencilGrid([130,130])
+        self.model = python_func_to_unrolled_model(IdentityKernel.kernel, self.in_grids, self.out_grid)
+
+    def test_StencilConvertAST_array_macro_use(self):
+        import asp.codegen.cpp_ast as cpp_ast
+        result = StencilConvertAST(self.model, self.in_grids, self.out_grid).gen_array_macro('in_grid',
+                                                                                             [cpp_ast.CNumber(3),
+                                                                                              cpp_ast.CNumber(4)])
+        self.assertEqual(str(result), "_in_grid_array_macro(3, 4)")
+
+    def test_whole_thing(self):
+        import numpy
+        for i in [1,2,3]:
+            self.in_grid.data = numpy.ones([130,130])
+            self.out_grid.data = numpy.zeros([130,130])
+            self.kernel.kernel(self.in_grid, self.out_grid)
+            self.assertEqual(self.out_grid[5,5],4.0)
+            for x in xrange(1,128):
+                for y in xrange(1,128):
+                    self.assertAlmostEqual(self.out_grid[x,y], 4.0)
+
+
 class StencilConvertASTBlockedTests(unittest.TestCase):
     def setUp(self):
         class IdentityKernel(StencilKernel):

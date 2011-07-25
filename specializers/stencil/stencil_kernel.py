@@ -43,7 +43,9 @@ class StencilKernel(object):
         self.pure_python = False
         self.pure_python_kernel = self.kernel
         self.should_unroll = True
-
+        self.should_cacheblock = False
+        self.block_size = 1
+        
         # replace kernel with shadow version
         self.kernel = self.shadow_kernel
 
@@ -94,14 +96,28 @@ class StencilKernel(object):
         # generate variant with no unrolling, then generate variants for various unrollings
         variants = [Converter(model, input_grids, output_grid).run()]
         variant_names = ["kernel_unroll_1"]
+
+        # we only cache block if the size is large enough for blocking
+        # or if the user has told us to
+        
+        if (len(args[0].shape) > 1 and args[0].shape[0] > 128):
+            self.should_cacheblock = True
+            self.block_size = 128
+        
+
         if self.should_unroll:
             for x in [2,4,8,16,32,64]:
-                check_valid = max(map(
-                    # dividing by 2 is wrong, should divide by cache block size
-                    lambda y: (y.shape[-1]-2*y.ghost_depth/2) % x,
+                if self.should_cacheblock:
+                    check_valid = 0
+                else:
+                    check_valid = max(map(
+                    # FIXME: is this the right way to figure out valid unrollings?
+                    lambda y: (y.shape[-1]-2*y.ghost_depth/self.block_size) % x,
                     args))
+
                 if check_valid == 0:
-                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
+                    print "APPENDING VARIANT"
+                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x, block_factor=self.block_size).run())
                     variant_names.append("kernel_unroll_%s" % x)
 
         from asp.jit import asp_module
