@@ -25,7 +25,7 @@ class StencilConvertASTBlocked(StencilConvertAST):
         if not self.block_factor:
             return [inner, unblocked]
 
-        factors = [self.unroll_factor for x in self.output_grid.shape]
+        factors = [self.block_factor for x in self.output_grid.shape]
         factors[len(self.output_grid.shape)-1] = 1
         
 
