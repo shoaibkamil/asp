@@ -35,6 +35,21 @@ class StencilConvertASTTests(unittest.TestCase):
                 for y in xrange(1,128):
                     self.assertAlmostEqual(self.out_grid[x,y], 4.0)
 
+    def test_whole_thing_in_3D(self):
+        import numpy
+        for i in [1,2,3]:
+            self.out_grid = StencilGrid([130,130,130])
+            self.in_grid = StencilGrid([130,130,130])
+            self.in_grid.data = numpy.ones([130,130,130])
+            self.out_grid.data = numpy.zeros([130,130,130])
+            self.kernel.kernel(self.in_grid, self.out_grid)
+            self.assertEqual(self.out_grid[5,5,5],6.0)
+            for x in xrange(1,128):
+                for y in xrange(1,128):
+                    for z in xrange(1,128):
+                        self.assertAlmostEqual(self.out_grid[x,y,z], 6.0)
+        
+
 
 class StencilConvertASTBlockedTests(unittest.TestCase):
     def setUp(self):

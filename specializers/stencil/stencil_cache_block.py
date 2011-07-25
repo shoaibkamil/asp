@@ -24,9 +24,12 @@ class StencilConvertASTBlocked(StencilConvertAST):
 
         if not self.block_factor:
             return [inner, unblocked]
+
+        factors = [self.unroll_factor for x in self.output_grid.shape]
+        factors[len(self.output_grid.shape)-1] = 1
         
 
-        blocked = StencilCacheBlocker().block(unblocked, (self.block_factor,1))
+        blocked = StencilCacheBlocker().block(unblocked, factors)
 
         # need to update inner to point to the innermost in the new blocked version
         inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
