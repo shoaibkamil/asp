@@ -3,7 +3,14 @@ import asp.codegen.ast_tools as ast_tools
 from stencil_convert import *
 
 class StencilConvertASTBlocked(StencilConvertAST):
+    """
+    Converter class for cache blocked stencils.
+    """
+    
     class FindInnerMostLoop(ast_tools.NodeVisitor):
+        """
+        Helper class that returns the innermost loop of perfectly nested loops.
+        """
         def __init__(self):
             self.inner_most = None
 
@@ -28,25 +35,26 @@ class StencilConvertASTBlocked(StencilConvertAST):
         factors = [self.block_factor for x in self.output_grid.shape]
         factors[len(self.output_grid.shape)-1] = 1
         
-
+        # use the helper class below to do the actual blocking.
         blocked = StencilCacheBlocker().block(unblocked, factors)
 
         # need to update inner to point to the innermost in the new blocked version
         inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
-        print "INNER: ", inner
+
         assert(inner != None)
-        return [inner,blocked]
+        return [inner, blocked]
 
     def visit_StencilModel(self, node):
         ret = super(StencilConvertASTBlocked, self).visit_StencilModel(node)
-        print "in VISIT", str(ret)
+        debug_print("in VISIT" + str(ret))
 
-    
+        # need to add the min macro, which is used by blocking
         macro = cpp_ast.Define("min(_a,_b)", "(_a < _b ?  _a : _b)")
         ret.body.contents.insert(0, macro)
 
+        # modify the function name to reflect both blocking and unrolling
         if self.block_factor and self.unroll_factor:
-            print "CHANGING FUNCTION NAME"
+            debug_print("CHANGING FUNCTION NAME")
             func_name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
             ret = cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), ret.fdecl.arg_decls),
                                        ret.body)

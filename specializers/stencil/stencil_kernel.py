@@ -110,10 +110,11 @@ class StencilKernel(object):
         if self.should_cacheblock and self.should_unroll:
             for b in self.block_sizes:
                 for u in [2,4,8,16,32,64]:
+                    # ensure the unrolling is valid for the given blocking
                     if b % u == 0:
                         variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=b).run())
                         variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
-                        print "ADDING BLOCKED"
+                        debug_print("ADDING BLOCKED")
                         
         elif self.should_unroll:
             for x in [2,4,8,16,32,64]:
@@ -123,7 +124,7 @@ class StencilKernel(object):
                     args))
 
                 if check_valid == 0:
-                    print "APPENDING VARIANT", x
+                    debug_print("APPENDING VARIANT %s" % x)
                     variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
                     variant_names.append("kernel_unroll_%s" % x)
 
