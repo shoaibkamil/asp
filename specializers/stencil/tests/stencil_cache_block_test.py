@@ -66,16 +66,13 @@ class StencilConvertASTBlockedTests(unittest.TestCase):
         self.model = python_func_to_unrolled_model(IdentityKernel.kernel, self.in_grids, self.out_grid)
 
     def test_gen_loops(self):
-        converter = StencilConvertASTBlocked(self.model, self.in_grids, self.out_grid)
+        converter = StencilConvertASTBlocked(self.model, self.in_grids, self.out_grid, block_factor=2)
         result = converter.gen_loops(self.model)
         wanted = """for (int x1x1 = 1; (x1x1 <= 8); x1x1 = (x1x1 + (1 * 2)))
         {
-        for (int x2x2 = 1; (x2x2 <= 8); x2x2 = (x2x2 + (1 * 2)))
-        for (int x1 = x1x1; (x1 <= min((x1x1 + 2),8)); x1 = (x1 + 1))
+        for (int x1 = x1x1; (x1 <= min((x1x1 + 1),8)); x1 = (x1 + 1))
+        for(intx2=1;(x2<=8);x2=(x2+1))
         {
-        for (int x2 = x2x2; (x2 <= min((x2x2 + 2),8)); x2 = (x2 + 1))
-        {
-        }
         }
         }"""
         self.assertEqual(wanted.replace(' ',''), str(result[1]).replace(' ',''))
@@ -98,9 +95,9 @@ class CacheBlockerTests(unittest.TestCase):
         {
          for (int jj = 0; (jj <= 3); jj = (jj + (1 * 2)))
          {
-          for (int i = ii; (i <= min((ii + 2),7)); i = (i + 1))
+          for (int i = ii; (i <= min((ii + 1),7)); i = (i + 1))
           {
-           for (int j = jj; (j <= min((jj + 2),3)); j = (j + 1))
+           for (int j = jj; (j <= min((jj + 1),3)); j = (j + 1))
            {
             v = i;
            }
@@ -133,9 +130,9 @@ class CacheBlockerTests(unittest.TestCase):
         {
         for (int kk = 0; (kk <= 4); kk = (kk + (1 * 3)))
         {
-        for (int i = ii; (i <= min((ii + 2),7)); i = (i + 1))
+        for (int i = ii; (i <= min((ii + 1),7)); i = (i + 1))
         {
-        for (int j = jj; (j <= min((jj + 2),3)); j = (j + 1))
+        for (int j = jj; (j <= min((jj + 1),3)); j = (j + 1))
         {
         for (int k = kk; (k <= min((kk + 2),4)); k = (k + 1))
         {
@@ -164,9 +161,9 @@ class CacheBlockerTests(unittest.TestCase):
         {
         for (int jj = 0; (jj <= 3); jj = (jj + (1 * 2)))
         {
-        for (int i = ii; (i <= min((ii + 2),7)); i = (i + 1))
+        for (int i = ii; (i <= min((ii + 1),7)); i = (i + 1))
         {
-        for (int j = jj; (j <= min((jj + 2),3)); j = (j + 1))
+        for (int j = jj; (j <= min((jj + 1),3)); j = (j + 1))
         {
         for (int k = 0; (k <= 4); k = (k + 1))
         {

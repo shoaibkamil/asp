@@ -128,7 +128,7 @@ class StencilKernel(object):
                     variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
                     variant_names.append("kernel_unroll_%s" % x)
 
-        print variant_names
+        debug_print(variant_names)
         from asp.jit import asp_module
 
         mod = self.mod = asp_module.ASPModule()

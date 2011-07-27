@@ -1,6 +1,7 @@
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
 from stencil_convert import *
+from asp.util import *
 
 class StencilConvertASTBlocked(StencilConvertAST):
     """
@@ -78,11 +79,11 @@ class StencilCacheBlocker(object):
         def visit_For(self, node):
             self.current_idx += 1
 
-            print "Searching for loop %d, currently at %d" % (self.target_idx, self.current_idx)
+            debug_print("Searching for loop %d, currently at %d" % (self.target_idx, self.current_idx))
 
             if self.current_idx == self.target_idx:
-                print "Before blocking:"
-                print node
+                debug_print("Before blocking:")
+                debug_print(node)
                 
                 return ast_tools.LoopBlocker().loop_block(node, self.factor)
             else:
@@ -96,12 +97,12 @@ class StencilCacheBlocker(object):
         """Main method in StencilCacheBlocker.  Used to block the loops in the tree."""
         # first we apply strip mining to the loops given in factors
         for x in xrange(len(factors)):
-            print "Doing loop %d by %d" % (x*2, factors[x])
+            debug_print("Doing loop %d by %d" % (x*2, factors[x]))
 
             # we may want to not block a particular loop, e.g. when doing Rivera/Tseng blocking
             if factors[x] > 1:
                 tree = StencilCacheBlocker.StripMineLoopByIndex(x*2, factors[x]).visit(tree)
-            print tree
+            debug_print(tree)
 
         # now we move all the outer strip-mined loops to be outermost
         for x in xrange(1,len(factors)):
@@ -116,6 +117,6 @@ class StencilCacheBlocker(object):
         while preserving the ordering of the loops between index and new_index.
         """
         for x in xrange(index-new_index):
-            print "In bubble, switching %d and %d" % (index-x-1, index-x)
+            debug_print("In bubble, switching %d and %d" % (index-x-1, index-x))
             tree = ast_tools.LoopSwitcher().switch(tree, index-x-1, index-x)
         return tree
