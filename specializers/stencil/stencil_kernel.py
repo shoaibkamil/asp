@@ -102,24 +102,32 @@ class StencilKernel(object):
         
         if (len(args[0].shape) > 1 and args[0].shape[0] > 128):
             self.should_cacheblock = True
-            self.block_size = 128
-        
+            self.block_sizes = [32, 64, 128]
+        else:
+            self.should_cacheblock = False
+            self.block_sizes = []
 
-        if self.should_unroll:
+        if self.should_cacheblock and self.should_unroll:
+            for b in self.block_sizes:
+                for u in [2,4,8,16,32,64]:
+                    if b % u == 0:
+                        variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=b).run())
+                        variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
+                        print "ADDING BLOCKED"
+                        
+        elif self.should_unroll:
             for x in [2,4,8,16,32,64]:
-                if self.should_cacheblock:
-                    check_valid = 0
-                else:
-                    check_valid = max(map(
+                check_valid = max(map(
                     # FIXME: is this the right way to figure out valid unrollings?
-                    lambda y: (y.shape[-1]-2*y.ghost_depth/self.block_size) % x,
+                    lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
                     args))
 
                 if check_valid == 0:
-                    print "APPENDING VARIANT"
-                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x, block_factor=self.block_size).run())
+                    print "APPENDING VARIANT", x
+                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
                     variant_names.append("kernel_unroll_%s" % x)
 
+        print variant_names
         from asp.jit import asp_module
 
         mod = self.mod = asp_module.ASPModule()

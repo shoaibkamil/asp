@@ -44,6 +44,13 @@ class StencilConvertASTBlocked(StencilConvertAST):
     
         macro = cpp_ast.Define("min(_a,_b)", "(_a < _b ?  _a : _b)")
         ret.body.contents.insert(0, macro)
+
+        if self.block_factor and self.unroll_factor:
+            print "CHANGING FUNCTION NAME"
+            func_name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
+            ret = cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), ret.fdecl.arg_decls),
+                                       ret.body)
+
         return ret
 
 class StencilCacheBlocker(object):
