@@ -135,9 +135,13 @@ class StencilKernel(object):
         self.add_libraries(mod)
         if self.with_cilk:
             mod.backends["c++"].toolchain.cc = "icc"
-            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast"]
+            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast", "-restrict"]
+            mod.backends["c++"].toolchain.cflags += ["-fno-fnalias", "-fno-alias"]
             mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
             mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
+            mod.backends["c++"].toolchain.cflags.remove('-O2')
+            mod.backends["c++"].toolchain.cflags.remove('-O2')
+            mod.backends["c++"].toolchain.cflags.remove('-g')
         else:
             mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
 #        print mod.toolchain.cflags
