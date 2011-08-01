@@ -140,8 +140,9 @@ class StencilKernel(object):
             mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
             mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
             mod.backends["c++"].toolchain.cflags.remove('-O2')
-            mod.backends["c++"].toolchain.cflags.remove('-O2')
             mod.backends["c++"].toolchain.cflags.remove('-g')
+            mod.backends["c++"].toolchain.cflags.remove('-g')
+            mod.backends["c++"].toolchain.cflags.remove('-fno-strict-aliasing')
         else:
             mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
 #        print mod.toolchain.cflags
