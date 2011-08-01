@@ -172,8 +172,8 @@ class StencilConvertAST(ast_tools.ConvertAST):
                 cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
                 cur_node = for_node
             elif d == dim-1:
-                # add IVDEP pragma to innermost node
-                pragma = cpp_ast.Pragma("IVDEP")
+                # add ivdep pragma to innermost node
+                pragma = cpp_ast.Pragma("ivdep")
                 for_node = cpp_ast.For(dim_var, initial, end, increment,
                                             cpp_ast.Block())
                 cur_node.body = cpp_ast.Block(contents=[pragma, for_node])

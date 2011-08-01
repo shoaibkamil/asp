@@ -116,7 +116,7 @@ class StencilKernel(object):
                         variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
                         debug_print("ADDING BLOCKED")
                         
-        elif self.should_unroll:
+        if self.should_unroll:
             for x in [2,4,8,16,32,64]:
                 check_valid = max(map(
                     # FIXME: is this the right way to figure out valid unrollings?
