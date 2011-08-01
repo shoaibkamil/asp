@@ -62,17 +62,24 @@ class StencilConvertAST(ast_tools.ConvertAST):
             func_name = "kernel_unroll_%s" % self.unroll_factor
         arg_names = [x.name for x in node.input_grids] + [self.output_grid_name]
         args = [cpp_ast.Pointer(cpp_ast.Value("PyObject", x)) for x in arg_names]
-        body = self.visit_interior_kernel(node.interior_kernel)
+
+        body = cpp_ast.Block()
+
+        # generate the code to unpack arrays into C++ pointers and macros for accessing
+        # the arrays
+        body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
+        body.extend(self.gen_array_unpack())
+
+
+        body.append(self.visit_interior_kernel(node.interior_kernel))
         return cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), args),
-                                    cpp_ast.Block([body]))
+                                    body)
 
     def visit_interior_kernel(self, node):
         cur_node, ret_node = self.gen_loops(node)
 
         body = cpp_ast.Block()
-        body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-        body.extend(self.gen_array_unpack())
-
+        
         self.output_index_var = cpp_ast.CName(self.gen_fresh_var())
         body.append(cpp_ast.Value("int", self.output_index_var))
         body.append(cpp_ast.Assign(self.output_index_var,
