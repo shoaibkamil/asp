@@ -71,8 +71,11 @@ class StencilConvertASTBlockedTests(unittest.TestCase):
         wanted = """for (int x1x1 = 1; (x1x1 <= 8); x1x1 = (x1x1 + (1 * 2)))
         {
         for (int x1 = x1x1; (x1 <= min((x1x1 + 1),8)); x1 = (x1 + 1))
+        {
+        #pragma IVDEP
         for(intx2=1;(x2<=8);x2=(x2+1))
         {
+        }
         }
         }"""
         self.assertEqual(wanted.replace(' ',''), str(result[1]).replace(' ',''))

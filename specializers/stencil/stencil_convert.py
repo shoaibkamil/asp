@@ -166,14 +166,23 @@ class StencilConvertAST(ast_tools.ConvertAST):
                 ret_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                 cur_node = ret_node
             elif d == dim-2:
+                # add OpenMP parallel pragma to 2nd innermost loop
                 pragma = cpp_ast.Pragma("omp parallel for")
                 for_node = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
+                cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
+                cur_node = for_node
+            elif d == dim-1:
+                # add IVDEP pragma to innermost node
+                pragma = cpp_ast.Pragma("IVDEP")
+                for_node = cpp_ast.For(dim_var, initial, end, increment,
+                                            cpp_ast.Block())
                 cur_node.body = cpp_ast.Block(contents=[pragma, for_node])
                 cur_node = for_node
             else:
                 cur_node.body = cpp_ast.For(dim_var, initial, end, increment, cpp_ast.Block())
                 cur_node = cur_node.body
 
+        
         return (cur_node, ret_node)
 
     def gen_fresh_var(self):
