@@ -392,3 +392,17 @@ class Compare(Generable):
 class IfConv(If):
     def generate(self, with_semicolon=False):
         return super(IfConv, self).generate()
+
+
+
+class ReturnStatement (Generable):
+    def __init__ (self, retval):
+        self.retval = retval
+        self._fields = ['retval']
+        
+    def generate (self, with_semicolon=True):
+        ret = 'return ' + str(self.retval)
+        if with_semicolon:
+            ret = ret + ';'
+              
+        yield ret

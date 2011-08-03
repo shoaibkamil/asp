@@ -4,6 +4,7 @@ import asp.codegen.cpp_ast as cpp_ast
 import pickle
 from variant_history import *
 import sqlite3
+import asp
 
 class ASPDB(object):
 
@@ -212,7 +213,7 @@ class SpecializedFunction(object):
         if self.backend.dirty:
             self.backend.compile()
 
-        which = self.pick_next_variant(args, kwargs)
+        which = self.pick_next_variant(*args, **kwargs)
 
         import time
         start = time.time()
@@ -272,7 +273,7 @@ class ASPBackend(object):
         try:
             func = getattr(self.compiled_module, name)
         except:
-            raise Error("Function %s not found in compiled module." % (name,))
+            raise AttributeError("Function %s not found in compiled module." % (name,))
 
         return func
 

@@ -199,6 +199,10 @@ class ConvertAST(ast.NodeTransformer):
             orelse = Block([self.visit(x) for x in node.orelse])
         return IfConv(test, body, orelse)
 
+    def visit_Return(self, node):
+        return ReturnStatement(self.visit(node.value))
+
+
 
 class LoopUnroller(object):
     class UnrollReplacer(NodeTransformer):
@@ -275,24 +279,17 @@ class LoopUnroller(object):
 
         import copy
 
-        #Number of iterations in the initial loop
-        num_iterations = node.end.num - node.initial.num + 1
-
-        #Integer division provides number of iterations
-        # in the unrolled loop
-        num_unrolls = num_iterations / factor
-
-        #Iterations left over after unrolled loop
-        leftover = num_iterations % factor
-
-        #End of unrolled loop, add one to get beginning of leftover loop
-        loop_end = CNumber(node.end.num - leftover)
-        leftover_begin = CNumber(node.end.num - leftover + 1)
-
-        debug_print("Loop unroller called with ", node.loopvar)
-        debug_print("Number of iterations: ", num_iterations)
-        debug_print("Number of unrolls: ", num_unrolls)
-        debug_print("Leftover iterations: ", leftover)
+        # we can't precalculate the number of leftover iterations in the case that
+        # the number of iterations are not known a priori, so we build an Expression
+        # and let the compiler deal with it
+        leftover_begin = BinOp(CNumber(factor),
+                               "*", 
+                               BinOp(BinOp(node.end, "+", 1), "/", CNumber(factor)))
+        
+#        debug_print("Loop unroller called with ", node.loopvar)
+#        debug_print("Number of iterations: ", num_iterations)
+#        debug_print("Number of unrolls: ", num_unrolls)
+#        debug_print("Leftover iterations: ", leftover)
 
         new_increment = BinOp(node.increment, "*", CNumber(factor))
 
@@ -307,7 +304,7 @@ class LoopUnroller(object):
         unrolled_for_node = For(
             node.loopvar,
             node.initial,
-            loop_end,
+            node.end,
             new_increment,
             new_block)
 
@@ -318,10 +315,97 @@ class LoopUnroller(object):
             node.increment,
             node.body)
 
+
         return_block.append(unrolled_for_node)
 
-        if leftover != 0:
+        # if we *know* this loop has no leftover iterations, then
+        # we return without the leftover loop
+        if not (isinstance(node.initial, CNumber) and isinstance(node.end, CNumber) and
+           ((node.end.num - node.initial.num + 1) % factor == 0)):
             return_block.append(leftover_for_node)
 
         return return_block
+
+
+class LoopBlocker(object):
+    def loop_block(self, node, block_size):
+        outer_incr_name = CName(node.loopvar + node.loopvar)
+
+        new_inner_for = For(
+            node.loopvar,
+            outer_incr_name,
+            FunctionCall("min", [BinOp(outer_incr_name, 
+                                       "+", 
+                                       CNumber(block_size-1)), 
+                                 node.end]),
+            CNumber(1),
+            node.body)
+
+        new_outer_for = For(
+            node.loopvar + node.loopvar,
+            node.initial,
+            node.end,
+            BinOp(node.increment, "*", CNumber(block_size)),
+            Block(contents=[new_inner_for]))
+        debug_print(new_outer_for)
+        return new_outer_for
+
+class LoopSwitcher(NodeTransformer):
+    """
+    Class that switches two loops.  The user is responsible for making sure the switching
+    is valid (i.e. that the code can still compile/run).  Given two integers i,j this
+    class switches the ith and jth loops encountered.
+    """
+
+    
+    def __init__(self):
+        self.current_loop = -1
+        self.saved_first_loop = None
+        self.saved_second_loop = None
+        super(LoopSwitcher, self).__init__()
+
+    def switch(self, tree, i, j):
+        """Switch the i'th and j'th loops in tree."""
+        self.first_target = min(i,j)
+        self.second_target = max(i,j)
+
+        self.original_ast = tree
+        
+        return self.visit(tree)
+
+    def visit_For(self, node):
+        self.current_loop += 1
+
+        debug_print("At loop %d, targets are %d and %d" % (self.current_loop, self.first_target, self.second_target))
+
+        if self.current_loop == self.first_target:
+            # save the loop
+            debug_print("Saving loop")
+            self.saved_first_loop = node
+            new_body = self.visit(node.body)
+            # replace with the second loop (which has now been saved)
+            return For(self.saved_second_loop.loopvar,
+                       self.saved_second_loop.initial,
+                       self.saved_second_loop.end,
+                       self.saved_second_loop.increment,
+                       new_body)
+                       
+
+        if self.current_loop == self.second_target:
+            # save this
+            self.saved_second_loop = node
+            # replace this
+            debug_print("replacing loop")
+            return For(self.saved_first_loop.loopvar,
+                       self.saved_first_loop.initial,
+                       self.saved_first_loop.end,
+                       self.saved_first_loop.increment,
+                       node.body)
+        
+
+        return For(node.loopvar,
+                   node.initial,
+                   node.end,
+                   node.increment,
+                   self.visit(node.body))
 
