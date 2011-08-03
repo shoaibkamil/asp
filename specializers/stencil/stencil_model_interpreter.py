@@ -89,3 +89,6 @@ class StencilModelInterpreter(ast.NodeVisitor):
         func = self.math_func_to_python_func[node.name]
         args = map(self.visit, node.args)
         return apply(func, args)
+
+    def visit_NeighborDistance(self, node):
+        return distance(visit(self.current_neighbor_point), visit(self.current_output_point))

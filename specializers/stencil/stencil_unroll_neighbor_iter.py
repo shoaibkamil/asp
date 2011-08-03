@@ -6,6 +6,7 @@ done once per call because the dimensions of the input are needed.
 """
 
 from stencil_model import *
+from stencil_grid import *
 import ast
 from assert_utils import *
 from copy import deepcopy
@@ -28,6 +29,9 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
 
         def visit_InputElementZeroOffset(self, node):
             assert False, 'Encountered InputElementZeroOffset but all should have been removed'
+
+        def visit_NeighborDistance(self, node):
+            assert False, 'Encountered NeighborDistance but all should have been removed'
 
     def run(self):
         self.visit(self.model)
@@ -77,3 +81,7 @@ class StencilUnrollNeighborIter(ast.NodeTransformer):
         assert grid.dim == 1, 'Grid \'%s\' has dimension %s but expected dimension 1 because this kernel indexes into it using an expression' % (grid, grid.dim)
         self.generic_visit(node)
         return node
+
+    def visit_NeighborDistance(self, node):
+        zero_point = tuple([0 for x in range(len(self.offset_list))])
+        return Constant(distance(zero_point, self.offset_list))
