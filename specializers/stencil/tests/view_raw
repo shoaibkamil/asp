@@ -1,0 +1,3 @@
+#!/bin/bash
+convert -size 800x800 -depth 8 gray:$1 /tmp/temp.tiff
+qiv /tmp/temp.tiff
