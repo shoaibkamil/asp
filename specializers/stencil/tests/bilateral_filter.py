@@ -2,12 +2,12 @@ from stencil_kernel import *
 import numpy
 import math
 
-radius = 10
 width = 800
 height = 800
 image_in = open('tests/mallard.raw', 'rb')
 stdev_d = 3
 stdev_s = 70
+radius = stdev_d * 3
 
 class BilateralKernel(StencilKernel):
    def kernel(self, in_img, filter_d, filter_s, out_img):

@@ -83,5 +83,20 @@ class BasicTests(unittest.TestCase):
         for x in self.out_grid.border_points():
             self.assertEqual(self.out_grid[x], 0)
 
+    def test_parse_distance(self):
+        model = StencilModel([Identifier('in_grid')],
+                             Kernel([StencilNeighborIter(Identifier('in_grid'),
+                                                         Constant(1),
+                                                         [OutputAssignment(ScalarBinOp(OutputElement(), ast.Add(), NeighborDistance()))])]),
+                             Kernel([]))
+        
+        self.in_grid.data[(1,1)] = 5  # Make it not just ones
+        StencilModelInterpreter(model, [self.in_grid], self.out_grid).run()
+        
+        for x in self.out_grid.interior_points():
+            self.assertEqual(self.out_grid[x], 4)
+        for x in self.out_grid.border_points():
+            self.assertEqual(self.out_grid[x], 0)
+
 if __name__ == '__main__':
     unittest.main()

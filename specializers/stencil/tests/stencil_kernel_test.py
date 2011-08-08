@@ -68,7 +68,6 @@ class Stencil1dAnd3dTests(unittest.TestCase):
         
     def test_whole_thing(self):
         import numpy
-        import numpy
         self.in_grid.data = numpy.ones([10])
         self.kernel.kernel(self.in_grid, self.out_grid)
         self.assertEqual(self.out_grid[4], 2.0)
@@ -217,6 +216,32 @@ class StencilConvert3DBilateralTests(unittest.TestCase):
 
         for x in self.out_grid.interior_points():
             self.assertAlmostEqual(self.out_grid[x], self.expected_out_grid[x])
+
+class StencilDistanceTests(unittest.TestCase):
+    def setUp(self):
+        class DistanceKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x] += distance(x,y)
+                        out_grid[x] += distance(y,x)
+                        out_grid[x] += distance(x,x)
+                        out_grid[x] += distance(y,y)
+
+        self.kernel = DistanceKernel()
+        self.in_grid = StencilGrid([10,10])
+        self.in_grid.neighbor_definition[1] = [(0,1), (1,0), (1,1), (0,2), (1,2)]
+        self.in_grids = [self.in_grid]
+        self.out_grid = StencilGrid([10,10])
+        self.out_grid.ghost_depth = 2
+        self.model = python_func_to_unrolled_model(DistanceKernel.kernel, self.in_grids, self.out_grid)
+        
+    def test_whole_thing(self):
+        import numpy
+        self.in_grid.data = numpy.ones([10,10])
+        self.kernel.kernel(self.in_grid, self.out_grid)
+        for x in self.out_grid.interior_points():
+            self.assertAlmostEqual(self.out_grid[x], 2 * (1 + 1 + math.sqrt(2) + 2 + math.sqrt(5)))
 
 def python_func_to_unrolled_model(func, in_grids, out_grid):
     python_ast = ast.parse(inspect.getsource(func).lstrip())
