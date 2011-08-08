@@ -1,66 +1,59 @@
-import asp.codegen.cpp_ast as cpp_ast
+from asp.codegen.cpp_ast import *
 import asp.codegen.ast_tools as ast_tools
-from stencil_convert import *
 from asp.util import *
 
-class StencilConvertASTBlocked(StencilConvertAST):
+class StencilOptimizeCpp(ast_tools.ConvertAST):
     """
-    Converter class for cache blocked stencils.
+    Does unrolling and cache blocking on the C++ AST representation.
     """
     
-    class FindInnerMostLoop(ast_tools.NodeVisitor):
-        """
-        Helper class that returns the innermost loop of perfectly nested loops.
-        """
-        def __init__(self):
-            self.inner_most = None
-
-        def find(self, node):
-            self.visit(node)
-            return self.inner_most
-        
-        def visit_For(self, node):
-            self.inner_most = node
-            self.visit(node.body)
-    
-    def __init__(self, model, input_grids, output_grid, unroll_factor=None, block_factor=None):    
+    def __init__(self, model, output_grid_shape, unroll_factor, block_factor=None):    
+        self.model = model
+        self.output_grid_shape = output_grid_shape
+        self.unroll_factor = unroll_factor
         self.block_factor = block_factor
-    	super(StencilConvertASTBlocked, self).__init__(model, input_grids, output_grid, unroll_factor=unroll_factor)
-        
-    def gen_loops(self, node):
-        inner, unblocked = super(StencilConvertASTBlocked, self).gen_loops(node)
+    	super(StencilOptimizeCpp, self).__init__()
 
-        if not self.block_factor:
-            return [inner, unblocked]
+    def run(self):
+        self.model = self.visit(self.model)
+        return self.model
 
-        factors = [self.block_factor for x in self.output_grid.shape]
-        factors[len(self.output_grid.shape)-1] = 1
+    def visit_FunctionDeclaration(self, node):
+        if self.block_factor:
+            node.subdecl.name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
+        else:
+            node.subdecl.name = "kernel_unroll_%s" % self.unroll_factor
+        return node
+
+    def visit_FunctionBody(self, node):
+        # need to add the min macro, which is used by blocking
+        macro = Define("min(_a,_b)", "(_a < _b ?  _a : _b)")
+        node.body.contents.insert(0, macro)
+        self.visit(node.fdecl)
+        for i in range(0, len(node.body.contents)):
+            node.body.contents[i] = self.visit(node.body.contents[i])
+        return node
+
+    def visit_For(self, node):
+        inner = FindInnerMostLoop().find(node)
+        if self.block_factor:
+            (inner, node) = self.block_loops(inner=inner, unblocked=node)
+        new_inner = ast_tools.LoopUnroller().unroll(inner, self.unroll_factor)
+        node = ast_tools.ASTNodeReplacerCpp(inner, new_inner).visit(node)
+        return node
+
+    def block_loops(self, inner, unblocked):
+        factors = [self.block_factor for x in self.output_grid_shape]
+        factors[len(self.output_grid_shape)-1] = 1
         
         # use the helper class below to do the actual blocking.
         blocked = StencilCacheBlocker().block(unblocked, factors)
 
         # need to update inner to point to the innermost in the new blocked version
-        inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
+        inner = FindInnerMostLoop().find(blocked)
 
         assert(inner != None)
         return [inner, blocked]
-
-    def visit_StencilModel(self, node):
-        ret = super(StencilConvertASTBlocked, self).visit_StencilModel(node)
-        debug_print("in VISIT" + str(ret))
-
-        # need to add the min macro, which is used by blocking
-        macro = cpp_ast.Define("min(_a,_b)", "(_a < _b ?  _a : _b)")
-        ret.body.contents.insert(0, macro)
-
-        # modify the function name to reflect both blocking and unrolling
-        if self.block_factor and self.unroll_factor:
-            debug_print("CHANGING FUNCTION NAME")
-            func_name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
-            ret = cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), ret.fdecl.arg_decls),
-                                       ret.body)
-
-        return ret
 
 class StencilCacheBlocker(object):
     """
@@ -87,7 +80,7 @@ class StencilCacheBlocker(object):
                 
                 return ast_tools.LoopBlocker().loop_block(node, self.factor)
             else:
-                return cpp_ast.For(node.loopvar,
+                return For(node.loopvar,
                            node.initial,
                            node.end,
                            node.increment,
@@ -108,7 +101,7 @@ class StencilCacheBlocker(object):
         for x in xrange(1,len(factors)):
             if factors[x] > 1:
                 tree = self.bubble(tree, 2*x, x)
-    
+
         return tree
         
     def bubble(self, tree, index, new_index):
@@ -120,3 +113,18 @@ class StencilCacheBlocker(object):
             debug_print("In bubble, switching %d and %d" % (index-x-1, index-x))
             tree = ast_tools.LoopSwitcher().switch(tree, index-x-1, index-x)
         return tree
+
+class FindInnerMostLoop(ast_tools.NodeVisitor):
+    """
+    Helper class that returns the innermost loop of perfectly nested loops.
+    """
+    def __init__(self):
+        self.inner_most = None
+
+    def find(self, node):
+        self.visit(node)
+        return self.inner_most
+
+    def visit_For(self, node):
+        self.inner_most = node
+        self.visit(node.body)

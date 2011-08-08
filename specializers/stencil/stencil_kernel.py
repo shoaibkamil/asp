@@ -18,6 +18,7 @@ import inspect
 from stencil_grid import *
 from stencil_python_front_end import *
 from stencil_unroll_neighbor_iter import *
+from stencil_optimize_cpp import *
 from stencil_convert import *
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
@@ -88,14 +89,14 @@ class StencilKernel(object):
 
         # depending on whether cilk is available, we choose which converter to use
         if not self.with_cilk:
-            import stencil_cache_block
-            Converter = stencil_cache_block.StencilConvertASTBlocked
+            Converter = StencilConvertAST
         else:
             Converter = StencilConvertASTCilk
 
         # generate variant with no unrolling, then generate variants for various unrollings
-        variants = [Converter(model, input_grids, output_grid).run()]
-        variant_names = ["kernel_unroll_1"]
+        base_variant = Converter(model, input_grids, output_grid).run()
+        variants = [base_variant]
+        variant_names = ["kernel"]
 
         # we only cache block if the size is large enough for blocking
         # or if the user has told us to
@@ -112,7 +113,8 @@ class StencilKernel(object):
                 for u in [2,4,8,16,32,64]:
                     # ensure the unrolling is valid for the given blocking
                     if b % u == 0:
-                        variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=b).run())
+                        variant = StencilOptimizeCpp(copy.deepcopy(base_variant), output_grid.shape, unroll_factor=u, block_factor=b).run()
+                        variants.append(variant)
                         variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
                         debug_print("ADDING BLOCKED")
                         
@@ -125,7 +127,7 @@ class StencilKernel(object):
 
                 if check_valid == 0:
                     debug_print("APPENDING VARIANT %s" % x)
-                    variants.append(Converter(model, input_grids, output_grid, unroll_factor=x).run())
+                    variants.append(StencilOptimizeCpp(copy.deepcopy(base_variant), output_grid.shape, unroll_factor=x).run())
                     variant_names.append("kernel_unroll_%s" % x)
 
         debug_print(variant_names)
@@ -133,19 +135,7 @@ class StencilKernel(object):
 
         mod = self.mod = asp_module.ASPModule()
         self.add_libraries(mod)
-        if self.with_cilk:
-            mod.backends["c++"].toolchain.cc = "icc"
-            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast"]
-            mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
-            mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
-        else:
-            mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
-#        print mod.toolchain.cflags
-        if mod.backends["c++"].toolchain.cflags.count('-Os') > 0:
-            mod.backends["c++"].toolchain.cflags.remove('-Os')
-        if mod.backends["c++"].toolchain.cflags.count('-O2') > 0:
-            mod.backends["c++"].toolchain.cflags.remove('-O2')
-        debug_print("toolchain" + str(mod.backends["c++"].toolchain.cflags))
+        self.set_compiler_flags(mod)
         mod.add_function("kernel", variants, variant_names)
 
         # package arguments and do the call 
@@ -154,3 +144,18 @@ class StencilKernel(object):
 
         # save parameter sizes for next run
         self.specialized_sizes = [x.shape for x in args]
+
+    def set_compiler_flags(self, mod):
+        if self.with_cilk:
+            mod.backends["c++"].toolchain.cc = "icc"
+            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast"]
+            mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
+            mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
+        else:
+            mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
+
+        if mod.backends["c++"].toolchain.cflags.count('-Os') > 0:
+            mod.backends["c++"].toolchain.cflags.remove('-Os')
+        if mod.backends["c++"].toolchain.cflags.count('-O2') > 0:
+            mod.backends["c++"].toolchain.cflags.remove('-O2')
+        debug_print("toolchain" + str(mod.backends["c++"].toolchain.cflags))

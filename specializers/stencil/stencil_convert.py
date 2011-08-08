@@ -12,7 +12,7 @@ import stencil_model
 from assert_utils import *
 
 class StencilConvertAST(ast_tools.ConvertAST):
-    def __init__(self, model, input_grids, output_grid, unroll_factor=None):
+    def __init__(self, model, input_grids, output_grid):
         assert_has_type(model, stencil_model.StencilModel)
         assert len(input_grids) == len(model.input_grids), 'Incorrect number of input grids'
         self.model = model
@@ -20,7 +20,6 @@ class StencilConvertAST(ast_tools.ConvertAST):
         self.output_grid = output_grid
         self.output_grid_name = 'out_grid'
         self.dim_vars = []
-        self.unroll_factor = unroll_factor
         self.var_names = [self.output_grid_name]
         self.next_fresh_var = 0
         super(StencilConvertAST, self).__init__()
@@ -56,10 +55,7 @@ class StencilConvertAST(ast_tools.ConvertAST):
 
         assert node.border_kernel.body == [], 'Border kernels not yet implemented'
 
-        if not self.unroll_factor:
-            func_name = "kernel_unroll_1"
-        else:
-            func_name = "kernel_unroll_%s" % self.unroll_factor
+        func_name = "kernel"
         arg_names = [x.name for x in node.input_grids] + [self.output_grid_name]
         args = [cpp_ast.Pointer(cpp_ast.Value("PyObject", x)) for x in arg_names]
 
@@ -69,7 +65,6 @@ class StencilConvertAST(ast_tools.ConvertAST):
         # the arrays
         body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
         body.extend(self.gen_array_unpack())
-
 
         body.append(self.visit_interior_kernel(node.interior_kernel))
         return cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), args),
@@ -93,11 +88,6 @@ class StencilConvertAST(ast_tools.ConvertAST):
         body.extend([self.visit(x) for x in replaced_body])
 
         cur_node.body = body
-
-        # unroll
-        if self.unroll_factor:
-            replacement = ast_tools.LoopUnroller().unroll(cur_node, self.unroll_factor)
-            ret_node = ast_tools.ASTNodeReplacerCpp(cur_node, replacement).visit(ret_node)
 
         return ret_node
 
