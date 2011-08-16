@@ -1,15 +1,16 @@
 from stencil_kernel import *
+import sys
 import numpy
 import math
 
-width = 800
-height = 800
-image_in = open('tests/mallard.raw', 'rb')
+width = int(sys.argv[2])
+height = int(sys.argv[3])
+image_in = open(sys.argv[1], 'rb')
 stdev_d = 3
 stdev_s = 70
 radius = stdev_d * 3
 
-class BilateralKernel(StencilKernel):
+class Kernel(StencilKernel):
    def kernel(self, in_img, filter_d, filter_s, out_img):
        for x in out_img.interior_points():
            for y in in_img.neighbors(x, 1):
@@ -26,7 +27,7 @@ def gaussian(stdev, length):
 pixels = map(ord, list(image_in.read(width * height))) # Read in grayscale values
 intensity = float(sum(pixels))/len(pixels)
 
-kernel = BilateralKernel()
+kernel = Kernel()
 kernel.should_unroll = False
 out_grid = StencilGrid([width,height])
 out_grid.ghost_depth = radius
@@ -49,5 +50,5 @@ out_intensity = float(sum(pixels))/len(pixels)
 for i in range(0, len(pixels)):
     pixels[i] = min(255, max(0, int(pixels[i] * (intensity/out_intensity))))
 
-image_out = open('tests/mallard.out.raw', 'wb')
+image_out = open(sys.argv[4], 'wb')
 image_out.write(''.join(map(chr, pixels)))
