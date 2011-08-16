@@ -1,0 +1,20 @@
+void kernel(PyObject *in_img, PyObject *out_grid)
+{
+  #define _in_img_array_macro(_d0,_d1) (_d1+(_d0 * 10))
+  #define _out_grid_array_macro(_d0,_d1) (_d1+(_d0 * 10))
+  npy_double *_my_in_img = ((npy_double *)PyArray_DATA(in_img));
+  npy_double *_my_out_grid = ((npy_double *)PyArray_DATA(out_grid));
+  for (int x1 = 1; (x1 <= 8); x1 = (x1 + 1))
+  {
+    #pragma IVDEP
+    for (int x2 = 1; (x2 <= 8); x2 = (x2 + 1))
+    {
+      int x3;
+      x3 = _out_grid_array_macro(x1, x2);
+      _my_out_grid[x3] = (_my_out_grid[x3] + _my_in_img[_in_img_array_macro((x1 + 1), (x2 + 0))]);
+      _my_out_grid[x3] = (_my_out_grid[x3] + _my_in_img[_in_img_array_macro((x1 + -1), (x2 + 0))]);
+      _my_out_grid[x3] = (_my_out_grid[x3] + _my_in_img[_in_img_array_macro((x1 + 0), (x2 + 1))]);
+      _my_out_grid[x3] = (_my_out_grid[x3] + _my_in_img[_in_img_array_macro((x1 + 0), (x2 + -1))]);
+    }
+  }
+}
