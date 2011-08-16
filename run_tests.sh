@@ -2,12 +2,12 @@
 
 if [ -z "${PYTHON}" ]
 then
-    PYTHON=python
+    export PYTHON=python
     #PYTHON=pychecker
 fi
 if [ -z "${PYTHONARGS}" ]
 then
-    PYTHONARGS=
+    export PYTHONARGS=-tt
     #PYTHONARGS=-#1000
 fi
 
@@ -25,6 +25,5 @@ PYTHONPATH=`pwd`:${PYTHONPATH} ${PYTHON} ${PYTHONARGS} tests/ast_tools_test.py
 #rm -fr test_install; mkdir -p test_install/lib/python2.7/site-packages/
 #export PYTHONPATH=`cd test_install;pwd`/lib/python2.7/site-packages:${PYTHONPATH}
 #python setup.py build install --prefix=test_install
-
 
 cd specializers; ./run_tests.sh; cd ..

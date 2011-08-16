@@ -12,7 +12,7 @@ class StencilOptimizeCpp(ast_tools.ConvertAST):
         self.output_grid_shape = output_grid_shape
         self.unroll_factor = unroll_factor
         self.block_factor = block_factor
-    	super(StencilOptimizeCpp, self).__init__()
+        super(StencilOptimizeCpp, self).__init__()
 
     def run(self):
         self.model = self.visit(self.model)
