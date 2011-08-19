@@ -1,9 +1,11 @@
 """Defines a parser for the tree grammar DSL.
 
-The tree grammar DSL is generally used to specify strongly-typed
-intermediate representations. The syntax is inspired by BNF
-(Back-Naurus Form) and is described in detail below. The parser
-is invoked like this:
+The tree grammar DSL is used to define a set of tree node classes that
+can be linked together into a tree data structure. In the context of
+Asp, it is generally used to specify strongly-typed intermediate
+representations. All nodes inherit from ast.AST and so the tree can be
+processed with ast.NodeVisitor or ast.NodeTransformer.  The parser is
+invoked like this:
 
 import asp.tree_grammar
 tree_grammar.parse('''
@@ -19,8 +21,9 @@ NameOfCheckerClass().visit(root)
 
 == Tree grammar program syntax ==
 
-There are two kinds of rules, field rules and alternative rules.
-Field rules have the following form:
+The syntax is inspired by BNF (Back-Naurus Form). There are two kinds
+of rules, field rules and alternative rules.  Field rules have the
+following form:
 
 NodeTypeName(fieldname1=Type, fieldname2=Type, ... , fieldnamen=Type)
 
