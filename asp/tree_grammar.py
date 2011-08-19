@@ -1,3 +1,93 @@
+"""Defines a parser for the tree grammar DSL.
+
+The tree grammar DSL is generally used to specify strongly-typed
+intermediate representations. The syntax is inspired by BNF
+(Back-Naurus Form) and is described in detail below. The parser
+is invoked like this:
+
+import asp.tree_grammar
+tree_grammar.parse('''
+<tree grammar program goes here>
+''', globals(), checker='NameOfCheckerClass')
+
+In addition to checking that every tree is well-typed during initial
+construction, the checker class can be invoked at any time to verify
+that a particular tree is well-typed according to the grammar
+definition (this is useful to do after the tree is modified):
+
+NameOfCheckerClass().visit(root)
+
+== Tree grammar program syntax ==
+
+There are two kinds of rules, field rules and alternative rules.
+Field rules have the following form:
+
+NodeTypeName(fieldname1=Type, fieldname2=Type, ... , fieldnamen=Type)
+
+where Type is one of the following:
+
+* Another NodeTypeName, or a fully-qualified built-in type like types.IntType
+* Type*, indicating a list of whatever Type refers to
+* (Type1 | Type2), indicating either Type1 or Type2 is acceptable (union type)
+* If the "=Type" is omitted altogether, the type is unconstrained.
+
+Here's a simple example:
+
+VectorBinOp(left=types.IntType*, op=(ast.Add|ast.Mult), right=types.IntType*)
+    check assert len(self.left) == len(self.right)
+
+As above, field rules can optionally be followed by "check"
+statements, consisting of the word "check" followed by an arbitrary
+Python statement. This code is embedded into the class's constructor
+and is intended to perform custom validation checks not expressible
+in the tree grammar DSL. The resulting class would be used like this:
+
+node = VectorBinOp([1,2,3], ast.Add, [4,5,6])
+
+Here's a more complex multi-rule example:
+
+BinOp(left=Expr, op=(ast.Add|ast.Mult), right=Expr)
+
+Expr(value = ( Constant
+             | Variable
+             | InputCall) )
+
+Constant(value = types.IntType)
+
+Variable(name = types.StringType)
+
+The "InputCall" node will be created automatically with no fields. It
+could be used like this:
+
+tree = BinOp(Expr(Variable('x')), ast.Add, Expr(Constant(1)))
+const_value = tree.right.value.value
+
+In cases like the Expr rule here, alternative rules can help to
+simplify the syntax. In our example we could substitute:
+
+Expr = Constant
+     | Variable
+     | InputCall
+
+This creates an abstract base type called Expr, with Constant,
+Variable, and InputCall subclassing it, and is used like this:
+
+tree = BinOp(Variable('x'), ast.Add, Constant(1))
+const_value = tree.right.value
+
+The general form of an alternative rule is:
+
+BaseTypeName = Alternative1
+             | Alternative2
+             | ...
+             | AlternativeN
+
+Type names appearing on the right-hand side of an
+alternative rule must be defined in the same tree
+grammar and can only appear in at most one such rule.
+To avoid these restrictions, use a field rule instead.
+"""
+
 # Based loosely on calc example from ply-3.4 distribution
 
 from collections import defaultdict
