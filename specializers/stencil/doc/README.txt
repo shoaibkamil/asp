@@ -59,7 +59,11 @@ in_grid.neighbor_definition[1] = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 Therefore this neighbor loop will loop over 4 points whose relative
 positions are as given in this neighbor definition. Each input grid
 has its own set of neighbor definitions and may assign different
-neighbor definitions to different IDs.
+neighbor definitions to different IDs. By default, each input grid
+has two neighbor definitions defined as follows:
+
+neighbor_definition[0] = [(0, 0)]
+neighbor_definition[1] = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
 The interior of neighbor loops may only be a sequence of assignments
 to the current output grid element. Neighbor loops cannot currently be
