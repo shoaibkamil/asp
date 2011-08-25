@@ -14,5 +14,5 @@ class SpecializationError(Exception):
     """
 
     def __init__(self, msg, phase="Unknown phase"):
-        self.value = value
+        self.msg = msg
         

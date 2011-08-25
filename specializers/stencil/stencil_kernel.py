@@ -102,22 +102,26 @@ class StencilKernel(object):
         
         if (len(args[0].shape) > 1 and args[0].shape[0] > 128):
             self.should_cacheblock = True
-            self.block_sizes = [32, 64, 128]
+            self.block_sizes = [16, 32, 48, 64, 128, 160, 192, 256]
         else:
             self.should_cacheblock = False
             self.block_sizes = []
 
         if self.should_cacheblock and self.should_unroll:
-            for b in self.block_sizes:
-                for u in [2,4,8,16,32,64]:
+            import itertools
+            for b in list(set(itertools.permutations(self.block_sizes, len(args[0].shape)-1))):
+                for u in [1,2,4,8]:
                     # ensure the unrolling is valid for the given blocking
-                    if b % u == 0:
-                        variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=b).run())
-                        variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
+                    #if b[len(b)-1] >= u:
+                    if args[0].shape[len(args[0].shape)-1] >= u:
+                        c = list(b)
+                        c.append(1)
+                        variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=c).run())
+                        variant_names.append("kernel_block_%s_unroll_%s" % ('_'.join([str(y) for y in c]) ,u))
                         debug_print("ADDING BLOCKED")
                         
         if self.should_unroll:
-            for x in [2,4,8,16,32,64]:
+            for x in [2,4,8,16]: #,32,64]:
                 check_valid = max(map(
                     # FIXME: is this the right way to figure out valid unrollings?
                     lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
@@ -133,10 +137,13 @@ class StencilKernel(object):
 
         mod = self.mod = asp_module.ASPModule()
         self.add_libraries(mod)
-        if self.with_cilk:
+
+        import asp.config
+        
+        if self.with_cilk or asp.config.CompilerDetector().detect("icc"):
             mod.backends["c++"].toolchain.cc = "icc"
             mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast", "-restrict"]
-            mod.backends["c++"].toolchain.cflags += ["-fno-fnalias", "-fno-alias"]
+            mod.backends["c++"].toolchain.cflags += ["-openmp", "-fno-fnalias", "-fno-alias"]
             mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
             mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
             mod.backends["c++"].toolchain.cflags.remove('-O2')

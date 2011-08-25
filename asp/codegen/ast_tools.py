@@ -282,9 +282,24 @@ class LoopUnroller(object):
         # we can't precalculate the number of leftover iterations in the case that
         # the number of iterations are not known a priori, so we build an Expression
         # and let the compiler deal with it
-        leftover_begin = BinOp(CNumber(factor),
-                               "*", 
-                               BinOp(BinOp(node.end, "+", 1), "/", CNumber(factor)))
+        #leftover_begin = BinOp(CNumber(factor),
+        #                       "*", 
+        #                       BinOp(BinOp(node.end, "+", 1), "/", CNumber(factor)))
+
+
+        # we begin leftover iterations at factor*( (end-initial+1) / factor ) + initial
+        # note that this works due to integer division
+        leftover_begin = BinOp(BinOp(BinOp(BinOp(BinOp(node.end, "-", node.initial),
+                                                 "+",
+                                                    CNumber(1)),
+                                           "/",
+                                           CNumber(factor)),
+                                     "*",
+                                     CNumber(factor)),
+                               "+",
+                               node.initial)
+
+        new_limit = BinOp(node.end, "-", CNumber(factor-1))
         
 #        debug_print("Loop unroller called with ", node.loopvar)
 #        debug_print("Number of iterations: ", num_iterations)
@@ -304,7 +319,8 @@ class LoopUnroller(object):
         unrolled_for_node = For(
             node.loopvar,
             node.initial,
-            node.end,
+            new_limit,
+            #node.end,
             new_increment,
             new_block)
 

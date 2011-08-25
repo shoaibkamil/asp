@@ -30,7 +30,9 @@ class StencilConvertASTTests(unittest.TestCase):
             self.in_grid.data = numpy.ones([130,130])
             self.out_grid.data = numpy.zeros([130,130])
             self.kernel.kernel(self.in_grid, self.out_grid)
+            print self.kernel.mod.db.get("kernel")
             self.assertEqual(self.out_grid[5,5],4.0)
+
             for x in xrange(1,128):
                 for y in xrange(1,128):
                     self.assertAlmostEqual(self.out_grid[x,y], 4.0)
@@ -66,13 +68,13 @@ class StencilConvertASTBlockedTests(unittest.TestCase):
         self.model = python_func_to_unrolled_model(IdentityKernel.kernel, self.in_grids, self.out_grid)
 
     def test_gen_loops(self):
-        converter = StencilConvertASTBlocked(self.model, self.in_grids, self.out_grid, block_factor=2)
+        converter = StencilConvertASTBlocked(self.model, self.in_grids, self.out_grid, block_factor=(2,1))
         result = converter.gen_loops(self.model)
         wanted = """for (int x1x1 = 1; (x1x1 <= 8); x1x1 = (x1x1 + (1 * 2)))
         {
         for (int x1 = x1x1; (x1 <= min((x1x1 + 1),8)); x1 = (x1 + 1))
         {
-        #pragma IVDEP
+        #pragma ivdep
         for(intx2=1;(x2<=8);x2=(x2+1))
         {
         }

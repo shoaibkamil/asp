@@ -33,11 +33,11 @@ class StencilConvertASTBlocked(StencilConvertAST):
         if not self.block_factor:
             return [inner, unblocked]
 
-        factors = [self.block_factor for x in self.output_grid.shape]
-        factors[len(self.output_grid.shape)-1] = 1
+        #factors = [self.block_factor for x in self.output_grid.shape]
+        #factors[len(self.output_grid.shape)-1] = 1
         
         # use the helper class below to do the actual blocking.
-        blocked = StencilCacheBlocker().block(unblocked, factors)
+        blocked = StencilCacheBlocker().block(unblocked, self.block_factor)
 
         # need to update inner to point to the innermost in the new blocked version
         inner = StencilConvertASTBlocked.FindInnerMostLoop().find(blocked)
@@ -56,7 +56,7 @@ class StencilConvertASTBlocked(StencilConvertAST):
         # modify the function name to reflect both blocking and unrolling
         if self.block_factor and self.unroll_factor:
             debug_print("CHANGING FUNCTION NAME")
-            func_name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
+            func_name = "kernel_block_%s_unroll_%s" % ('_'.join([str(x) for x in self.block_factor]), self.unroll_factor)
             ret = cpp_ast.FunctionBody(cpp_ast.FunctionDeclaration(cpp_ast.Value("void", func_name), ret.fdecl.arg_decls),
                                        ret.body)
 
