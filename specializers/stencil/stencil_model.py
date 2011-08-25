@@ -36,6 +36,7 @@ Expr = Constant
      | InputElementExprIndex
      | ScalarBinOp
      | MathFunction
+     | NeighborDistance
 
 Constant(value = types.IntType | types.LongType | types.FloatType)
 

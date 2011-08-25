@@ -4,6 +4,7 @@ Facilitates isolation of bugs between stages in the specializer.
 """
 
 from stencil_model import *
+from stencil_grid import distance
 import ast
 from assert_utils import *
 import math
@@ -89,3 +90,6 @@ class StencilModelInterpreter(ast.NodeVisitor):
         func = self.math_func_to_python_func[node.name]
         args = map(self.visit, node.args)
         return apply(func, args)
+
+    def visit_NeighborDistance(self, node):
+        return distance(self.current_neighbor_point, self.current_output_point)

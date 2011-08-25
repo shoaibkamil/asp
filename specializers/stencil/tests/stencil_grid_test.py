@@ -1,5 +1,6 @@
 import unittest2 as unittest
 from stencil_grid import *
+import math
 
 class BasicTests(unittest.TestCase):
     def test_init(self):
@@ -53,7 +54,10 @@ class BasicTests(unittest.TestCase):
 
         grid = StencilGrid([5])
         self.assertEquals(len([x for x in grid.neighbors([1],1)]), 2)
-        
+
+    def test_distance(self):
+        self.assertAlmostEquals(distance((1,2), (-1,3)), math.sqrt(5))
+        self.assertEquals(distance((5,5), (5,5)), 0)
 
 if __name__ == '__main__':
     unittest.main()

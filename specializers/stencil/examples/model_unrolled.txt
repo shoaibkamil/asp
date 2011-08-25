@@ -1,0 +1,8 @@
+StencilModel(
+  input_grids=[Identifier(name='in_img')],
+  interior_kernel=
+    Kernel(body=[OutputAssignment(value=ScalarBinOp(left=OutputElement(), op=Add(), right=InputElement(grid=Identifier(name='in_img'), offset_list=[1, 0]))),
+                 OutputAssignment(value=ScalarBinOp(left=OutputElement(), op=Add(), right=InputElement(grid=Identifier(name='in_img'), offset_list=[-1, 0]))),
+                 OutputAssignment(value=ScalarBinOp(left=OutputElement(), op=Add(), right=InputElement(grid=Identifier(name='in_img'), offset_list=[0, 1]))),
+                 OutputAssignment(value=ScalarBinOp(left=OutputElement(), op=Add(), right=InputElement(grid=Identifier(name='in_img'), offset_list=[0, -1])))]),
+  border_kernel=Kernel(body=[]))

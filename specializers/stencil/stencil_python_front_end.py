@@ -114,4 +114,12 @@ class StencilPythonFrontEnd(ast.NodeTransformer):
 
     def visit_Call(self, node):
         assert isinstance(node.func, ast.Name), 'Cannot call expression'
-        return MathFunction(node.func.id, map(self.visit, node.args))
+        if node.func.id == 'distance' and len(node.args) == 2:
+            if ((node.args[0].id == self.neighbor_target and node.args[1].id == self.kernel_target) or \
+                (node.args[0].id == self.kernel_target and node.args[1].id == self.neighbor_target)):
+                return NeighborDistance()
+            elif ((node.args[0].id == self.neighbor_target and node.args[1].id == self.neighbor_target) or \
+                  (node.args[0].id == self.kernel_target and node.args[1].id == self.kernel_target)):
+                return Constant(0)
+        else:
+            return MathFunction(node.func.id, map(self.visit, node.args))

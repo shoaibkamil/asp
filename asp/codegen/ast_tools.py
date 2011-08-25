@@ -1,6 +1,8 @@
 
 from cpp_ast import *
+import cpp_ast
 import python_ast as ast
+import python_ast
 from asp.util import *
 
 def is_cpp_node(x):
@@ -148,8 +150,12 @@ class ConvertAST(ast.NodeTransformer):
 
     # only single targets supported
     def visit_Assign(self, node):
-        return Assign(self.visit(node.targets[0]),
-                self.visit(node.value))
+        if isinstance(node, python_ast.Assign):
+            return Assign(self.visit(node.targets[0]),
+                          self.visit(node.value))
+        elif isinstance(node, cpp_ast.Assign):
+            return Assign(self.visit(node.lvalue),
+                          self.visit(node.rvalue))
 
     def visit_FunctionDef(self, node):
         debug_print("In FunctionDef:")
@@ -399,13 +405,14 @@ class LoopSwitcher(NodeTransformer):
             debug_print("Saving loop")
             self.saved_first_loop = node
             new_body = self.visit(node.body)
+            assert self.second_target < self.current_loop + 1, 'Tried to switch loops %d and %d but only %d loops available' % (self.first_target, self.second_target, self.current_loop + 1)
             # replace with the second loop (which has now been saved)
             return For(self.saved_second_loop.loopvar,
                        self.saved_second_loop.initial,
                        self.saved_second_loop.end,
                        self.saved_second_loop.increment,
                        new_body)
-                       
+
 
         if self.current_loop == self.second_target:
             # save this
@@ -417,11 +424,10 @@ class LoopSwitcher(NodeTransformer):
                        self.saved_first_loop.end,
                        self.saved_first_loop.increment,
                        node.body)
-        
+
 
         return For(node.loopvar,
                    node.initial,
                    node.end,
                    node.increment,
                    self.visit(node.body))
-

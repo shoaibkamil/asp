@@ -1,0 +1,96 @@
+The following instructions been tested with Ubuntu 11.04 (Natty
+Narwhal), Eclipse 3.5.2, Python 2.7.1+, and PyDev 2.2.1, all of which
+were current on 2011 August 22.
+
+Installation part based on http://techcolleague.com/2011/02/install-eclipse-and-pydev-on-ubuntu/,
+with modifications.
+
+First, we need to get access to the Sun JDK package. Uncomment this in
+your /etc/apt/sources.list:
+
+deb http://archive.canonical.com/ubuntu natty partner
+deb-src http://archive.canonical.com/ubuntu natty partner
+
+And do this (from http://myubuntuarchive.blogspot.com/2011/03/java-on-ubuntu.html):
+
+sudo add-apt-repository ppa:sun-java-community-team/sun-java6
+sudo apt-get update
+
+Install Eclipse and Sun JDK and plug-in:
+
+sudo apt-get install eclipse sun-java6-jdk sun-java6-jre sun-java6-bin sun-java6-plugin
+
+Accept license terms when prompted. After this completes, make Sun's
+JDK the default:
+
+sudo update-java-alternatives -s java-6-sun
+
+Next install PyDev:
+
+1. Run Eclipse and then go to Help | Install New Software
+
+2. Click Add... next to the "Work with" drop down. Specify the
+following:
+
+    Name: PyDev
+    URL: http://pydev.org/updates
+
+3. Check "PyDev". Do not check "Pydev Mylyn Integration". Press Next.
+
+4. Press Next again, accept license terms, click Finish to begin
+install.
+
+5. If prompted to accept a certificate, click Select All, then OK. If
+prompted to restart Eclipse, click Yes.
+
+6. Open Windows | Preferences | Pydev | Interpreter - Python.
+
+7. Click Auto Config. A "selection needed" window will appear for the
+SYSTEM pythonpath. Click Select All, click OK.
+
+8. When Auto Config completes, click OK and wait for Pydev to scan
+your system Python libraries.
+
+PyDev installation is now complete. To create a new (fresh) Python
+project in Eclipse with PyDev:
+
+1. Click File | New | Project | PyDev | PyDev Project, and click Next.
+
+2. Enter a project name. Click Finish.
+
+3. An Open Associated Perspective dialog will appear. Check the
+checkbox and click Yes.
+
+4. Right-click "src" and choose New | PyDev Module. Enter a Name (you
+need not enter a Package). Click Finish.
+
+5. Type some Python into the text file, like:
+
+print('hello world'.capitalize())
+
+You can press ENTER to autocomplete the capitalize() call while typing
+it.
+
+6. Click Run | Run. Leave set to "Python Run" and click OK. A Console
+window tab should appear showing the program output.
+
+7. Add the following two lines of source code:
+
+x = 'hello there'
+print(x)
+
+Right-click in the margin to the left of the first source code line
+and choose "Add Breakpoint".
+
+8. Choose Run | Debug. When "Confirm Perspective Switch" appears,
+check the box and click Yes.
+
+9. Execution will break at the first line. Select Run | Step Over,
+click the "Step Over" toolbar button, or press F6 to step through the
+source code line by line. After stepping over the line "x = 'hello
+there'" the variable x should appear in the "Variables" window (you
+may have to scroll it down). Use Run | Debug or F11 to start the
+program over again during debugging.
+
+10. When done debugging, click the "PyDev perspective" in the upper
+right hand corner to return to the normal source editing view.

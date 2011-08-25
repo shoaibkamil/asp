@@ -124,7 +124,7 @@ class CodeVariants(object):
 
     def set_from_pickled_obj(self, obj):
         if self.v_id_list != obj['variant_names']:
-	    print "Warning: Attempted to load pickled performance data for non-matching space of code variants."
-	    return
+            print "Warning: Attempted to load pickled performance data for non-matching space of code variants."
+            return
         self.param_names = obj['param_names']
 
