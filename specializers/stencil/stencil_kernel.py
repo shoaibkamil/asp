@@ -103,23 +103,31 @@ class StencilKernel(object):
         
         if (len(args[0].shape) > 1 and args[0].shape[0] > 128):
             self.should_cacheblock = True
-            self.block_sizes = [32, 64, 128]
+            self.block_sizes = [16, 32, 48, 64, 128, 160, 192, 256]
         else:
             self.should_cacheblock = False
             self.block_sizes = []
 
         if self.should_cacheblock and self.should_unroll:
-            for b in self.block_sizes:
-                for u in [2,4,8,16,32,64]:
+            import itertools
+            for b in list(set(itertools.permutations(self.block_sizes, len(args[0].shape)-1))):
+                for u in [1,2,4,8]:
                     # ensure the unrolling is valid for the given blocking
-                    if b % u == 0:
-                        variant = StencilOptimizeCpp(copy.deepcopy(base_variant), output_grid.shape, unroll_factor=u, block_factor=b).run()
+
+                    #if b[len(b)-1] >= u:
+                    if args[0].shape[len(args[0].shape)-1] >= u:
+                        c = list(b)
+                        c.append(1)
+                        #variants.append(Converter(model, input_grids, output_grid, unroll_factor=u, block_factor=c).run())
+                        
+                        variant = StencilOptimizeCpp(copy.deepcopy(base_variant), output_grid.shape, unroll_factor=u, block_factor=c).run()
                         variants.append(variant)
-                        variant_names.append("kernel_block_%s_unroll_%s" % (b ,u))
+                        variant_names.append("kernel_block_%s_unroll_%s" % ('_'.join([str(y) for y in c]) ,u))
+
                         debug_print("ADDING BLOCKED")
                         
-        elif self.should_unroll:
-            for x in [2,4,8,16,32,64]:
+        if self.should_unroll:
+            for x in [2,4,8,16]: #,32,64]:
                 check_valid = max(map(
                     # FIXME: is this the right way to figure out valid unrollings?
                     lambda y: (y.shape[-1]-2*y.ghost_depth) % x,
@@ -135,6 +143,7 @@ class StencilKernel(object):
 
         mod = self.mod = asp_module.ASPModule()
         self.add_libraries(mod)
+
         self.set_compiler_flags(mod)
         mod.add_function("kernel", variants, variant_names)
 
@@ -146,11 +155,18 @@ class StencilKernel(object):
         self.specialized_sizes = [x.shape for x in args]
 
     def set_compiler_flags(self, mod):
-        if self.with_cilk:
+        import asp.config
+        
+        if self.with_cilk or asp.config.CompilerDetector().detect("icc"):
             mod.backends["c++"].toolchain.cc = "icc"
-            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast"]
+            mod.backends["c++"].toolchain.cflags += ["-intel-extensions", "-fast", "-restrict"]
+            mod.backends["c++"].toolchain.cflags += ["-openmp", "-fno-fnalias", "-fno-alias"]
             mod.backends["c++"].toolchain.cflags += ["-I/usr/include/x86_64-linux-gnu"]
             mod.backends["c++"].toolchain.cflags.remove('-fwrapv')
+            mod.backends["c++"].toolchain.cflags.remove('-O2')
+            mod.backends["c++"].toolchain.cflags.remove('-g')
+            mod.backends["c++"].toolchain.cflags.remove('-g')
+            mod.backends["c++"].toolchain.cflags.remove('-fno-strict-aliasing')
         else:
             mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
 

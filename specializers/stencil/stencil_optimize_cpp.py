@@ -20,7 +20,7 @@ class StencilOptimizeCpp(ast_tools.ConvertAST):
 
     def visit_FunctionDeclaration(self, node):
         if self.block_factor:
-            node.subdecl.name = "kernel_block_%s_unroll_%s" % (self.block_factor, self.unroll_factor)
+            node.subdecl.name = "kernel_block_%s_unroll_%s" % ('_'.join([str(x) for x in self.block_factor]), self.unroll_factor)
         else:
             node.subdecl.name = "kernel_unroll_%s" % self.unroll_factor
         return node
@@ -43,17 +43,20 @@ class StencilOptimizeCpp(ast_tools.ConvertAST):
         return node
 
     def block_loops(self, inner, unblocked):
-        factors = [self.block_factor for x in self.output_grid_shape]
-        factors[len(self.output_grid_shape)-1] = 1
+        #factors = [self.block_factor for x in self.output_grid_shape]
+        #factors[len(self.output_grid_shape)-1] = 1
+
         
         # use the helper class below to do the actual blocking.
-        blocked = StencilCacheBlocker().block(unblocked, factors)
+        blocked = StencilCacheBlocker().block(unblocked, self.block_factor)
 
         # need to update inner to point to the innermost in the new blocked version
         inner = FindInnerMostLoop().find(blocked)
 
         assert(inner != None)
         return [inner, blocked]
+
+  
 
 class StencilCacheBlocker(object):
     """

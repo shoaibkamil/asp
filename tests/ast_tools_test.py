@@ -69,19 +69,36 @@ class LoopUnrollerTests(unittest.TestCase):
 
     def test_unrolling_by_2(self):
         result = LoopUnroller().unroll(self.test_ast, 2)
-        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 2)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n}"
+        print result
+        wanted_result ='for(int i=0;(i<=(7-1));i=(i+(1*2)))\n {\n a[i]=i;\n a[(i+1)]=(i+1);\n}'
+        
         self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
+
+
+
 
     def test_unrolling_by_4(self):
         result = LoopUnroller().unroll(self.test_ast, 4)
-        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 4)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n  a[(i + 3)] = (i + 3);\n}"
+        print result
+        wanted_result = 'for(inti=0;(i<=(7-3));i=(i+(1*4)))\n{\na[i]=i;\na[(i+1)]=(i+1);\na[(i+2)]=(i+2);\na[(i+3)]=(i+3);\n}'
 
         self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
 
     def test_imperfect_unrolling (self):
         result = LoopUnroller().unroll(self.test_ast, 3)
-        wanted_result = "for (int i = 0; (i <= 7); i = (i + (1 * 3)))\n{\n  a[i] = i;\n  a[(i + 1)] = (i + 1);\n  a[(i + 2)] = (i + 2);\n}\n" + "for (int i = (3*((7+1)/3)); (i <= 7); i = (i + 1))\n{\n  a[i] = i;\n}"
+        wanted_result = 'for(inti=0;(i<=(7-2));i=(i+(1*3)))\n{\na[i]=i;\na[(i+1)]=(i+1);\na[(i+2)]=(i+2);\n}\nfor(inti=(((((7-0)+1)/3)*3)+0);(i<=7);i=(i+1))\n{\na[i]=i;\n}'
+
+        print str(result)
         self.assertEqual(str(result).replace(' ',''), str(wanted_result).replace(' ', ''))
+
+    def test_with_1_index(self):
+        test_ast = For("i",
+                       CNumber(1),
+                       CNumber(9),
+                       CNumber(1),
+                       Block(contents=[Assign(Subscript(CName("a"), CName("i")), CName("i"))]))
+        result = LoopUnroller().unroll(test_ast, 2)
+        print result
 
 class LoopBlockerTests(unittest.TestCase):
     def test_basic_blocking(self):

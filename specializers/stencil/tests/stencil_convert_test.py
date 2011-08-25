@@ -10,7 +10,7 @@ class AddNeighborsBasicTest(unittest.TestCase):
         self.in_grid = StencilGrid([10,10])
         self.in_grid.data = numpy.ones([10,10])
         self.out_grid = StencilGrid([10,10])
-        self.model_identity =
+        self.model_identity = 
             StencilModel([Identifier('in_grid')],
                           Kernel([OutputAssignment(InputElementZeroOffset(Identifier('in_grid')))]),
                           Kernel([]))
