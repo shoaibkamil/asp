@@ -260,6 +260,9 @@ class FunctionBody(codepy.cgen.FunctionBody):
     def __init__(self, fdecl, body):
         super(FunctionBody, self).__init__(fdecl, body)
         self._fields = ['fdecl', 'body']
+
+    def generate(self, with_semicolon=False):
+        return super(FunctionBody, self).generate()
         
     def to_xml(self):
         node = ElementTree.Element("FunctionBody")
