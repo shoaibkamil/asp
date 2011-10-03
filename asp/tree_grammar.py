@@ -255,9 +255,10 @@ class FieldRule:
         field_names = map(lambda x: x[0], self.fields_list)
         return('''
 class %s(%s):
-    def __init__(self, %s):
+    def __init__(self, %s, lineno=None, col_offset=None):
         self._fields = (%s,)
-        super(%s, self).__init__()
+        self._attributes = ('lineno', 'col_offset',)
+        super(%s, self).__init__(lineno=lineno, col_offset=col_offset)
 %s
         self.check()
 
@@ -327,8 +328,9 @@ class AlternativesRule:
     def generate(self, parent_map, all_classes):
         return '''
 class %s(%s):
-    def __init__(self):
-        super(%s, self).__init__()
+    def __init__(self, lineno=None, col_offset=None):
+        self._attributes = ('lineno', 'col_offset',)
+        super(%s, self).__init__(lineno=lineno, col_offset=col_offset)
 ''' % (self.name, parent_map[self.name], self.name)
 
     def get_classes(self):
@@ -390,8 +392,9 @@ def parse(tree_grammar, global_dict, checker=None):
     for x in all_classes - classes_with_rules:
         program += '''
 class %s(%s):
-    def __init__(self):
-        super(%s, self).__init__()
+    def __init__(self, lineno=None, col_offset=None):
+        self._attributes = ('lineno', 'col_offset',)
+        super(%s, self).__init__(lineno=lineno, col_offset=col_offset)
 ''' % (x, parent_map[x], x)
 
     if checker != None:

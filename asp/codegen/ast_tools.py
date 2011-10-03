@@ -58,7 +58,20 @@ class NodeTransformerCustomNodes(ast.NodeTransformer):
     def is_node(self, x):
         return isinstance(x, ast.AST)
 
-class NodeTransformer(NodeTransformerCustomNodes):
+class NodeTransformerCustomNodesExtended(NodeTransformerCustomNodes):
+    """Extended version of NodeTransformerCustomNodes that also tracks line numbers"""
+    def visit(self, node):
+        result = super(NodeTransformerCustomNodesExtended, self).visit(node)
+        return self.transfer_lineno(node, result)
+
+    def transfer_lineno(self, node_from, node_to):
+        if hasattr(node_from, 'lineno') and hasattr(node_to, 'lineno'):
+            node_to.lineno = node_from.lineno
+        if hasattr(node_from, 'col_offset') and hasattr(node_to, 'col_offset'):
+            node_to.col_offset = node_from.col_offset
+        return node_to
+
+class NodeTransformer(NodeTransformerCustomNodesExtended):
     """Unified class for *transforming* Python and C++ AST nodes"""
     def is_node(self, x):
         return isinstance(x, ast.AST) or is_cpp_node(x)
@@ -207,8 +220,6 @@ class ConvertAST(ast.NodeTransformer):
 
     def visit_Return(self, node):
         return ReturnStatement(self.visit(node.value))
-
-
 
 class LoopUnroller(object):
     class UnrollReplacer(NodeTransformer):
