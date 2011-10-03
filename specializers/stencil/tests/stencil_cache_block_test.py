@@ -31,7 +31,7 @@ class StencilConvertASTTests(unittest.TestCase):
             self.in_grid.data = numpy.ones([130,130])
             self.out_grid.data = numpy.zeros([130,130])
             self.kernel.kernel(self.in_grid, self.out_grid)
-            print self.kernel.mod.db.get("kernel")
+            # print self.kernel.mod.db.get("kernel")
             self.assertEqual(self.out_grid[5,5],4.0)
 
             for x in xrange(1,128):

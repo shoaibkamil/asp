@@ -168,7 +168,7 @@ class StencilKernel(object):
             mod.backends["c++"].toolchain.cflags.remove('-g')
             mod.backends["c++"].toolchain.cflags.remove('-fno-strict-aliasing')
         else:
-            mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3"]
+            mod.backends["c++"].toolchain.cflags += ["-fopenmp", "-O3", "-msse3", "-Wno-unknown-pragmas"]
 
         if mod.backends["c++"].toolchain.cflags.count('-Os') > 0:
             mod.backends["c++"].toolchain.cflags.remove('-Os')

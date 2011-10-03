@@ -1,0 +1,19 @@
+StencilModel(
+  input_grids=[Identifier(name='in_img'),
+	       Identifier(name='filter_d')],
+  interior_kernel=
+    Kernel(body=[StencilNeighborIter(
+		   grid=Identifier(name='in_img'),
+		   neighbors_id=Constant(value=1),
+		   body=[OutputAssignment(
+			   value=ScalarBinOp(
+				   left=OutputElement(),
+				   op=Add(),
+				   right=ScalarBinOp(
+					   left=Neighbor(),
+					   op=Mult(),
+					   right=InputElementExprIndex(
+						   grid=Identifier(name='filter_d'),
+						   index=MathFunction(name='int',
+                                                                      args=[NeighborDistance()])))))])]),
+  border_kernel=Kernel(body=[]))
