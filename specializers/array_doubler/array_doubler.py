@@ -16,6 +16,30 @@ class ArrayDoubler(object):
         mod.add_function("double_in_c", rendered)
         return mod.double_in_c(arr)
 
+    def double_using_scala(self, arr):
+        import asp.jit.asp_module as asp_module
+        mod = asp_module.ASPModule(use_scala=True)
+        # remember, must specify function name when using a string
+        rendered = """
+        object double_using_scala {
+          def double(arr: List[Double]): List[Double] = {
+            return arr map { _ * 2.0 }
+          }
+          def main(args: Array[String]) {
+            var arr: List[Double] = scala.util.parsing.json.JSON.parse(args(0)).getOrElse(List()) match {
+              case x:List[Double] => x
+            }
+            var arr2 = double(arr)
+            for (s <- arr2) {
+              print(s)
+              print(" ")
+            }
+          }
+        }
+        """
+        mod.add_function("double_using_scala", rendered, backend="scala")
+        return mod.double_using_scala(arr)
+
     def double(self, arr):
         return map (lambda x: x*2, arr)
         

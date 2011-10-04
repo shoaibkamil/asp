@@ -5,6 +5,7 @@ import pickle
 from variant_history import *
 import sqlite3
 import asp
+import scala_module
 
 class ASPDB(object):
 
@@ -191,7 +192,10 @@ class SpecializedFunction(object):
         self.variant_funcs.append(variant_func)
         self.run_check_funcs.append(run_check_func)
         
-        if isinstance(variant_func, str):
+        if isinstance(self.backend.module, scala_module.ScalaModule):
+            self.backend.module.add_to_module(variant_func)
+            self.backend.module.add_to_init(variant_name)
+        elif isinstance(variant_func, str):
             if isinstance(self.backend.module, codepy.cuda.CudaModule):#HACK because codepy's CudaModule doesn't have add_to_init()
                 self.backend.module.boost_module.add_to_module([cpp_ast.Line(variant_func)])
                 self.backend.module.boost_module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
@@ -322,7 +326,7 @@ class ASPModule(object):
     """
 
     #FIXME: specializer should be required.
-    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False, use_cilk=False):
+    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False, use_cilk=False, use_scala=False):
             
         self.specialized_functions= {}
         self.helper_method_names = []
@@ -359,6 +363,11 @@ class ASPModule(object):
         if use_cilk:
             self.backends["cilk"] = self.backends["c++"]
             self.backends["cilk"].toolchain.cc = "icc"
+
+        if use_scala:
+            self.backends["scala"] = ASPBackend(scala_module.ScalaModule(),
+                                                scala_module.ScalaToolchain(),
+                                                self.cache_dir)
 
 
 
