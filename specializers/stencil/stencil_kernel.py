@@ -38,8 +38,11 @@ class StencilKernel(object):
 
         # get text of kernel() method and parse into a StencilModel
         self.kernel_src = inspect.getsource(self.kernel)
+        # print(self.kernel_src)
         self.kernel_ast = ast.parse(self.remove_indentation(self.kernel_src))
+        # print(ast.dump(self.kernel_ast, include_attributes=True))
         self.model = StencilPythonFrontEnd().parse(self.kernel_ast)
+        # print(ast.dump(self.model, include_attributes=True))
 
         self.pure_python = False
         self.pure_python_kernel = self.kernel
