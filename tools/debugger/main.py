@@ -6,6 +6,7 @@
 import cgi
 import sys
 import gdb
+import pdb
 from PySide.QtCore import *
 from PySide.QtGui import *
 from PySide.QtDeclarative import QDeclarativeView
@@ -25,21 +26,18 @@ class Form(QDialog):
         self.button_close = QPushButton("Close")
         self.button_close.clicked.connect(exit)
 
-        self.watch_values = dict()
+        watches = [('C++','x1'), ('C++', 'x2'), ('C++', 'x3'), ('C++', '_my_out_grid[x3]'),
+                   ('Python', 'x'), ('Python', 'y'), ('Python', 'out_grid[x]'), ('Python', 'in_grid[y]')]
 
         self.watch_layout = QGridLayout()
-        self.watch_layout.addWidget(QLabel("x1"), 0, 0)
-        self.watch_values['x1'] = QLineEdit()
-        self.watch_layout.addWidget(self.watch_values['x1'], 0, 1)
-        self.watch_layout.addWidget(QLabel("x2"), 1, 0)
-        self.watch_values['x2'] = QLineEdit()
-        self.watch_layout.addWidget(self.watch_values['x2'], 1, 1)
-        self.watch_layout.addWidget(QLabel("x3"), 2, 0)
-        self.watch_values['x3'] = QLineEdit()
-        self.watch_layout.addWidget(self.watch_values['x3'], 2, 1)
-        self.watch_layout.addWidget(QLabel("_my_out_grid[x3]"), 3, 0)
-        self.watch_values['_my_out_grid[x3]'] = QLineEdit()
-        self.watch_layout.addWidget(self.watch_values['_my_out_grid[x3]'], 3, 1)
+        self.watch_values = dict()
+        row = 0
+        for watch in watches:
+            self.watch_values[watch] = QLineEdit()
+            self.watch_layout.addWidget(QLabel(watch[1]), row, 0)
+            self.watch_layout.addWidget(self.watch_values[watch], row, 1)
+            self.watch_layout.addWidget(QLabel(watch[0]), row, 2)
+            row += 1
 
         self.right_panel = QVBoxLayout()
         self.right_panel.addLayout(self.watch_layout)
@@ -98,6 +96,7 @@ out_grid = StencilGrid([5,5])
 ExampleKernel().kernel(in_grid, out_grid)
 """
         self.gdb = gdb.gdb()
+        self.pdb = pdb.pdb()
         self.updateView()
 
     def get_line_from_cpp_line(self, cpp_line):
@@ -111,35 +110,53 @@ ExampleKernel().kernel(in_grid, out_grid)
             current_line += 1
         return -1
 
+    def get_line_from_python_line(self, python_line):
+        current_line = 0
+        current_python_line = 0
+        for line in self.mixedText.split("\n"):
+            if not (len(line) > 1 and line[0] == '@'):
+                if current_python_line == python_line:
+                    return current_line
+                current_python_line += 1
+            current_line += 1
+        return -1
+
     def updateView(self):
         try:
             stack = self.gdb.get_current_stack()
-            cpp_line = stack['line_no'] - 6 # First 6 lines of real C++ file are headers and stuff
-            self.current_line = self.get_line_from_cpp_line(cpp_line)
+            cpp_line = stack['line_no'] - 6 # First 5 lines of real C++ file are headers and stuff
+            stack = self.pdb.get_current_stack()
+            python_line = stack['line_no'] - 1 # Adjust to zero based
+            self.current_lines = [self.get_line_from_cpp_line(cpp_line), self.get_line_from_python_line(python_line)]
         except:
-            self.current_line = -1
+            self.current_line = []
+            self.button_step_over.setDisabled(True)
 
         hScrollBarPosition = self.textedit.horizontalScrollBar().value()
         vScrollBarPosition = self.textedit.verticalScrollBar().value()
 
         html = "<font face=\"" + self.fontFamily + "\" color=\"#000000\"><b>" + "<table><tr><td width=\"20\">";
-        if self.current_line == -1:
-            html += "&nbsp;"
-            self.button_step_over.setDisabled(True)
-        else:
-            html += "&nbsp;<br/>" * self.current_line + "<img src=\"current_line.png\"/>"
+        for line in range(len(self.mixedText.split("\n"))):
+            if line in self.current_lines:
+                html += "<img src=\"current_line.png\"/><br/>"
+            else:
+                html += "&nbsp;<br/>"
         html += "</td><td>" + self.render() + "</td></tr></table>" + "</b></font>"
         self.textedit.setHtml(html)
 
         self.textedit.horizontalScrollBar().setValue(hScrollBarPosition)
         self.textedit.verticalScrollBar().setValue(vScrollBarPosition)
 
-        for expr in self.watch_values.keys():
-            value = self.gdb.read_expr(expr)
-            if value == None:
-                self.watch_values[expr].setText('')
-            else:
-                self.watch_values[expr].setText(value)
+        for watch in self.watch_values.keys():
+            if watch[0] == 'C++':
+                value = self.gdb.read_expr(watch[1])
+                if value == None:
+                    self.watch_values[watch].setText('')
+                else:
+                    self.watch_values[watch].setText(value)
+            elif watch[0] == 'Python':
+                value = self.pdb.read_expr(watch[1])
+                self.watch_values[watch].setText(value)
 
     def render(self):
         x = ''
@@ -153,12 +170,36 @@ ExampleKernel().kernel(in_grid, out_grid)
         return x
 
     def stepOver(self):
-        self.gdb.next()
+        # Get current lines
+        stack = self.gdb.get_current_stack()
+        cpp_line = stack['line_no'] - 6 # First 5 lines of real C++ file are headers and stuff
+        stack = self.pdb.get_current_stack()
+        python_line = stack['line_no'] - 1 # Adjust to zero based
+
+        next_dict = {(5,4): (0,1), (5,5): (1,1),
+                     (6,6): (0,1), (6,9): (0,1), (6,12): (1,1),
+                     (7,13): (1,0), (8,13): (1,1),
+                     (7,14): (1,0), (8,14): (1,1),
+                     (7,15): (1,0), (8,15): (1,1),
+                     (7,16): (1,0), (8,16): (2,1),
+                     (6,19): (1,1)
+                    }
+        try:
+            to_step = next_dict[tuple([python_line, cpp_line])]
+        except:
+            print 'Missing dictionary entry for line combination', tuple([python_line, cpp_line])
+            return
+        for x in range(to_step[0]):
+            self.pdb.next()
+        for x in range(to_step[1]):
+            self.gdb.next()
         self.updateView()
 
     def restart(self):
         self.gdb.quit()
+        self.pdb.quit()
         self.gdb = gdb.gdb()
+        self.pdb = pdb.pdb()
         self.button_step_over.setEnabled(True)
         self.updateView()
 
