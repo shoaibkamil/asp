@@ -5,6 +5,7 @@
 
 import cgi
 import sys
+import gdb
 from PySide.QtCore import *
 from PySide.QtGui import *
 from PySide.QtDeclarative import QDeclarativeView
@@ -17,20 +18,49 @@ class Form(QDialog):
         self.resize(1024, 600)
         self.textedit = QTextEdit()
         self.textedit.setLineWrapMode(QTextEdit.NoWrap)
-        self.button1 = QPushButton("Step over")
-        self.button1.clicked.connect(self.stepOver)
-        self.button2 = QPushButton("Close")
-        self.button2.clicked.connect(exit)
-        self.currentLine = 20
+        self.button_step_over = QPushButton("Step over")
+        self.button_step_over.clicked.connect(self.stepOver)
+        self.button_restart = QPushButton("Restart")
+        self.button_restart.clicked.connect(self.restart)
+        self.button_close = QPushButton("Close")
+        self.button_close.clicked.connect(exit)
+
+        self.watch_values = dict()
+
+        self.watch_layout = QGridLayout()
+        self.watch_layout.addWidget(QLabel("x1"), 0, 0)
+        self.watch_values['x1'] = QLineEdit()
+        self.watch_layout.addWidget(self.watch_values['x1'], 0, 1)
+        self.watch_layout.addWidget(QLabel("x2"), 1, 0)
+        self.watch_values['x2'] = QLineEdit()
+        self.watch_layout.addWidget(self.watch_values['x2'], 1, 1)
+        self.watch_layout.addWidget(QLabel("x3"), 2, 0)
+        self.watch_values['x3'] = QLineEdit()
+        self.watch_layout.addWidget(self.watch_values['x3'], 2, 1)
+        self.watch_layout.addWidget(QLabel("_my_out_grid[x3]"), 3, 0)
+        self.watch_values['_my_out_grid[x3]'] = QLineEdit()
+        self.watch_layout.addWidget(self.watch_values['_my_out_grid[x3]'], 3, 1)
+
+        self.right_panel = QVBoxLayout()
+        self.right_panel.addLayout(self.watch_layout)
+        self.right_panel.addStretch()
+
+        self.button_hlayout = QHBoxLayout()
+        self.button_hlayout.addWidget(self.button_step_over)
+        self.button_hlayout.addWidget(self.button_restart)
+        self.button_hlayout.addWidget(self.button_close)
+
+        self.edit_watch_hlayout = QHBoxLayout()
+        self.edit_watch_hlayout.addWidget(self.textedit)
+        self.edit_watch_hlayout.addLayout(self.right_panel)
+        self.edit_watch_hlayout.setStretch(0, 1)
 
         self.vlayout = QVBoxLayout()
-        self.vlayout.addWidget(self.textedit)
-        self.vlayout.addWidget(self.button1)
-        self.vlayout.addWidget(self.button2)
+        self.vlayout.addLayout(self.edit_watch_hlayout)
+        self.vlayout.addLayout(self.button_hlayout)
 
         self.setLayout(self.vlayout)
         self.mixedText = """\
-# Example from DARPA 2011 May 18 slides
 from stencil_kernel import *
 import stencil_grid
 import numpy
@@ -67,21 +97,53 @@ in_grid.data = numpy.ones([5,5])
 out_grid = StencilGrid([5,5])
 ExampleKernel().kernel(in_grid, out_grid)
 """
+        self.gdb = gdb.gdb()
         self.updateView()
 
+    def get_line_from_cpp_line(self, cpp_line):
+        current_line = 0
+        current_cpp_line = 0
+        for line in self.mixedText.split("\n"):
+            if len(line) > 1 and line[0] == '@':
+                if current_cpp_line == cpp_line:
+                    return current_line
+                current_cpp_line += 1
+            current_line += 1
+        return -1
+
     def updateView(self):
+        try:
+            stack = self.gdb.get_current_stack()
+            cpp_line = stack['line_no'] - 6 # First 6 lines of real C++ file are headers and stuff
+            self.current_line = self.get_line_from_cpp_line(cpp_line)
+        except:
+            self.current_line = -1
+
         hScrollBarPosition = self.textedit.horizontalScrollBar().value()
         vScrollBarPosition = self.textedit.verticalScrollBar().value()
-        self.textedit.setHtml("<font face=\"" + self.fontFamily + "\" color=\"#000000\"><b>" +
-            "<table><tr><td width=\"20\">" + "&nbsp;<br/>" * (self.currentLine - 1) + "<img src=\"current_line.png\"/></td><td>" +
-            self.render(self.mixedText) +
-            "</td></tr></table>" + "</b></font>")
+
+        html = "<font face=\"" + self.fontFamily + "\" color=\"#000000\"><b>" + "<table><tr><td width=\"20\">";
+        if self.current_line == -1:
+            html += "&nbsp;"
+            self.button_step_over.setDisabled(True)
+        else:
+            html += "&nbsp;<br/>" * self.current_line + "<img src=\"current_line.png\"/>"
+        html += "</td><td>" + self.render() + "</td></tr></table>" + "</b></font>"
+        self.textedit.setHtml(html)
+
         self.textedit.horizontalScrollBar().setValue(hScrollBarPosition)
         self.textedit.verticalScrollBar().setValue(vScrollBarPosition)
 
-    def render(self, mixedText):
+        for expr in self.watch_values.keys():
+            value = self.gdb.read_expr(expr)
+            if value == None:
+                self.watch_values[expr].setText('')
+            else:
+                self.watch_values[expr].setText(value)
+
+    def render(self):
         x = ''
-        for line in mixedText.split("\n"):
+        for line in self.mixedText.split("\n"):
             line = cgi.escape(line).replace(' ', '&nbsp;')
             if len(line) > 1 and line[0] == '@':
                 line = line[1:]
@@ -91,7 +153,13 @@ ExampleKernel().kernel(in_grid, out_grid)
         return x
 
     def stepOver(self):
-        self.currentLine += 1
+        self.gdb.next()
+        self.updateView()
+
+    def restart(self):
+        self.gdb.quit()
+        self.gdb = gdb.gdb()
+        self.button_step_over.setEnabled(True)
         self.updateView()
 
 app = QApplication(sys.argv)
