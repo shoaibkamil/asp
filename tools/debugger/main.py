@@ -25,17 +25,18 @@ class WatchRemover(object):
         self.form.update_watch_widgets()
 
 class AddWatchForm(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, cpponly=False, parent=None):
         self.fontFamily = "Courier"
         super(AddWatchForm, self).__init__(parent)
         self.setWindowTitle("Add Watch")
 
-        self.layout_lang = QHBoxLayout()
-        self.radiobutton_cpp = QRadioButton('C++')
-        self.radiobutton_cpp.setChecked(True)
-        self.radiobutton_python = QRadioButton('Python')
-        self.layout_lang.addWidget(self.radiobutton_cpp)
-        self.layout_lang.addWidget(self.radiobutton_python)
+        if not cpponly:
+            self.layout_lang = QHBoxLayout()
+            self.radiobutton_cpp = QRadioButton('C++')
+            self.radiobutton_cpp.setChecked(True)
+            self.radiobutton_python = QRadioButton('Python')
+            self.layout_lang.addWidget(self.radiobutton_cpp)
+            self.layout_lang.addWidget(self.radiobutton_python)
 
         self.layout_expr = QHBoxLayout()
         self.layout_expr.addWidget(QLabel('Expression to watch'))
@@ -55,7 +56,8 @@ class AddWatchForm(QDialog):
         self.button_hlayout.addWidget(self.button_close)
 
         self.vlayout = QVBoxLayout()
-        self.vlayout.addLayout(self.layout_lang)
+        if not cpponly:
+            self.vlayout.addLayout(self.layout_lang)
         self.vlayout.addLayout(self.layout_expr)
         self.vlayout.addLayout(self.button_hlayout)
 
@@ -272,9 +274,11 @@ class Form(QDialog):
 
     def add_watch(self):
         log('Add watch clicked')
-        add_watch_form = AddWatchForm(parent=self)
+        add_watch_form = AddWatchForm(cpponly=self.cpponly, parent=self)
         if add_watch_form.exec_() == QDialog.Accepted:
-            lang = 'C++' if add_watch_form.radiobutton_cpp.isChecked() else 'Python'
+            lang = 'C++'
+            if not self.cpponly and add_watch_form.radiobutton_python.isChecked():
+                lang = 'Python'
             expr = add_watch_form.lineedit_expr.text()
             self.watches.append( (lang, expr) )
             self.update_watch_widgets()

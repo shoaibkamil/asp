@@ -1,0 +1,22 @@
+In the user interface, what was the difference between the blue and red text?
+
+
+
+In the user interface, what did the blue and red arrows indicate?
+
+
+
+In the first example, can you explain what the program was doing?
+
+
+
+In the second example, can you explain what the program was doing?
+
+
+
+Which debugger did you prefer?
+
+
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+
