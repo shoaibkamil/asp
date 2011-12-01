@@ -15,6 +15,15 @@ from PySide.QtDeclarative import QDeclarativeView
 def log(str):
     print datetime.datetime.now() - start_time, str
 
+class WatchRemover(object):
+    def __init__(self, form, row):
+        self.form = form
+        self.row = row
+
+    def remove_watch(self):
+        self.form.watches.pop(self.row)
+        self.form.update_watch_widgets()
+
 class AddWatchForm(QDialog):
     def __init__(self, parent=None):
         self.fontFamily = "Courier"
@@ -88,8 +97,6 @@ class Form(QDialog):
             self.watches = [x for x in watches if x[0] == 'C++']
         self.watch_layout = QGridLayout()
         self.watch_values = dict()
-        for watch in self.watches:
-            self.add_watch_widgets(watch)
 
         self.button_add_watch = QPushButton("Add watch")
         self.button_add_watch.clicked.connect(self.add_watch)
@@ -119,13 +126,33 @@ class Form(QDialog):
         self.gdb = gdb.gdb(self.python_file_gdb, self.cpp_file, self.cpp_start_line)
         self.pdb = pdb.pdb(self.python_file_pdb, self.python_start_line)
         self.updateView()
+        self.update_watch_widgets()
 
-    def add_watch_widgets(self, watch):
-        self.watch_values[watch] = QLineEdit()
-        row = self.watch_layout.rowCount()
-        self.watch_layout.addWidget(QLabel('<font color="' + self.lang_colors[watch[0]] + '">' + watch[1] + '</font>'), row, 0)
-        self.watch_layout.addWidget(self.watch_values[watch], row, 1)
-        self.watch_layout.addWidget(QLabel('<font color="' + self.lang_colors[watch[0]] + '">' + watch[0] + '</font>'), row, 2)
+    def emptyOutGrid(self, grid):
+        for row in range(0, grid.rowCount()):
+            for col in range(0, grid.columnCount()):
+                item = grid.itemAtPosition(row, col)
+                if item != None:
+                    item.widget().hide()
+                    grid.removeItem(item)
+
+    def update_watch_widgets(self):
+        self.emptyOutGrid(self.watch_layout)
+        self.watch_values = dict()
+        self.watch_removers = []
+        row = 0
+        for watch in self.watches:
+            self.watch_values[watch] = QLineEdit()
+            self.watch_layout.addWidget(QLabel('<font color="' + self.lang_colors[watch[0]] + '">' + watch[1] + '</font>'), row, 0)
+            self.watch_layout.addWidget(self.watch_values[watch], row, 1)
+            self.watch_layout.addWidget(QLabel('<font color="' + self.lang_colors[watch[0]] + '">' + watch[0] + '</font>'), row, 2)
+            button_delete = QToolButton()
+            button_delete.setIcon(QIcon('delete.png'))
+            self.watch_removers.append(WatchRemover(self, row))
+            button_delete.clicked.connect(self.watch_removers[-1].remove_watch)
+            self.watch_layout.addWidget(button_delete, row, 3)
+            row = row + 1
+        self.updateView()
 
     def get_line_from_cpp_line(self, cpp_line):
         current_line = 0
@@ -250,8 +277,7 @@ class Form(QDialog):
             lang = 'C++' if add_watch_form.radiobutton_cpp.isChecked() else 'Python'
             expr = add_watch_form.lineedit_expr.text()
             self.watches.append( (lang, expr) )
-            self.add_watch_widgets(self.watches[-1])
-            self.updateView()
+            self.update_watch_widgets()
             log('Add watch completed, added ' + lang + ', ' + expr)
 
 start_time = datetime.datetime.now()
@@ -292,7 +318,9 @@ class ExampleKernel(StencilKernel):
 @}
 
 in_grid = StencilGrid([5,5])
-in_grid.data = numpy.ones([5,5])
+for x in range(0,5):
+    for y in range(0,5):
+        in_grid.data[x,y] = x + y
 
 out_grid = StencilGrid([5,5])
 ExampleKernel().kernel(in_grid, out_grid)
@@ -308,7 +336,7 @@ ExampleKernel().kernel(in_grid, out_grid)
     # watches = [('C++','x1'), ('C++', 'x2'), ('C++', 'x3'), ('C++', '_my_out_grid[x3]'),
     #            ('Python', 'x'), ('Python', 'y'), ('Python', 'out_grid[x]'), ('Python', 'in_grid[y]')]
     watches = []
-    form = Form(mixedText, 'stencil_kernel_example.py', '/tmp/asp_cache/ca3a79b1ef34c14cdd7df371368ecb01/module.cpp', 7, 'stencil_kernel_example.2.py', ['break 15', 'continue', 's'], next_dict, cpp_offset_lines=5, watches=watches, cpponly=cpponly)
+    form = Form(mixedText, 'stencil_kernel_example.py', '/tmp/asp_cache/ca3a79b1ef34c14cdd7df371368ecb01/module.cpp', 7, 'stencil_kernel_example.2.py', ['break 17', 'continue', 's'], next_dict, cpp_offset_lines=5, watches=watches, cpponly=cpponly)
 elif example_num == 2:
     mixedText = """\
 from stencil_kernel import *
