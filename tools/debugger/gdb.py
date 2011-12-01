@@ -2,11 +2,11 @@ import subprocess
 import re
 
 class gdb(object):
-    def __init__(self):
-        self.process = subprocess.Popen(["PYTHONPATH=../../specializers/stencil:../.. gdb python"],shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd='.')
-        self.process.stdin.write("run stencil_kernel_example.py\n")
-        self.process.stdin.write("break /tmp/asp_cache/9604cf3a1e724389cfd962396444beea/module.cpp:7\n")
-        self.process.stdin.write("run stencil_kernel_example.py\n")
+    def __init__(self, python_file, cpp_file, cpp_start_line):
+        self.process = subprocess.Popen(["PYTHONPATH=stencil:../.. gdb python"],shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd='.')
+        self.process.stdin.write("run " + python_file + "\n")
+        self.process.stdin.write("break " + cpp_file + ":" + str(cpp_start_line) + "\n")
+        self.process.stdin.write("run " + python_file + "\n")
         self.process.stdin.write("delete 0\n")
 
     # Read up to current position in output

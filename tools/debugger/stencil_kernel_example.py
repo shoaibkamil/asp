@@ -12,5 +12,5 @@ in_grid = StencilGrid([5,5])
 in_grid.data = numpy.ones([5,5])
 
 out_grid = StencilGrid([5,5])
-ExampleKernel().kernel(in_grid, out_grid)
+ExampleKernel(inject_failure='loop_off_by_one').kernel(in_grid, out_grid)
 print out_grid

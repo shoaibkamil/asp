@@ -3,16 +3,10 @@ import re
 import os
 
 class pdb(object):
-    def __init__(self):
-#        self.process = subprocess.Popen(["python"],
-#         self.process = subprocess.Popen(["python", "/usr/bin/pdb", "stencil_kernel_example.2.py"],
-#                                         env=os.environ.update({'PYTHONPATH':'../../specializers/stencil:../..'}),
-#                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # self.process = subprocess.Popen(["PYTHONPATH=../../specializers/stencil:../.. python /usr/bin/pdb stencil_kernel_example.2.py"],shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd='.')
-        self.process = subprocess.Popen(["PYTHONPATH=../../specializers/stencil:../.. python -u /usr/bin/pdb stencil_kernel_example.2.py"],shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd='.')
-        self.process.stdin.write("break 15\n")
-        self.process.stdin.write("continue\n")
-        self.process.stdin.write("s\n")
+    def __init__(self, python_file, python_start_line):
+        self.process = subprocess.Popen(["PYTHONPATH=../../specializers/stencil:../.. python -u /usr/bin/pdb " + python_file],shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd='.')
+        for line in python_start_line:
+            self.process.stdin.write(line + "\n")
 
     # Read up to current position in output
     def sync_pos(self):
@@ -30,7 +24,7 @@ class pdb(object):
         while True:
             line = self.process.stdout.readline().strip()
             if len(line) > 0 and line[0] == '>':
-                m = re.match(r'^> (.*)\(([0-9]+)\)(.*)\(\)$', line)
+                m = re.match(r'^> (.*)\(([0-9]+)\)([A-Za-z0-9_]+)\(\)', line)
                 if m:
                     result = dict()
                     result['filename'] = m.group(1)
