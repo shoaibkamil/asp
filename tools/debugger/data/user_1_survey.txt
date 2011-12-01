@@ -1,0 +1,19 @@
+In the user interface, what was the difference between the blue and red text?
+
+Blue text was the python code and red code was the C++ code generated from the python code.
+
+In the user interface, what did the blue and red arrows indicate?
+
+Blue arrow indicated which line of the python code was being executed and red arrows indicated which line of the C++ code was being executed.
+
+In the first example, can you explain what the program was doing?
+
+For each point in the grid, add up the value of some function on each of its neighbors
+
+In the second example, can you explain what the program was doing?
+
+Same thing for points with a distance of 1 or 2
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+
+Don't have much experience with debuggers

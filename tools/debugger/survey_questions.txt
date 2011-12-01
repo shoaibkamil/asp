@@ -1,3 +1,11 @@
+On a scale of 1 to 5, 1 being least, rate your experience with debuggers in general: 
+On a scale of 1 to 5, 1 being least, rate your experience with C++ debuggers: 
+On a scale of 1 to 5, 1 being least, rate your experience with Python debuggers: 
+On a scale of 1 to 5, 1 being least, rate your experience with C++/Python interoperation: 
+On a scale of 1 to 5, 1 being least, rate your experience with the SEJITS platform: 
+
+Short answer questions (brief answers are sufficient):
+
 In the user interface, what was the difference between the blue and red text?
 
 
@@ -14,7 +22,7 @@ In the second example, can you explain what the program was doing?
 
 
 
-Which debugger did you prefer?
+Which interface did you prefer and why?
 
 
 

@@ -21,6 +21,7 @@ class WatchRemover(object):
         self.row = row
 
     def remove_watch(self):
+        log('Removing watch ' + self.form.watches[self.row][0] + ", " + self.form.watches[self.row][1])
         self.form.watches.pop(self.row)
         self.form.update_watch_widgets()
 
@@ -368,10 +369,10 @@ class Kernel(StencilKernel):
 @    npy_double *_my_filter_d = ((npy_double *)PyArray_DATA(filter_d));
 @    npy_double *_my_out_grid = ((npy_double *)PyArray_DATA(out_grid));
        for x in out_img.interior_points():
-@    for (int x1 = 3; (x1 <= 46); x1 = (x1 + 1))
+@    for (int x1 = 1; (x1 <= 48); x1 = (x1 + 1))
 @    {
 @      #pragma ivdep
-@      for (int x2 = 3; (x2 <= 46); x2 = (x2 + 1))
+@      for (int x2 = 1; (x2 <= 48); x2 = (x2 + 1))
 @      {
 @        int x3;
 @        x3 = _out_grid_array_macro(x1, x2);
