@@ -191,8 +191,12 @@ class SpecializedFunction(object):
         self.run_check_funcs.append(run_check_func)
         
         if isinstance(variant_func, str):
-            self.backend.module.add_to_module([cpp_ast.Line(variant_func)])
-            self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
+            if isinstance(self.backend.module, codepy.cuda.CudaModule):#HACK because codepy's CudaModule doesn't have add_to_init()
+                self.backend.module.boost_module.add_to_module([cpp_ast.Line(variant_func)])
+                self.backend.module.boost_module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
+            else:
+                self.backend.module.add_to_module([cpp_ast.Line(variant_func)])
+                self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
         else:
             self.backend.module.add_function(variant_func)
 
@@ -265,9 +269,10 @@ class ASPBackend(object):
     Class to encapsulate a backend for Asp.  A backend is the combination of a CodePy module
     (which contains the actual functions) and a CodePy compiler toolchain.
     """
-    def __init__(self, module, toolchain, cache_dir):
+    def __init__(self, module, toolchain, cache_dir, host_toolchain=None):
         self.module = module
         self.toolchain = toolchain
+        self.host_toolchain = host_toolchain
         self.compiled_module = None
         self.cache_dir = cache_dir
         self.dirty = True
@@ -280,8 +285,8 @@ class ASPBackend(object):
         """
         if not self.compilable: return
         if isinstance(self.module, codepy.cuda.CudaModule):
-            self.compiled_module = self.backends["cuda"].module.compile(self.module.boost_module,
-                                                                        self.backends["cuda"].toolchain,
+            self.compiled_module = self.module.compile(self.host_toolchain,
+                                                                        self.toolchain,
                                                                         debug=True, cache_dir=self.cache_dir)
         else:
             self.compiled_module = self.module.compile(self.toolchain,
@@ -332,10 +337,6 @@ class ASPModule(object):
             if not os.access(self.cache_dir, os.F_OK):
                 os.mkdir(self.cache_dir)
 
-        self.dirty = False
-        self.timing_enabled = True
-        self.use_cuda = use_cuda
-
         self.backends = {}
         self.backends["c++"] = ASPBackend(codepy.bpl.BoostPythonModule(),
                                           codepy.toolchain.guess_toolchain(),
@@ -343,9 +344,12 @@ class ASPModule(object):
         if use_cuda:
             self.backends["cuda"] = ASPBackend(codepy.cuda.CudaModule(self.backends["c++"].module),
                                                codepy.toolchain.guess_nvcc_toolchain(),
-                                               self.cache_dir)
-            self.backends["cuda"].module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
-
+                                               self.cache_dir,
+                                               self.backends["c++"].toolchain)
+            self.backends['cuda'].module.add_to_preamble([cpp_ast.Include('cuda.h', True)]) # codepy.CudaModule doesn't do this automatically for some reason
+            self.backends['cuda'].module.add_to_preamble([cpp_ast.Include('cuda_runtime.h', True)]) # codepy.CudaModule doesn't do this automatically for some reason
+            self.backends['c++'].module.add_to_preamble([cpp_ast.Include('cuda_runtime.h', True)]) # codepy.CudaModule doesn't do this automatically for some reason
+            self.backends["cuda"].toolchain.cflags += ["-shared"]
         if use_cilk:
             self.backends["cilk"] = self.backends["c++"]
             self.backends["cilk"].toolchain.cc = "icc"
@@ -355,12 +359,6 @@ class ASPModule(object):
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[], backend="c++"):
         self.backends[backend].toolchain.add_library(feature, include_dirs, library_dirs, libraries)
         
-    def add_cuda_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
-        """
-        Deprecated.  Use add_library(..., backend="cuda")
-        """
-        self.add_library(feature, include_dirs, library_dirs, libraries, backend="cuda")
-
     def add_cuda_arch_spec(self, arch):
         archflag = '-arch='
         if 'sm_' not in arch: archflag += 'sm_' 
@@ -374,36 +372,23 @@ class ASPModule(object):
         """
         self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, brackets)])
 
-    def add_cuda_header(self, include_file):
-        """
-        Deprecated.  Use add_header(..., backend="cuda").
-        """
-        self.add_header(include_file, backend="cuda")
-
     def add_to_preamble(self, pa, backend="c++"):
         if isinstance(pa, str):
             pa = [cpp_ast.Line(pa)]
         self.backends[backend].module.add_to_preamble(pa)
 
-    def add_to_cuda_preamble(self, pa):
-        """
-        Deprecated.  Use add_to_preamble(..., backend="cuda").
-        """
-        if isinstance(pa, str):
-            pa = [cpp_ast.Line(pa)]
-        self.add_to_preamble(pa, backend="cuda")
-        
     def add_to_init(self, stmt, backend="c++"):
         if isinstance(stmt, str):
             stmt = [cpp_ast.Line(stmt)]
-        self.backends[backend].module.add_to_init(stmt)
-
-    def add_to_cuda_module(self, block):
-        #FIXME: figure out use case for this and replace
+        if backend == "cuda":
+            self.backends[backend].module.boost_module.add_to_init(stmt) #HACK because codepy's CudaModule doesn't have add_to_init()
+        else:
+            self.backends[backend].module.add_to_init(stmt)
+        
+    def add_to_module(self, block, backend="c++"):
         if isinstance(block, str):
             block = [cpp_ast.Line(block)]
-        self.backends["cuda"].module.add_to_module(block)
-        
+        self.backends[backend].module.add_to_module(block)
 
     def add_function(self, fname, funcs, variant_names=[], run_check_funcs=[], key_function=None, 
                      backend="c++"):
@@ -430,13 +415,9 @@ class ASPModule(object):
 
     def __getattr__(self, name):
         if name in self.specialized_functions:
-            if self.dirty:
-                self.compile()
             return self.specialized_functions[name]
-        elif name in self.helper_method_names:
-            return self.helper_func(name)
         else:
-            raise AttributeError("No method %s found; did you add it?" % name)
+            raise AttributeError("No method %s found; did you add it to this ASPModule?" % name)
 
     def generate(self):
         """
@@ -445,6 +426,7 @@ class ASPModule(object):
         """
         src = ""
         for x in self.backends.keys():
+            src += "\nSource code for backend '" + x + "':\n" 
             src += str(self.backends[x].module.generate())
 
         return src
