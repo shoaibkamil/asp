@@ -56,7 +56,17 @@ class CPUInfoTests(unittest.TestCase):
         compilers = PlatformDetector().get_compilers()
         self.assertTrue("gcc" in compilers)
 
-        
+class GPUInfoTest(unittest.TestCase):
+
+    def test_properties(self):
+        pd = PlatformDetector()
+        compilers = pd.get_compilers()
+        if "nvcc" in compilers and pd.get_num_cuda_devices() > 0:
+            info = {}
+            pd.set_cuda_device(0)
+            info = pd.get_cuda_info()
+            self.assertTrue(len(info) > 0)
+        else: self.assertTrue(True) # Undesirable to have the test fail on machinces without GPUs
 
 if __name__ == '__main__':
     unittest.main()
