@@ -298,8 +298,14 @@ class ASPModule(object):
         if cache_dir:
             self.cache_dir = cache_dir
         else:
+            # create a per-user cache directory
             import tempfile, os
-            self.cache_dir = tempfile.gettempdir() + "/asp_cache"
+            if os.name == 'nt':
+                username = os.environ['USERNAME']
+            else:
+                username = os.environ['LOGNAME']
+
+            self.cache_dir = tempfile.gettempdir() + "/asp_cache_" + username
             if not os.access(self.cache_dir, os.F_OK):
                 os.mkdir(self.cache_dir)
 
