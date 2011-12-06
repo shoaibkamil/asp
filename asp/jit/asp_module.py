@@ -338,8 +338,12 @@ class ASPModule(object):
         archflag += arch
         self.backends["cuda"].toolchain.cflags += [archflag]
 
-    def add_header(self, include_file, backend="c++"):
-        self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, False)])
+    def add_header(self, include_file, brackets=False, backend="c++"):
+        """
+        Add a header (e.g. #include "foo.h") to the module source file.
+        With brackets=True, it will be C++-style #include <foo> instead.
+        """
+        self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, brackets)])
 
     def add_cuda_header(self, include_file):
         """
