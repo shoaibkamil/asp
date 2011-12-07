@@ -1,3 +1,0 @@
-#!/bin/bash
-convert -size $2x$3 -depth 8 gray:$1 /tmp/temp.tiff
-qiv /tmp/temp.tiff
