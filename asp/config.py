@@ -86,6 +86,7 @@ class PlatformDetector(object):
             info[key] = self.cuda_util_mod.device_get_attribute(attr, d)
         info['total_mem']  = self.cuda_util_mod.device_total_mem(d)
         version = self.cuda_util_mod.device_compute_capability(d)
+        info['capability'] = version
         info['supports_int32_atomics_in_global'] = False if version in [(1,0)] else True
         info['supports_int32_atomics_in_shared'] = False if version in [(1,0),(1,1)] else True
         info['supports_int64_atomics_in_global'] = False if version in [(1,0),(1,1)] else True

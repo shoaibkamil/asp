@@ -65,7 +65,7 @@ class GPUInfoTest(unittest.TestCase):
             info = {}
             pd.set_cuda_device(0)
             info = pd.get_cuda_info()
-            self.assertTrue(len(info) > 0)
+            self.assertTrue(info['total_mem'] > 0)
         else: self.assertTrue(True) # Undesirable to have the test fail on machinces without GPUs
 
 if __name__ == '__main__':
