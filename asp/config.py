@@ -1,4 +1,5 @@
 import re
+import yaml
 
 class CompilerDetector(object):
     """
