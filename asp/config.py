@@ -1,4 +1,5 @@
 import re
+import yaml
 
 class CompilerDetector(object):
     """
@@ -58,3 +59,20 @@ class PlatformDetector(object):
         
     def read_cpu_info(self):
         return open("/proc/cpuinfo", "r").readlines()
+
+
+class Config(object):
+
+    def __init__(self):
+        self.stream = open('configs.yaml')
+        self.configs = yaml.load(self.stream)
+        #translates from YAML file to Python dictionary
+
+    # given a key, return corresponding configs
+    # add functionality to iterate keys? 
+    def getOptions(self, key):
+        try:
+            return self.configs[key]
+        except KeyError:
+            print "Not a valid configuration key"
+
