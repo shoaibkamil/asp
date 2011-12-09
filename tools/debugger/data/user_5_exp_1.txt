@@ -1,0 +1,77 @@
+0:00:00.000020 Starting
+0:02:11.361766 Add watch clicked
+0:02:23.995770 Add watch completed, added Python, in_grid
+0:02:26.263892 Add watch clicked
+0:02:31.684458 Add watch completed, added Python, out_grid
+0:02:33.310601 Add watch clicked
+0:02:39.728336 Add watch completed, added C++, x1
+0:02:43.131373 Add watch clicked
+0:02:45.748207 Add watch completed, added C++, x2w
+0:02:49.639183 Removing watch C++, x2w
+0:02:50.442355 Add watch clicked
+0:02:54.020103 Add watch completed, added C++, x2
+0:02:55.686680 Add watch clicked
+0:02:58.574634 Add watch completed, added C++, x3
+0:03:01.303676 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:03:03.049247 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:03:04.378568 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:03:06.264651 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:03:11.647691 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:03:48.671351 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:03:52.281307 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:04:00.199240 Add watch clicked
+0:04:05.951224 Add watch completed, added C++, my_in_grid
+0:04:08.059461 Add watch clicked
+0:04:19.960364 Add watch completed, added C++, _my_in_grid
+0:04:23.017007 Removing watch C++, my_in_grid
+0:04:24.454507 Add watch clicked
+0:04:34.290189 Add watch completed, added C++, _my_in_grid[12]
+0:04:52.224216 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:04:54.467928 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:05:11.836971 Add watch clicked
+0:05:19.089113 Add watch completed, added C++, _my_out_grid[x3]
+0:05:21.554465 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:05:22.818635 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:05:24.388212 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:05:24.905694 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:05:26.987743 Restart clicked
+0:05:32.004402 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:05:32.498864 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:05:52.569233 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:05:53.751875 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:07:28.534999 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:08:00.456727 Add watch clicked
+0:08:07.288349 Add watch completed, added C++, _my_in_grid[x3]
+0:08:11.943104 Removing watch C++, _my_in_grid[12]
+0:08:18.487226 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:08:19.017226 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:08:45.668376 Restart clicked
+0:08:47.723857 Restart clicked
+0:08:50.253132 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:08:50.341829 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:08:51.071488 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:08:51.600272 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:08:52.538737 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:09:37.554654 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:09:39.518217 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:09:43.447976 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:09:44.048185 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:09:45.238001 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:09:45.732474 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:09:46.915681 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:09:47.330873 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:09:51.616191 Restart clicked
+0:09:54.092257 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:09:54.252981 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:09:54.625861 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:09:54.993015 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:09:55.418552 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:09:57.114198 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:09:58.110267 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:09:58.957891 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:09:59.595369 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:10:00.476196 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:10:00.857573 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:10:04.175379 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:10:06.425652 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:11:21.965007 Exiting with result 0

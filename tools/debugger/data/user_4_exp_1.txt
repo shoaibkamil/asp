@@ -1,0 +1,154 @@
+0:00:00.000020 Starting
+0:00:33.313823 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:01:00.201000 Step over clicked, moved from lines (5,5) to lines (5,6)
+0:01:01.132649 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:01:02.731087 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:01:16.017211 Add watch clicked
+0:01:20.865295 Add watch completed, added C++, x3
+0:01:23.540180 Add watch clicked
+0:01:27.046577 Add watch completed, added C++, x2
+0:01:28.714552 Add watch clicked
+0:01:30.320795 Add watch completed, added C++, x1
+0:01:44.113054 Add watch clicked
+0:02:00.669759 Add watch completed, added C++, _my_out_grid[x3]
+0:02:28.301685 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:02:31.812644 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:02:33.379627 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:02:35.415039 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:02:42.046346 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:02:43.636527 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:02:44.349443 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:02:44.855296 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:02:45.353463 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:02:45.949516 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:02:47.549504 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:03:27.826915 Add watch clicked
+0:04:02.162532 Add watch clicked
+0:04:05.406857 Add watch completed, added C++, _my_in_grid[_in_grid_array_macro((x1 + 1), (x2 + 0))]
+0:04:07.326437 Add watch clicked
+0:04:13.097027 Add watch completed, added C++, _my_in_grid[_in_grid_array_macro((x1 - 1), (x2 + 0))]
+0:04:14.527381 Add watch clicked
+0:04:23.159646 Add watch completed, added C++, _my_in_grid[_in_grid_array_macro((x1 + 0), (x2 + 1))]
+0:04:24.234025 Add watch clicked
+0:04:31.064582 Add watch completed, added C++, _my_in_grid[_in_grid_array_macro((x1 + 0), (x2 + -1))]
+0:04:34.353660 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:04:38.571392 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:04:47.517872 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:05:03.299291 Removing watch C++, _my_in_grid[_in_grid_array_macro((x1 + 1), (x2 + 0))]
+0:05:03.999282 Removing watch C++, _my_in_grid[_in_grid_array_macro((x1 - 1), (x2 + 0))]
+0:05:04.477625 Removing watch C++, _my_in_grid[_in_grid_array_macro((x1 + 0), (x2 + 1))]
+0:05:04.949883 Removing watch C++, _my_in_grid[_in_grid_array_macro((x1 + 0), (x2 + -1))]
+0:05:05.649730 Add watch clicked
+0:05:33.340157 Add watch completed, added C++, _my_in_grid[x2 + 5 * (x1 + 1)]
+0:05:35.314325 Add watch clicked
+0:06:04.893171 Add watch completed, added C++, _my_in_grid[(x2) + 5 * (x1 - 1)]
+0:06:06.575444 Add watch clicked
+0:06:18.668731 Add watch completed, added C++, _my_in_grid[(x2 + 1) + 5 * (x1)]
+0:06:20.058600 Add watch clicked
+0:06:28.091180 Add watch completed, added C++, _my_in_grid[(x2 - 1) + 5 * (x1 )]
+0:06:39.853814 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:06:41.089819 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:06:42.021945 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:06:48.672690 Step over clicked, moved from lines (5,9) to lines (5,6)
+0:06:50.012266 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:06:53.070734 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:06:58.237200 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:07:00.900953 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:07:02.087872 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:07:03.699811 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:07:07.029281 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:07:09.603010 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:07:10.232119 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:07:10.747426 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:07:11.196539 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:07:11.641295 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:07:11.977373 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:07:12.917695 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:07:13.337792 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:07:13.903429 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:07:14.396745 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:07:14.917695 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:07:33.471340 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:08:02.981928 Restart clicked
+0:08:09.400973 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:08:10.013387 Step over clicked, moved from lines (5,5) to lines (5,6)
+0:08:10.109185 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:08:12.577906 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:08:49.441840 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:08:55.407551 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:08:56.973851 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:08:58.165283 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:09:15.635780 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:09:16.417137 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:09:18.694289 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:09:20.002891 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:09:20.833064 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:09:21.534407 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:09:21.918006 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:09:22.470796 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:11:00.537111 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:11:01.021368 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:11:01.702725 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:11:02.028467 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:11:02.277484 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:11:02.589923 Step over clicked, moved from lines (5,9) to lines (5,6)
+0:11:03.200839 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:11:04.052746 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:11:10.697140 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:11:11.331895 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:11:11.748731 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:11:11.990868 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:11:12.371461 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:11:12.705956 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:11:13.003895 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:11:28.033302 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:11:28.436609 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:11:28.618338 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:11:28.833014 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:11:29.119271 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:11:59.867750 Restart clicked
+0:12:02.576213 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:12:03.954653 Step over clicked, moved from lines (5,5) to lines (5,6)
+0:12:04.426973 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:12:05.115363 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:12:07.347012 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:12:07.544957 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:12:07.889739 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:12:08.195045 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:12:08.687152 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:12:09.165423 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:12:10.006984 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:12:10.191118 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:12:10.374339 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:12:10.548893 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:12:10.907167 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:12:11.268843 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:14:40.721603 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:14:42.270926 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:14:44.564772 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:14:47.026418 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:14:47.406010 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:14:48.006145 Step over clicked, moved from lines (5,9) to lines (5,6)
+0:14:48.444958 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:14:48.946165 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:14:49.628480 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:14:50.083491 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:14:52.645239 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:14:52.957760 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:14:53.330543 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:14:53.580380 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:14:53.860059 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:14:54.157158 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:14:54.617657 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:14:54.858689 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:14:55.161628 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:14:55.428452 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:14:55.731268 Step over clicked, moved from lines (5,12) to lines (5,13)
+0:14:56.092658 Step over clicked, moved from lines (5,13) to lines (5,14)
+0:14:56.384089 Step over clicked, moved from lines (5,14) to lines (5,15)
+0:14:56.714272 Step over clicked, moved from lines (5,15) to lines (5,16)
+0:14:57.177853 Step over clicked, moved from lines (5,16) to lines (5,9)
+0:14:57.647144 Step over clicked, moved from lines (5,9) to lines (5,6)
+0:14:58.101492 Step over clicked, moved from lines (5,6) to lines (5,9)
+0:14:58.562194 Step over clicked, moved from lines (5,9) to lines (5,12)
+0:15:20.768030 Exiting with result 0

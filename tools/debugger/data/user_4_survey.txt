@@ -1,0 +1,38 @@
+On a scale of 1 to 5, 1 being least, rate your experience with debuggers in general: 4
+On a scale of 1 to 5, 1 being least, rate your experience with C++ debuggers: 4
+On a scale of 1 to 5, 1 being least, rate your experience with Python debuggers: 3
+On a scale of 1 to 5, 1 being least, rate your experience with C++/Python interoperation: 4
+On a scale of 1 to 5, 1 being least, rate your experience with the SEJITS platform: 4
+
+Short answer questions (brief answers are sufficient):
+
+In the user interface, what was the difference between the blue and red text?
+
+The blue text was the original Python code, red text was the C++ implementation of the Python code
+
+
+In the user interface, what did the blue and red arrows indicate?
+
+They indicated which line the debugger was currently on in the Python and C++ code respectively.
+
+
+In the first example, can you explain what the program was doing?
+
+It was iterating over a 5x5 matrix and computing the sum of the four neighboring elements
+
+
+In the second example, can you explain what the program was doing?
+
+It was iterating over the pixels of an image and computing a Gaussian blur using the neighboring 8 elements.
+
+
+
+Which interface did you prefer and why?
+
+The second interface was much easier to use because I was able to see the values of the Python expressions. In addition, since Python is interpreted, I could use any valid Python expression as a watch variable, so that was more convenient.
+
+
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+
+Setting breakpoints based on lines, functions. Setting watch flags on certain values of specific variables. Using backtraces and moving up and down the stack frames. 

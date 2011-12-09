@@ -1,0 +1,37 @@
+On a scale of 1 to 5, 1 being least, rate your experience with debuggers in general: 3
+On a scale of 1 to 5, 1 being least, rate your experience with C++ debuggers: 3
+On a scale of 1 to 5, 1 being least, rate your experience with Python debuggers: 1
+On a scale of 1 to 5, 1 being least, rate your experience with C++/Python interoperation: 1
+On a scale of 1 to 5, 1 being least, rate your experience with the SEJITS platform: 1
+
+Short answer questions (brief answers are sufficient):
+
+In the user interface, what was the difference between the blue and red text?
+
+One was the Python code, the other was the C++.  I believe Python was blue.
+
+In the user interface, what did the blue and red arrows indicate?
+
+The current instruction at which you were stopped in the two souce languages.
+
+In the first example, can you explain what the program was doing?
+
+It was doing some sort of stencil operation.  If I recall, it was adding all of the four cardinal direction neighbors together to get the new value.
+
+In the second example, can you explain what the program was doing?
+
+There was a more complicated stencil that involved looping over all nine neighbors once plus the four cardinal neighbors a second time and adding some complicated expressions based on those.  I have no idea what the rest of the Python code did, although it probably used a Gaussian distribution somehow.  And it painted stuff.
+
+Which interface did you prefer and why?
+
+It certainly helped to see the Python stuff.  Part of that might have been because the C++ debugger wasn't as good, i.e., didn't respect macros and you couldn't see a whole array at a time.  So just using Python gave you more information: one breakpoint could see a whole array row, while that would take many C++ breakpoints.
+
+Beyond that, though, it probably helped to see the correspondence, since seeing the Python variables lets you understand what the code is trying to do in addition to what the C++ is actually doing.
+
+One annoying thing about the Python debugger was that it took longer to step over the code.  For example, it took two clicks to go to the next line of the C++ code (that was the unrolled loop) since one simply advanced the Python line but not the C++ line.  In the C++ debugger, it was easier to step over each line.
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+
+Seeing the entire memory/locals instead of having to set watches to see anything.  For example, in the C++ code, I wanted to look at all the neighbors, which would have required setting a lot of ugly watch points.
+Minor things: seeing entire Python/C++ arrays, easier scrolling, macros in C++, etc.
+Breakpoints in theory, although these were both short programs.
