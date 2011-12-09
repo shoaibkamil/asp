@@ -1,5 +1,0 @@
-compilers:
-  - cilk
-  - icc
-  - cuda
-  - gcc

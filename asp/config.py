@@ -1,5 +1,6 @@
 import re
 import yaml
+import os
 
 class CompilerDetector(object):
     """
@@ -61,11 +62,16 @@ class PlatformDetector(object):
         return open("/proc/cpuinfo", "r").readlines()
 
 
-class Config(object):
+class ConfigReader(object):
 
     def __init__(self):
-        self.stream = open('configs.yaml')
-        self.configs = yaml.load(self.stream)
+        try:
+            self.stream = open(os.path.expanduser("~")+'/.asp_config.yml')
+            self.configs = yaml.load(self.stream)
+        except:
+            print "No configuration file ~/.asp_config.yml found."
+            self.configs = {}
+            
         #translates from YAML file to Python dictionary
 
     # given a key, return corresponding configs
@@ -74,5 +80,6 @@ class Config(object):
         try:
             return self.configs[key]
         except KeyError:
-            print "Not a valid configuration key"
+            print "Configuration key %s not found" % key
+            return None
 

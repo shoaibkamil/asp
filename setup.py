@@ -41,7 +41,9 @@ setup(name="asp",
         "unittest2",
         "mako",
         "mock",
-        "discover"
+        "discover",
+        "yaml"
+
           ],
 
 
