@@ -16,8 +16,15 @@ class ASPDB(object):
 
         if persistent:
             # create db file or load db
+            # create a per-user cache directory
             import tempfile, os
-            self.cache_dir = tempfile.gettempdir() + "/asp_cache"
+            if os.name == 'nt':
+                username = os.environ['USERNAME']
+            else:
+                username = os.environ['LOGNAME']
+
+            self.cache_dir = tempfile.gettempdir() + "/asp_cache_" + username
+
             if not os.access(self.cache_dir, os.F_OK):
                 os.mkdir(self.cache_dir)
             self.db_file = self.cache_dir + "/aspdb.sqlite3"
@@ -119,39 +126,32 @@ class ASPDB(object):
 class SpecializedFunction(object):
     """
     Class that encapsulates a function that is specialized.  It keeps track of variants,
-    their timing information, which backend, and a function to determine if a variant
-    can run as well as a function to generate keys from parameters.
+    their timing information, which backend, functions to determine if a variant
+    can run, as well as a function to generate keys from parameters.
 
-    The signature for run_check_function is run(self, variant_name, *args, **kwargs).
+    The signature for any run_check function is run(*args, **kwargs).
     The signature for the key function is key(self, *args, **kwargs), where the args/kwargs are
     what are passed to the specialized function.
 
     """
     
-    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], run_check_function=None, 
+    def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], run_check_funcs=[], 
                  key_function=None):
         self.name = name
         self.backend = backend
         self.db = db
         self.variant_names = []
         self.variant_funcs = []
-        self.variant_times = {}
+        self.run_check_funcs = []
+        
+        if variant_names != [] and run_check_funcs == []:
+            run_check_funcs = [lambda *args,**kwargs: True]*len(variant_names)
         
         for x in xrange(len(variant_names)):
-            self.add_variant(variant_names[x], variant_funcs[x])
-
-        if run_check_function:
-            self.run_check = run_check_function
+            self.add_variant(variant_names[x], variant_funcs[x], run_check_funcs[x])
 
         if key_function:
             self.key = key_function
-
-    def run_check(self, variant_name, *args, **kwargs):
-        """
-        Given a variant, check if it can run.  This should be overridden if certain variants can only run
-        for certain input values.
-        """
-        return True
 
     def key(self, *args, **kwargs):
         """
@@ -162,16 +162,18 @@ class SpecializedFunction(object):
         return hashlib.md5(str(args)+str(kwargs)).hexdigest()
 
 
-    def add_variant(self, variant_name, variant_func):
+    def add_variant(self, variant_name, variant_func, run_check_func=lambda *args,**kwargs: True):
         """
         Add a variant of this function.  Must have same call signature.  Variant names must be unique.
         The variant_func parameter should be a CodePy Function object or a string defining the function.
+        The run_check_func parameter should be a lambda function with signature run(*args,**kwargs).
         """
         if variant_name in self.variant_names:
             raise Exception("Attempting to add a variant with an already existing name %s to %s" %
                             (variant_name, self.name))
         self.variant_names.append(variant_name)
         self.variant_funcs.append(variant_func)
+        self.run_check_funcs.append(run_check_func)
         
         if isinstance(variant_func, str):
             self.backend.module.add_to_module([cpp_ast.Line(variant_func)])
@@ -187,7 +189,7 @@ class SpecializedFunction(object):
         fastest variant.
         """
         # get variants that have run
-        already_run = self.db.get(self.name, key=self.key(args, kwargs))
+        already_run = self.db.get(self.name, key=self.key(*args, **kwargs))
 
         if already_run == []:
             already_run_variant_names = []
@@ -199,7 +201,7 @@ class SpecializedFunction(object):
 
         # of these candidates, which variants *can* run
         for x in candidates:
-            if self.run_check(x, args, kwargs):
+            if self.run_check_funcs[self.variant_names.index(x)](*args, **kwargs):
                 return x
 
         # if none left, pick fastest from those that have already run
@@ -220,7 +222,10 @@ class SpecializedFunction(object):
         ret_val = self.backend.get_compiled_function(which).__call__(*args, **kwargs)
         elapsed = time.time() - start
         #FIXME: where should key function live?
+        print "doing update with %s, %s, %s, %s" % (self.name, which, self.key(args, kwargs), elapsed)
         self.db.update(self.name, which, self.key(args, kwargs), elapsed)
+        #TODO: Should we use db.update instead of db.insert to avoid O(N) ops on already_run_variant_names = map(lambda x: x[1], already_run)?
+
         return ret_val
 
 class HelperFunction(SpecializedFunction):
@@ -231,7 +236,7 @@ class HelperFunction(SpecializedFunction):
     def __init__(self, name, func, backend):
         self.name = name
         self.backend = backend
-        self.variant_names, self.variant_funcs = [], []
+        self.variant_names, self.variant_funcs, self.run_check_funcs = [], [], []
         self.add_variant(name, func)
 
     def __call__(self, *args, **kwargs):
@@ -250,12 +255,14 @@ class ASPBackend(object):
         self.compiled_module = None
         self.cache_dir = cache_dir
         self.dirty = True
+        self.compilable = True
 
     def compile(self):
         """
         Trigger a compile of this backend.  Note that CUDA needs to know about the C++
         backend as well.
         """
+        if not self.compilable: return
         if isinstance(self.module, codepy.cuda.CudaModule):
             self.compiled_module = self.backends["cuda"].module.compile(self.module.boost_module,
                                                                         self.backends["cuda"].toolchain,
@@ -382,7 +389,7 @@ class ASPModule(object):
         self.backends["cuda"].module.add_to_module(block)
         
 
-    def add_function(self, fname, funcs, variant_names=None, run_check_function=None, key_function=None, 
+    def add_function(self, fname, funcs, variant_names=[], run_check_funcs=[], key_function=None, 
                      backend="c++"):
         """
         Add a specialized function to the Asp module.  funcs can be a list of variants, but then
@@ -395,7 +402,7 @@ class ASPModule(object):
 
         self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
                                                                 variant_funcs=funcs, 
-                                                                run_check_function=run_check_function,
+                                                                run_check_funcs=run_check_funcs,
                                                                 key_function=key_function)
 
     def add_helper_function(self, fname, func, backend="c++"):

@@ -10,7 +10,6 @@ class TimerTest(unittest.TestCase):
 #         mod.add_function("void test(){;;;;}", "test")
 # #        mod.test()
 #         self.failUnless("test" in mod.times.keys())
-
        
 class ASPDBTests(unittest.TestCase):
     def test_creating_db(self):
@@ -265,13 +264,25 @@ class MultipleFuncTests(unittest.TestCase):
 
     def test_running_multiple_variants(self):
         mod = asp_module.ASPModule()
-        mod = asp_module.ASPModule()
-        mod.add_function("foo", ["void foo_1(){};", "void foo_2(){};"],
+        mod.add_function("foo", ["void foo_1(){printf(\"running foo1\\n\");};", 
+                                 "void foo_2(){printf(\"running foo2\\n\");};"],
                          ["foo_1", "foo_2"])
         mod.foo()
         mod.foo()
 
         self.assertEqual(len(mod.db.get("foo")), 2)
+
+    def test_running_variants_with_unrunnable_inputs(self):
+        mod = asp_module.ASPModule()
+        mod.add_function("foo", ["void foo_1(int a){};", "void foo_2(int a){};"],
+                         ["foo_1", "foo_2"], [lambda *args,**kwargs: True, lambda *args,**kwargs: args[0] < 2])
+        mod.foo(1)
+        mod.foo(1)
+        mod.foo(10)
+        mod.foo(10)
+        self.assertEqual(len(filter(lambda x: x[1]==u'foo_1',mod.db.get("foo"))),3)
+
+
 """
 
 
