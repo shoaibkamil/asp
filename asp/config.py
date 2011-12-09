@@ -63,7 +63,18 @@ class PlatformDetector(object):
 
 
 class ConfigReader(object):
+    """
+    Interface for reading a per-user configuration file in YAML format.  The
+    config file lives in ~/.asp_config.yml (on windows, ~ is equivalent to 
+    \Users\<current user>).  The format of the file should contain a specializer's
+    settings in its own hash.  E.g.:
+    specializer_foo:
+     - setting one
+     - setting two
+    specializer bar:
+     - setting etc
 
+    """
     def __init__(self):
         try:
             self.stream = open(os.path.expanduser("~")+'/.asp_config.yml')
@@ -76,7 +87,7 @@ class ConfigReader(object):
 
     # given a key, return corresponding configs
     # add functionality to iterate keys? 
-    def getOptions(self, key):
+    def get_option(self, key):
         try:
             return self.configs[key]
         except KeyError:
