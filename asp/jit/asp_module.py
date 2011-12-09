@@ -298,8 +298,14 @@ class ASPModule(object):
         if cache_dir:
             self.cache_dir = cache_dir
         else:
+            # create a per-user cache directory
             import tempfile, os
-            self.cache_dir = tempfile.gettempdir() + "/asp_cache"
+            if os.name == 'nt':
+                username = os.environ['USERNAME']
+            else:
+                username = os.environ['LOGNAME']
+
+            self.cache_dir = tempfile.gettempdir() + "/asp_cache_" + username
             if not os.access(self.cache_dir, os.F_OK):
                 os.mkdir(self.cache_dir)
 
@@ -338,8 +344,12 @@ class ASPModule(object):
         archflag += arch
         self.backends["cuda"].toolchain.cflags += [archflag]
 
-    def add_header(self, include_file, backend="c++"):
-        self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, False)])
+    def add_header(self, include_file, brackets=False, backend="c++"):
+        """
+        Add a header (e.g. #include "foo.h") to the module source file.
+        With brackets=True, it will be C++-style #include <foo> instead.
+        """
+        self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, brackets)])
 
     def add_cuda_header(self, include_file):
         """
