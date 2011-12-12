@@ -42,7 +42,7 @@ setup(name="asp",
         "mako",
         "mock",
         "discover",
-        "yaml"
+        "PyYAML"
 
           ],
 
