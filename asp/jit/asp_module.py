@@ -220,7 +220,7 @@ class SpecializedFunction(object):
         ret_val = self.backend.get_compiled_function(which).__call__(*args, **kwargs)
         elapsed = time.time() - start
         #FIXME: where should key function live?
-        self.db.insert(self.name, which, self.key(args, kwargs), elapsed)
+        self.db.update(self.name, which, self.key(args, kwargs), elapsed)
         return ret_val
 
 class HelperFunction(SpecializedFunction):
