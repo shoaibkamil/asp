@@ -69,10 +69,10 @@ class ConfigReader(object):
     \Users\<current user>).  The format of the file should contain a specializer's
     settings in its own hash.  E.g.:
     specializer_foo:
-     - setting one
-     - setting two
-    specializer bar:
-     - setting etc
+      setting_one: value
+      setting_two: value
+    specializer_bar:
+      setting_etc: value
 
     """
     def __init__(self):
