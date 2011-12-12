@@ -1,0 +1,31 @@
+On a scale of 1 to 5, 1 being least, rate your experience with debuggers in general: 3-4
+On a scale of 1 to 5, 1 being least, rate your experience with C++ debuggers: 4
+On a scale of 1 to 5, 1 being least, rate your experience with Python debuggers: 1 
+On a scale of 1 to 5, 1 being least, rate your experience with C++/Python interoperation: 2-3 
+On a scale of 1 to 5, 1 being least, rate your experience with the SEJITS platform: 2-3
+
+Short answer questions (brief answers are sufficient):
+
+In the user interface, what was the difference between the blue and red text?
+The language it was in.  Blue = python
+
+
+In the user interface, what did the blue and red arrows indicate?
+Debug point in each language.  
+
+
+In the first example, can you explain what the program was doing?
+For all cells not on the edge of the grid, compute a value based on it's neighbors.  
+
+
+In the second example, can you explain what the program was doing?
+Not really.
+
+
+
+Which interface did you prefer and why?
+C++ + Python, but the examples were unfair.  
+
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+None.

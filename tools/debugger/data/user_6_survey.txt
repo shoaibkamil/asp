@@ -1,0 +1,35 @@
+On a scale of 1 to 5, 1 being least, rate your experience with debuggers in general: 2
+On a scale of 1 to 5, 1 being least, rate your experience with C++ debuggers: 3
+On a scale of 1 to 5, 1 being least, rate your experience with Python debuggers: 1
+On a scale of 1 to 5, 1 being least, rate your experience with C++/Python interoperation: 4
+On a scale of 1 to 5, 1 being least, rate your experience with the SEJITS platform: 4
+
+Short answer questions (brief answers are sufficient):
+
+In the user interface, what was the difference between the blue and red text?
+Source and evaluated watchpoints for python vs. c++.
+
+
+In the user interface, what did the blue and red arrows indicate?
+Where the execution currently was for python and c++.
+
+
+In the first example, can you explain what the program was doing?
+It computes the sum of the cardinal neighbors of each interior point.
+
+
+In the second example, can you explain what the program was doing?
+It applied two scaling filters to the neighbors of the interior input points. In this case, neighbors has some duplicates, and it has the 4 cardinal neighbors plus the default 9-pt stencil.
+
+
+Which interface did you prefer and why?
+The interface with both C++/Python was more useful. Highlighting the text by language allowed me to quickly pick out the Python to read the input specification. The ability to evaluate the Python also helped me 
+in understanding what correct behavior would be.
+
+
+If you had been able to use your favorite debugger, what additional debugger features would you have considered using?
+Some sort of ability to see the values of a watch over time.
+Breakpoints, especially conditional
+Run (to next breakpoint or end)
+Back one step
+value of all local variables in current frame
