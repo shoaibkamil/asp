@@ -1,0 +1,52 @@
+0:00:00.000020 Starting
+0:08:27.215954 Add watch clicked
+0:08:34.194005 Add watch completed, added C++, x1
+0:08:36.263990 Add watch clicked
+0:08:37.681405 Add watch completed, added C++, x2
+0:08:43.228118 Add watch clicked
+0:08:44.818760 Add watch completed, added C++, x3
+0:08:48.975754 Step over clicked, moved from lines (13,6) to lines (13,7)
+0:08:49.815250 Step over clicked, moved from lines (13,7) to lines (13,8)
+0:08:50.061954 Step over clicked, moved from lines (13,8) to lines (13,9)
+0:08:51.042665 Step over clicked, moved from lines (13,9) to lines (13,10)
+0:08:55.906795 Step over clicked, moved from lines (13,10) to lines (13,13)
+0:08:58.173914 Step over clicked, moved from lines (13,13) to lines (13,16)
+0:09:00.405578 Step over clicked, moved from lines (13,16) to lines (13,17)
+0:09:10.189493 Step over clicked, moved from lines (13,17) to lines (13,18)
+0:09:12.136704 Step over clicked, moved from lines (13,18) to lines (13,19)
+0:09:12.331977 Step over clicked, moved from lines (13,19) to lines (13,20)
+0:09:12.490302 Step over clicked, moved from lines (13,20) to lines (13,21)
+0:09:59.764225 Add watch clicked
+0:15:38.955410 Step over clicked, moved from lines (13,21) to lines (13,22)
+0:15:39.489421 Step over clicked, moved from lines (13,22) to lines (13,23)
+0:15:39.698896 Step over clicked, moved from lines (13,23) to lines (13,24)
+0:15:39.985259 Step over clicked, moved from lines (13,24) to lines (13,25)
+0:15:40.240308 Step over clicked, moved from lines (13,25) to lines (13,26)
+0:15:40.560741 Step over clicked, moved from lines (13,26) to lines (13,27)
+0:15:40.819304 Step over clicked, moved from lines (13,27) to lines (13,28)
+0:15:41.329539 Step over clicked, moved from lines (13,28) to lines (13,29)
+0:15:45.893178 Step over clicked, moved from lines (13,29) to lines (13,13)
+0:15:47.258872 Step over clicked, moved from lines (13,13) to lines (13,16)
+0:15:48.695584 Step over clicked, moved from lines (13,16) to lines (13,17)
+0:15:49.408827 Step over clicked, moved from lines (13,17) to lines (13,18)
+0:15:49.494704 Step over clicked, moved from lines (13,18) to lines (13,19)
+0:15:49.655710 Step over clicked, moved from lines (13,19) to lines (13,20)
+0:15:49.755254 Step over clicked, moved from lines (13,20) to lines (13,21)
+0:15:49.904770 Step over clicked, moved from lines (13,21) to lines (13,22)
+0:15:50.021512 Step over clicked, moved from lines (13,22) to lines (13,23)
+0:15:50.175179 Step over clicked, moved from lines (13,23) to lines (13,24)
+0:15:50.330382 Step over clicked, moved from lines (13,24) to lines (13,25)
+0:15:50.831448 Step over clicked, moved from lines (13,25) to lines (13,26)
+0:15:50.966254 Step over clicked, moved from lines (13,26) to lines (13,27)
+0:15:51.163669 Step over clicked, moved from lines (13,27) to lines (13,28)
+0:15:51.349203 Step over clicked, moved from lines (13,28) to lines (13,29)
+0:16:01.952407 Add watch clicked
+0:16:25.462497 Add watch completed, added C++, x1+x2*50
+0:16:57.907398 Removing watch C++, x1+x2*50
+0:17:02.059941 Add watch clicked
+0:17:10.271639 Add watch completed, added C++, x1*50+x2
+0:19:33.138915 Add watch clicked
+0:19:43.039350 Add watch completed, added C++, *filter_s
+0:19:55.633941 Add watch clicked
+0:20:10.617619 Add watch completed, added C++, PyArray_DATA(filter_s)
+0:21:34.641595 Exiting with result 0

@@ -1,0 +1,140 @@
+0:00:00.000018 Starting
+0:00:55.830303 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:01:08.990914 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:01:56.164432 Add watch clicked
+0:02:06.938816 Add watch completed, added Python, out_grid
+0:02:21.327964 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:02:26.835061 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:02:29.659472 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:03:25.485042 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:03:32.395118 Add watch clicked
+0:03:49.345508 Add watch completed, added Python, y
+0:03:53.016150 Add watch clicked
+0:03:59.845190 Add watch completed, added C++, x1
+0:04:01.726989 Add watch clicked
+0:04:10.224525 Add watch completed, added C++, x2
+0:04:11.741076 Add watch clicked
+0:04:16.086701 Add watch completed, added C++, x3
+0:04:36.873706 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:05:25.442532 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:05:28.142210 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:05:30.138847 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:05:33.630150 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:05:40.105973 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:05:45.697048 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:05:48.598024 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:05:49.500766 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:06:39.983235 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:06:42.924108 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:06:43.464707 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:06:44.019895 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:06:44.332573 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:06:45.004860 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:06:45.416958 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:06:46.470420 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:06:46.819590 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:06:47.722736 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:06:48.118208 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:06:48.495090 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:06:49.102980 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:06:49.485748 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:06:49.884066 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:06:50.268677 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:06:50.868872 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:06:51.301511 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:06:51.640991 Step over clicked, moved from lines (6,9) to lines (6,6)
+0:06:51.964912 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:06:53.244260 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:07:08.820216 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:07:09.461113 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:07:10.144676 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:07:10.692049 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:07:11.252216 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:07:12.113006 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:07:12.568879 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:07:12.949922 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:07:13.364182 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:07:14.275155 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:07:16.657190 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:07:17.012999 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:07:17.387077 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:07:17.968175 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:07:18.531048 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:07:19.075145 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:07:19.593866 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:07:20.082951 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:07:20.562526 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:07:23.124505 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:07:24.565829 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:07:24.977774 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:07:25.453893 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:07:26.475770 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:07:27.227215 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:07:27.711033 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:07:31.618217 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:07:34.218519 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:07:34.845382 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:07:36.102703 Step over clicked, moved from lines (6,9) to lines (6,6)
+0:07:37.694686 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:07:50.966806 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:08:01.938004 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:08:02.313606 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:08:02.691308 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:08:03.021538 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:08:03.393971 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:08:03.886510 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:08:04.965942 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:08:05.367932 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:08:05.823128 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:08:09.882397 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:08:10.578287 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:08:11.751206 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:08:17.210311 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:08:18.407986 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:08:18.880300 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:08:19.306064 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:08:19.720320 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:08:20.138524 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:08:20.554292 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:08:20.888534 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:08:21.405153 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:08:21.958788 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:08:22.330197 Step over clicked, moved from lines (8,13) to lines (7,14)
+0:08:22.791881 Step over clicked, moved from lines (7,14) to lines (8,14)
+0:08:23.168682 Step over clicked, moved from lines (8,14) to lines (7,15)
+0:08:23.770979 Step over clicked, moved from lines (7,15) to lines (8,15)
+0:08:24.711484 Step over clicked, moved from lines (8,15) to lines (7,16)
+0:08:25.220425 Step over clicked, moved from lines (7,16) to lines (8,16)
+0:08:25.626837 Step over clicked, moved from lines (8,16) to lines (6,9)
+0:08:25.987207 Step over clicked, moved from lines (6,9) to lines (6,6)
+0:08:33.876193 Step over clicked, moved from lines (6,6) to lines (6,19)
+('Could not match regex on stack line:', '#0  boost::python::detail::invoke<int, void (*)(_object*, _object*), boost::python::arg_from_python<_object*>, boost::python::arg_from_python<_object*> > (f=@0x10d58d8, ac0=..., ac1=...) at /usr/include/boost/python/detail/invoke.hpp:82')
+0:10:08.937767 Restart clicked
+0:10:14.151332 Restart clicked
+0:10:16.067928 Restart clicked
+0:10:17.994411 Exiting with result 0
+0:00:00.000025 Starting
+0:00:22.429672 Add watch clicked
+0:00:29.300866 Add watch completed, added C++, x1
+0:00:31.881029 Add watch clicked
+0:00:36.133650 Add watch completed, added C++, x2
+0:00:46.986344 Step over clicked, moved from lines (5,4) to lines (5,5)
+0:00:48.574527 Step over clicked, moved from lines (5,5) to lines (6,6)
+0:00:57.350513 Step over clicked, moved from lines (6,6) to lines (6,9)
+0:00:58.480582 Step over clicked, moved from lines (6,9) to lines (6,12)
+0:00:59.737396 Step over clicked, moved from lines (6,12) to lines (7,13)
+0:01:01.862553 Add watch clicked
+0:01:04.043418 Add watch completed, added C++, 
+0:01:08.538505 Add watch clicked
+0:01:12.421565 Add watch completed, added C++, x3
+0:01:16.378264 Removing watch C++, 
+0:02:39.309538 Add watch clicked
+0:02:57.297220 Add watch completed, added C++, _my_out_grid[x3]
+0:02:59.544821 Add watch clicked
+0:03:10.848931 Add watch completed, added Python, out_grid[y]
+0:03:13.231942 Add watch clicked
+0:03:19.964595 Add watch completed, added Python, y
+0:03:46.559456 Step over clicked, moved from lines (7,13) to lines (8,13)
+0:04:25.061969 Add watch clicked
+0:04:29.734935 Add watch completed, added Python, x
+0:05:06.934897 Exiting with result 0
