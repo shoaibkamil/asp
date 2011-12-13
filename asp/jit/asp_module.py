@@ -29,6 +29,9 @@ class ASPDB(object):
                 os.mkdir(self.cache_dir)
             self.db_file = self.cache_dir + "/aspdb.sqlite3"
             self.connection = sqlite3.connect(self.db_file)
+            self.connection.execute("PRAGMA temp_store = MEMORY;")
+            self.connection.execute("PRAGMA synchronous = OFF;")
+            
         else:
             self.db_file = None
             self.connection = sqlite3.connect(":memory:")
