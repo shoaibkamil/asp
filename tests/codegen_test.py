@@ -46,7 +46,7 @@ class ConversionTests(unittest.TestCase):
     def test_Assign(self):
         a = ast.Assign([ast.Name("hello", None)], ast.Num(4))
         b = ConvertAST().visit(a)
-        self.assertEqual(str(b), "hello = 4;")
+        self.assertEqual(str(b), "hello = 4")
 
     def test_simple_FunctionDef(self):
         a = ast.FunctionDef("hello",
