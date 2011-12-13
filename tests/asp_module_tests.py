@@ -82,6 +82,11 @@ class ASPDBTests(unittest.TestCase):
         db.close() # close the real connection so we can mock it out
         db.connection = Mock()
         db.table_exists = Mock(return_value = True)
+        
+        mock_cursor = Mock()
+        mock_cursor.fetchone.return_value = (1,)
+        db.connection.cursor.return_value = mock_cursor
+
 
         db.update("foo", "foo_v1", "KEY", 3.21)
 
@@ -280,7 +285,8 @@ class MultipleFuncTests(unittest.TestCase):
         mod.foo(1)
         mod.foo(10)
         mod.foo(10)
-        self.assertEqual(len(filter(lambda x: x[1]==u'foo_1',mod.db.get("foo"))),3)
+
+        self.assertEqual(len(filter(lambda x: x[1]==u'foo_2',mod.db.get("foo"))),1)
 
 
 """

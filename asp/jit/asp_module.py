@@ -88,15 +88,27 @@ class ASPDB(object):
     def update(self, fname, variant, key, value):
         """
         Updates an entry in the db.  Overwrites the timing information with value.
+        If the entry does not exist, does an insert.
         """
         if (not self.table_exists()):
             self.create_specializer_table()
             self.insert(fname, variant, key, value)
             return
 
-        query = "update "+self.specializer+" set perf=? where fname=? and variant=? and key=?"
-        self.connection.execute(query, (value, fname, variant, key))
-        self.connection.commit()
+        # check if the entry exists
+        query = "select count(*) from "+self.specializer+" where fname=? and variant=? and key=?;"
+        cursor = self.connection.cursor()
+        cursor.execute(query, (fname, variant, key))
+        count = cursor.fetchone()[0]
+        
+        # if it exists, do an update, otherwise do an insert
+        if count > 0:
+            query = "update "+self.specializer+" set perf=? where fname=? and variant=? and key=?"
+            self.connection.execute(query, (value, fname, variant, key))
+            self.connection.commit()
+        else:
+            self.insert(fname, variant, key, value)
+
 
     def delete(self, fname, variant, key):
         """
@@ -192,7 +204,8 @@ class SpecializedFunction(object):
         fastest variant.
         """
         # get variants that have run
-        already_run = self.db.get(self.name, key=self.key(*args, **kwargs))
+        already_run = self.db.get(self.name, key=self.key(args, kwargs))
+
 
         if already_run == []:
             already_run_variant_names = []
@@ -225,7 +238,7 @@ class SpecializedFunction(object):
         ret_val = self.backend.get_compiled_function(which).__call__(*args, **kwargs)
         elapsed = time.time() - start
         #FIXME: where should key function live?
-        print "doing update with %s, %s, %s, %s" % (self.name, which, self.key(args, kwargs), elapsed)
+        #print "doing update with %s, %s, %s, %s" % (self.name, which, self.key(args, kwargs), elapsed)
         self.db.update(self.name, which, self.key(args, kwargs), elapsed)
         #TODO: Should we use db.update instead of db.insert to avoid O(N) ops on already_run_variant_names = map(lambda x: x[1], already_run)?
 
