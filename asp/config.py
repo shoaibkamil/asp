@@ -66,7 +66,11 @@ class ConfigReader(object):
     """
     Interface for reading a per-user configuration file in YAML format.  The
     config file lives in ~/.asp_config.yml (on windows, ~ is equivalent to 
-    \Users\<current user>).  The format of the file should contain a specializer's
+    \Users\<current user>).  
+    
+    On initialization, specify the specializer whose settings are going to be read.
+
+    The format of the file should contain a specializer's
     settings in its own hash.  E.g.:
     specializer_foo:
       setting_one: value
@@ -75,21 +79,26 @@ class ConfigReader(object):
       setting_etc: value
 
     """
-    def __init__(self):
+    def __init__(self, specializer):
         try:
             self.stream = open(os.path.expanduser("~")+'/.asp_config.yml')
             self.configs = yaml.load(self.stream)
         except:
             print "No configuration file ~/.asp_config.yml found."
             self.configs = {}
+
+        self.specializer = specializer
             
         #translates from YAML file to Python dictionary
 
-    # given a key, return corresponding configs
+
     # add functionality to iterate keys? 
     def get_option(self, key):
+        """
+        Given a key, return the value for that key, or None.
+        """
         try:
-            return self.configs[key]
+            return self.configs[self.specializer][key]
         except KeyError:
             print "Configuration key %s not found" % key
             return None
