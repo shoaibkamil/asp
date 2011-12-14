@@ -34,7 +34,7 @@ setup(name="asp",
       author_email="skamil@cs.berkeley.edu",
       license = "BSD",
 
-      packages=["asp", "asp.codegen", "asp.codegen.templating", "asp.jit"],
+      packages=["asp", "asp.codegen", "asp.codegen.templating", "asp.jit", "asp.ply"],
       install_requires=[
         "numpy",
         "codepy",
