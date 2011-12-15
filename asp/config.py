@@ -7,9 +7,9 @@ class CompilerDetector(object):
     Detect if a particular compiler is available by trying to run it.
     """
     def detect(self, compiler):
-        import subprocess
+        from pytools.prefork import call_capture_output
         try:
-            retcode = subprocess.call([compiler, "--version"])
+            retcode, stdout, stderr = call_capture_output([compiler, "--version"])
         except:
             return False
 
