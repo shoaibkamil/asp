@@ -10,6 +10,35 @@ class TimerTest(unittest.TestCase):
 #         mod.add_function("void test(){;;;;}", "test")
 # #        mod.test()
 #         self.failUnless("test" in mod.times.keys())
+
+class CallPoliciesTests(unittest.TestCase):
+    def test_adding_with_call_policy(self):
+        mod = asp_module.ASPModule()
+        
+        # add a struct to the module
+        mod.add_to_module("struct foo { int a; };\n")
+        
+        # we also want to expose the struct to Python so we can pass instances
+        # back and forth
+        mod.expose_class("foo")
+        
+        # add a function that returns a pointer to this arbitrary struct
+        # we have to specify a call policy because we are returning a pointer to a C++ object
+        mod.add_function("get_foo", "struct foo* get_foo() { struct foo* f = new foo; f->a = 10; return f; }\n",
+                         call_policy="python_gc")
+
+        # add a function that takes a foo and returns the int
+        mod.add_function("get_int", "int get_int(struct foo* f) { return f->a; }")
+
+        # take a look at the generated code
+        print mod.generate()
+
+        # let's create a foo
+        foo = mod.get_foo()
+        
+        # and now let's make sure that if we pass foo back to C++, it is the same instance
+        self.assertEqual(mod.get_int(foo), 10)
+        
        
 class ASPDBTests(unittest.TestCase):
     def test_creating_db(self):

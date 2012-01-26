@@ -151,13 +151,14 @@ class SpecializedFunction(object):
     """
     
     def __init__(self, name, backend, db, variant_names=[], variant_funcs=[], run_check_funcs=[], 
-                 key_function=None):
+                 key_function=None, call_policy=None):
         self.name = name
         self.backend = backend
         self.db = db
         self.variant_names = []
         self.variant_funcs = []
         self.run_check_funcs = []
+        self.call_policy = call_policy
         
         if variant_names != [] and run_check_funcs == []:
             run_check_funcs = [lambda *args,**kwargs: True]*len(variant_names)
@@ -196,7 +197,10 @@ class SpecializedFunction(object):
                 self.backend.module.boost_module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
             else:
                 self.backend.module.add_to_module([cpp_ast.Line(variant_func)])
-                self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
+                if self.call_policy == "python_gc":
+                    self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s, boost::python::return_value_policy<boost::python::manage_new_object>())" % (variant_name, variant_name))])
+                else:
+                    self.backend.module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
         else:
             self.backend.module.add_function(variant_func)
 
@@ -257,7 +261,9 @@ class HelperFunction(SpecializedFunction):
         self.name = name
         self.backend = backend
         self.variant_names, self.variant_funcs, self.run_check_funcs = [], [], []
+        self.call_policy = None
         self.add_variant(name, func)
+
 
     def __call__(self, *args, **kwargs):
         if self.backend.dirty:
@@ -391,7 +397,7 @@ class ASPModule(object):
         self.backends[backend].module.add_to_module(block)
 
     def add_function(self, fname, funcs, variant_names=[], run_check_funcs=[], key_function=None, 
-                     backend="c++"):
+                     backend="c++", call_policy=None):
         """
         Add a specialized function to the Asp module.  funcs can be a list of variants, but then
         variant_names is required (also a list).  Each item in funcs should be a string function or
@@ -404,13 +410,24 @@ class ASPModule(object):
         self.specialized_functions[fname] = SpecializedFunction(fname, self.backends[backend], self.db, variant_names,
                                                                 variant_funcs=funcs, 
                                                                 run_check_funcs=run_check_funcs,
-                                                                key_function=key_function)
+                                                                key_function=key_function,
+                                                                call_policy=call_policy)
 
     def add_helper_function(self, fname, func, backend="c++"):
         """
         Add a helper function, which is a specialized function that it not timed and has a single variant.
         """
         self.specialized_functions[fname] = HelperFunction(fname, func, self.backends[backend])
+
+
+    def expose_class(self, classname, backend="c++"):
+        """
+        Expose a class or struct from C++ to Python, letting us pass instances back and forth
+        between Python and C++.
+
+        TODO: allow exposing *functions* within the class
+        """
+        self.backends[backend].module.add_to_init([cpp_ast.Line("boost::python::class_<%s>(\"%s\");\n" % (classname, classname))])
 
 
     def __getattr__(self, name):
