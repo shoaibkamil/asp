@@ -389,6 +389,11 @@ class Compare(Generable):
         self.right = right
         self._fields = ('left', 'op', 'right')
 
+    # cgen as of 4/24/2012 has a bug that directly calls split() on a Compare object.
+    # see https://github.com/shoaibkamil/asp/issues/32
+    def split(self, t):
+        return str(self).split(t)
+
     def generate(self, with_semicolon=False):
         yield '%s %s %s' % (self.left, self.op, self.right)
 
