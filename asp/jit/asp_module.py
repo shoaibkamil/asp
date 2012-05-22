@@ -322,7 +322,7 @@ class ASPModule(object):
     """
 
     #FIXME: specializer should be required.
-    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False, use_cilk=False):
+    def __init__(self, specializer="default_specializer", cache_dir=None, use_cuda=False, use_cilk=False, use_tbb=False, use_pthreads=False):
             
         self.specialized_functions= {}
         self.helper_method_names = []
@@ -359,7 +359,12 @@ class ASPModule(object):
         if use_cilk:
             self.backends["cilk"] = self.backends["c++"]
             self.backends["cilk"].toolchain.cc = "icc"
-
+        if use_tbb:
+            self.backends["tbb"] = self.backends["c++"]
+            self.backends["tbb"].toolchain.cflags += ["-ltbb"]
+        if use_pthreads:
+            self.backends["pthreads"] = self.backends["c++"]
+            self.backends["pthreads"].toolchain.cflags += ["-pthread"]
 
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[], backend="c++"):
