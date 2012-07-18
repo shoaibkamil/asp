@@ -65,6 +65,9 @@ class BinOp(Expression):
     def generate(self, with_semicolon=False):
         yield "(%s %s %s)" % (self.left, self.op, self.right) + (";" if with_semicolon else "")
 
+    def split(self, x):
+        return str(self).split(x)
+
     def to_xml(self):
         node = ElementTree.Element("BinOp", attrib={"op":str(self.op)})
         left = ElementTree.SubElement(node, "left")
