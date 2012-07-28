@@ -400,4 +400,6 @@ class %s(%s):
     if checker != None:
         program = "import ast\n" + program + "\n" + generate_checker_class(checker, classes_with_rules) + "\n"
 
+    program = program + "\n"
+
     exec(program, global_dict)
