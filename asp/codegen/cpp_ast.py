@@ -1,5 +1,5 @@
 import codepy.cgen
-from codepy.cgen import *
+from cgen import *
 import xml.etree.ElementTree as ElementTree
 
 # these are additional classes that, along with codepy's classes, let
