@@ -1,0 +1,4 @@
+This directory contains scripts that can be downloaded and executed to
+perform the entire SEJITS install process in a single command. It is
+intended to be used with github's "raw" interface for accessing the latest
+revision of a checked in file via public HTTPS.
