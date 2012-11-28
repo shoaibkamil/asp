@@ -1,24 +1,44 @@
 import os
 import os.path
 import subprocess
+from asp.avro_inter.py_avro_inter import *
+import sys
 
 class ScalaFunction:
     def __init__(self, classname, source_dir):
         self.classname = classname
-        self.source_dir = source_dir
+        self.source_dir = source_dir                               
+    
+    def find_close(self,str):
+        index = len(str)-1
+        char = str[index]
+        
+        while (char!=']'):
+            index -=1
+            char = str[index]
+        return index 
 
     def __call__(self, *args, **kwargs):
-        # Should support more than just floats and lists of floats
-        result = subprocess.Popen(['scala', '-classpath', self.source_dir,
-                  self.classname] + [str(arg) for arg in args],
-                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        result.wait()
-        if result.returncode != 0:
-            raise Error("Bad return code")
-        output = result.communicate()[0]
-        nums = [float(x) for x in output.split()]
-        print nums
-        return nums
+        write_avro_file(args, 'args.avro')
+        prefix = os.environ['CLASSPATH']
+        class_path = prefix +':'+self.source_dir + ':/root/asp/asp/avro_inter'
+        
+        # make_jar should be edited so that source.jar contains all the necessary files 
+        # to be deployed to the slave nodes
+        os.system('/root/asp/asp/jit/make_source_jar '+ self.source_dir)     
+        os.environ['SOURCE_LOC'] = self.source_dir + "/source.jar"
+        out = subprocess.Popen('/root/spark/run -cp '+class_path + ' ' +self.classname, shell=True)
+        out.wait()
+        if out.returncode != 0:
+            print "return code is:" , out.returncode
+            raise Exception("Bad return code")
+
+        results = read_avro_file('results.avro')[0]        
+        os.remove('args.avro')
+        os.remove('results.avro')
+        return results
+
+
 
 class PseudoModule:
     '''Pretends to be a Python module that contains the generated functions.'''
@@ -67,23 +87,25 @@ class ScalaModule:
         else: 
             if not os.path.isdir(cache_dir):
                 os.makedirs(cache_dir)
+        
 
         source_string = self.generate()
         hex_checksum = self.calculate_hex_checksum(source_string)
         mod_cache_dir = os.path.join(cache_dir, hex_checksum)
-
         # Should we assume that if the directory exists, then we don't need to
         # recompile?
         if not os.path.isdir(mod_cache_dir):
             os.makedirs(mod_cache_dir)
             filepath = os.path.join(mod_cache_dir, "asp_tmp.scala")
-
             source = open(filepath, 'w')
             source.write(source_string)
-            source.close()
-            os.system("scalac -d %s %s" % (mod_cache_dir, filepath))
+            source.close()            
+            result = os.system("scalac -d %s %s" % (mod_cache_dir, filepath))                
             os.remove(filepath)
-
+            if result != 0:
+                os.system("rm -rf " +  mod_cache_dir)
+                raise Exception("Could not compile")
+               
         mod = PseudoModule()
         for fname in self.init_body:
             self.func = ScalaFunction(fname, mod_cache_dir)

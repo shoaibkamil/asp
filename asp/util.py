@@ -7,3 +7,4 @@ def debug_print(*args):
         for arg in args:
             print(arg, end='')
         print()
+
