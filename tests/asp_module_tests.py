@@ -31,7 +31,7 @@ class CallPoliciesTests(unittest.TestCase):
         mod.add_function("get_int", "int get_int(struct foo* f) { return f->a; }")
 
         # take a look at the generated code
-        print mod.generate()
+        # print mod.generate()
 
         # let's create a foo
         foo = mod.get_foo()
@@ -298,8 +298,8 @@ class MultipleFuncTests(unittest.TestCase):
 
     def test_running_multiple_variants(self):
         mod = asp_module.ASPModule()
-        mod.add_function("foo", ["void foo_1(){printf(\"running foo1\\n\");};", 
-                                 "void foo_2(){printf(\"running foo2\\n\");};"],
+        mod.add_function("foo", ["void foo_1(){/*printf(\"running foo1\\n\");*/};", 
+                                 "void foo_2(){/*printf(\"running foo2\\n\");*/};"],
                          ["foo_1", "foo_2"])
         mod.foo()
         mod.foo()
