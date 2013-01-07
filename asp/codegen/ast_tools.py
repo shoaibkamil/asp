@@ -1,6 +1,7 @@
 import cpp_ast as cpp
 import python_ast as ast
 import scala_ast as scala 
+import inspect
 
 try:
     from asp.util import *
@@ -15,6 +16,10 @@ def is_cpp_node(x):
 
 def is_scala_node(x):
     return isinstance(x, scala.Generable)
+
+def parse_method(method):
+    src = inspect.getsource(method)
+    return ast.parse(src.lstrip())
 
 class NodeVisitorCustomNodes(ast.NodeVisitor):
     # Based on NodeTransformer.generic_visit(), but visits all sub-nodes
