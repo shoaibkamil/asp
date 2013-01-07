@@ -25,7 +25,7 @@ def generator_index(gen, index):
     import itertools
     return next(itertools.islice(gen, index, index+1))
 
-class AstExplorer:
+class ASTExplorer:
 
     def button_release_event(self, treeview, event):
         if event.button == 3: # right click
@@ -142,4 +142,4 @@ class TestObject:
 if __name__ == "__main__":
     import ast_tools
     ast = ast_tools.parse_method(TestObject.operation)
-    AstExplorer(ast)
+    ASTExplorer(ast)
