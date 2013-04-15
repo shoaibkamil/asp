@@ -35,9 +35,10 @@ setup(name="asp",
       license = "BSD",
 
       packages=["asp", "asp.codegen", "asp.codegen.templating", "asp.jit", "asp.ply", "asp.avro_inter"],
+      dependency_links = ['http://github.com/shoaibkamil/codepy/tarball/master#egg=codepy-2013.3.sk'],
       install_requires=[
         "numpy",
-        "codepy",
+        "codepy>=2013.1",
         "unittest2",
         "mako",
         "mock",
