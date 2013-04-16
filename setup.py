@@ -43,7 +43,8 @@ setup(name="asp",
         "mako",
         "mock",
         "discover",
-        "PyYAML"
+        "PyYAML",
+        "avro"
 
           ],
 
