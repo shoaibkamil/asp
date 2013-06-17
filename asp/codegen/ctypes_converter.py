@@ -34,16 +34,30 @@ class StructConverter(object):
         elif type(item) == type(c_int * 4):
             # if it is an array:
             return (self.visitor(item._type_), item._length_)
-        else:
+        elif item.__name__ in self._typehash_:
             return self._typehash_[item.__name__]
+        else:
+            if item.__name__ not in self.all_structs.keys():
+                self.convert(item)
+            return item.__name__
     
     def convert(self, cl):
+        """Top-level function for converting from ctypes Structure to it's C++ equivalent declaration.
+        
+        The function returns a hash with keys corresponding to structure names encountered, and values
+        corresponding to the definition of the type.
+        """
         def mapfunc(x):
             ret = self.visitor(x[1])
             if type(ret) is tuple:
                 return "%s %s[%s];" % (ret[0], x[0], ret[1])
             else:
                 return "%s %s;" % (ret, x[0])
-                
+        
+        # try to avoid infinite recursion for types defined with self-recursion or mutual recursion
+        self.all_structs[cl.__name__] = None
+        
         fields = map(mapfunc, cl._fields_)
-        return "struct %s { %s };" % (cl.__name__, '\n'.join(fields))
+        self.all_structs[cl.__name__] = "struct %s { %s };" % (cl.__name__, '\n'.join(fields))
+        
+        return self.all_structs
