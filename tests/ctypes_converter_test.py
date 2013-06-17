@@ -23,6 +23,13 @@ class BasicConversionTests(unittest.TestCase):
             _fields_ = [("x", c_int), ("y", POINTER(c_int)), ("z", POINTER(POINTER(c_double)))]
             
         self.assertEquals(normalize(StructConverter().convert(Foo)), normalize("struct Foo { int x; int* y; double** z;};"))
+    
+    def test_array_field(self):
+        class Foo(Structure):
+            _fields_ = [("x", c_int * 4)]
+        
+        self.assertEquals(normalize(StructConverter().convert(Foo)), normalize("struct Foo {int x[4];};"))
+        
         
 if __name__ == '__main__':
     unittest.main()

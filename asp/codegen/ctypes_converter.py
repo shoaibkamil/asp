@@ -3,7 +3,6 @@ from ctypes import *
 # converts from a class that is a ctypes Structure into the C declaration of the datatype
 class StructConverter(object):
     # we currently do not support int8/int16/etc
-    #FIXME: do we need to support nested definitions?
     _typehash_ = {'c_int':'int',
                   'c_byte': 'byte',
                   'c_char': 'char',
@@ -25,14 +24,26 @@ class StructConverter(object):
                   'c_wchar': 'wchcar_t',
                   'c_wchar_p': 'wchar_t*',
                   'c_bool': 'bool'}
+                  
+    def __init__(self):
+        self.all_structs = {}
     
     def visitor(self, item):
         if type(item) == type(POINTER(c_int)):
             return self.visitor(item._type_) + "*"
+        elif type(item) == type(c_int * 4):
+            # if it is an array:
+            return (self.visitor(item._type_), item._length_)
         else:
             return self._typehash_[item.__name__]
     
     def convert(self, cl):
-        
-        fields = map(lambda x: "%s %s;" % (self.visitor(x[1]), x[0]), cl._fields_)
+        def mapfunc(x):
+            ret = self.visitor(x[1])
+            if type(ret) is tuple:
+                return "%s %s[%s];" % (ret[0], x[0], ret[1])
+            else:
+                return "%s %s;" % (ret, x[0])
+                
+        fields = map(mapfunc, cl._fields_)
         return "struct %s { %s };" % (cl.__name__, '\n'.join(fields))
