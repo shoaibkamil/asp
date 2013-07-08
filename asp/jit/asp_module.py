@@ -195,7 +195,7 @@ class SpecializedFunction(object):
         if isinstance(self.backend.module, scala_module.ScalaModule):
             self.backend.module.add_to_module(variant_func)
             self.backend.module.add_to_init(variant_name)
-        elif isinstance(variant_func, str):
+        elif isinstance(variant_func, basestring):
             if isinstance(self.backend.module, codepy.cuda.CudaModule):#HACK because codepy's CudaModule doesn't have add_to_init()
                 self.backend.module.boost_module.add_to_module([cpp_ast.Line(variant_func)])
                 self.backend.module.boost_module.add_to_init([cpp_ast.Statement("boost::python::def(\"%s\", &%s)" % (variant_name, variant_name))])
@@ -392,7 +392,7 @@ class ASPModule(object):
         self.backends[backend].module.add_to_preamble([cpp_ast.Include(include_file, brackets)])
 
     def add_to_preamble(self, pa, backend="c++"):
-        if isinstance(pa, str):
+        if isinstance(pa, basestring):
             pa = [cpp_ast.Line(pa)]
         self.backends[backend].module.add_to_preamble(pa)
 
@@ -405,7 +405,7 @@ class ASPModule(object):
             self.backends[backend].module.add_to_init(stmt)
         
     def add_to_module(self, block, backend="c++"):
-        if isinstance(block, str):
+        if isinstance(block, basestring):
             block = [cpp_ast.Line(block)]
         self.backends[backend].module.add_to_module(block)
 
